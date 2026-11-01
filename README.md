@@ -145,7 +145,7 @@ The usage endpoint is an internal ChatGPT endpoint and its fields may change. If
 <details>
 <summary><strong>Build from source</strong></summary>
 
-Contributors need Xcode 16 or newer and a macOS version supported by that Xcode release. The built app supports macOS 14 or later. CI uses Xcode 16.2 on macOS 14:
+Contributors need Xcode 16 or newer and a macOS version supported by that Xcode release. The built app supports macOS 14 or later. CI uses Xcode 16.2 on macOS 15:
 
 ```sh
 swift test

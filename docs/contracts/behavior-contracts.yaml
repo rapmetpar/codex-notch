@@ -189,7 +189,7 @@ contracts:
 
   - id: CI-VERIFICATION-001
     title: Verify release source with a supported SDK before publication
-    status: active
+    status: superseded
     statement: >-
       CI must explicitly select Xcode 16.2 on macOS 14, record the checked-out
       source SHA and toolchain, and run the existing full verification entry
@@ -215,6 +215,38 @@ contracts:
       - docs/decisions/053-explicit-ci-toolchain.md
       - "manual: confirm successful CI and its checkout SHA before publication"
     supersedes: []
+    superseded_by: CI-VERIFICATION-002
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-002
+    title: Full CI verification uses an available macOS runner
+    status: active
+    statement: >-
+      Preserve CI-VERIFICATION-001 except the retired macOS 14 runner. Run CI
+      on macOS 15 with explicitly selected Xcode 16.2, record the checkout SHA,
+      OS, Xcode, Swift and SDK versions, and run the unchanged full verify.sh
+      entry point. All contracts, tests, release build, resources, bundle and
+      signing checks remain required. Failed, cancelled, pending or missing CI
+      is not success. Keep manual exact-source verification and require both
+      local and exact-source CI success before public release. Application
+      runtime support remains macOS 14 or later.
+    rationale: PR 1 CI was cancelled before checkout during the macOS 14 image brownout preceding its November 2 retirement.
+    source: github-actions-run-41317612859
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner, ci-toolchain, full-verification, release-publication]
+      exclude: [app-behavior, minimum-runtime-version, signing-key, published-archives, branch-protection]
+    examples:
+      positive: CI starts on macOS 15, logs Xcode 16.2 and the intended checkout SHA, and passes every existing verification stage.
+      negative: Continuing on retired macOS 14, using an implicit toolchain, skipping tests to obtain a green result, or treating an infrastructure cancellation as a pass.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/updating.md
+      - docs/decisions/059-supported-ci-runner.md
+      - "manual: confirm a successful GitHub CI run on macOS 15 for the exact PR head before merging"
+    supersedes: [CI-VERIFICATION-001]
     superseded_by: null
     last_verified_commit: null
 
