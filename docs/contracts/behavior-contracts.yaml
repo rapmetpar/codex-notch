@@ -1,7 +1,49 @@
 contracts:
+  - id: CONVERSATION-STATUS-002
+    title: Running, new and locally viewed answers have distinct rows
+    status: active
+    statement: >-
+      Preserve CONVERSATION-STATUS-001 except completed-row appearance and the
+      placement of status copy. Retain the blue open-ring running animation and
+      the finite green completion check for new answers. Show explicit localized
+      Running, New and Viewed labels; new answers also use a stronger title and
+      faint green fill, while viewed answers use a static gray check and quiet
+      regular title. Preserve duration, completion time and project metadata.
+      Motion off retains all distinctions. A successful specific-thread link
+      acknowledges only the captured completed turn, matching turn ID and
+      completion instant; a running row, hover, frontmost app, app-only fallback
+      or failed handoff never acknowledges an answer. New completion becomes
+      New again. Persist only IDs and completion instants in app-owned versioned
+      preferences, at most 512 receipts; always keep the just-opened chat and
+      evict the oldest other completion. Initial or evicted history is New.
+      Tooltips and accessibility explain this local opening acknowledgement;
+      never claim native Codex read synchronization or confirmed consumption.
+      Preserve ACTIVITY-STATE-007 history order and limits, stable thread IDs,
+      40pt hit areas, compact status, quota, settings and fixed-canvas geometry.
+    rationale: The user could not distinguish chats in progress, unseen answers and already viewed chats in the list.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [recent-conversation-appearance, local-view-acknowledgements, navigation-result, accessibility]
+      exclude: [codex-read-state, message-content, activity-detection, compact-state, quotas, geometry, releases]
+    examples:
+      positive: A running row is blue; completion becomes green New; opening it turns it gray Viewed across restarts; the next completed turn becomes New again.
+      negative: Hovering clears New, app activation marks every chat Viewed, opening a running turn hides its later answer, or a failed thread link marks the chat Viewed.
+    guards:
+      - Tests/CodexNotchTests/ConversationAttentionTests.swift
+      - Tests/CodexNotchTests/CodexThreadNavigatorTests.swift
+      - Tests/CodexNotchTests/ConversationStatusTests.swift
+      - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
+      - docs/decisions/060-conversation-attention.md
+      - "manual: inspect all three row states and languages, actual thread navigation, restart, a new answer, VoiceOver, motion off/on, scrolling and unchanged hover/camera clearance on physical-notch and floating hardware"
+    supersedes: [CONVERSATION-STATUS-001]
+    superseded_by: null
+    last_verified_commit: null
+
   - id: CONVERSATION-STATUS-001
     title: Each recent chat has a distinct running spinner and completion check
-    status: active
+    status: superseded
     statement: >-
       Recent conversation rows show a blue rotating open ring while their own
       activity is running and a green closed ring with a check when completed.
@@ -29,7 +71,7 @@ contracts:
       - docs/decisions/059-conversation-status-animation.md
       - "manual: expand two running chats, complete one and start another turn; inspect check reveal, row reordering, reopen history, app motion off/on and unchanged physical-notch hover geometry"
     supersedes: []
-    superseded_by: null
+    superseded_by: CONVERSATION-STATUS-002
     last_verified_commit: null
 
   - id: LOCALIZATION-001

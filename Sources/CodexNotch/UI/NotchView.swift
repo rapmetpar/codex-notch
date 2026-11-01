@@ -1582,7 +1582,6 @@ private struct ExpandedNotchView: View {
             ForEach(content.conversations, id: \.threadID) { conversation in
                 ConversationRowView(
                     conversation: conversation,
-                    isPrimary: conversation.threadID == content.sessions.first?.threadID,
                     now: now,
                     language: language,
                     action: { onOpenThread(conversation.threadID) }
@@ -1667,66 +1666,6 @@ private struct ExpandedNotchView: View {
             return { onOpenThread(conversation.threadID) }
         }
         return onActivateChatGPT
-    }
-}
-
-private struct ConversationRowView: View {
-    let conversation: ConversationSummary
-    let isPrimary: Bool
-    let now: Date
-    let language: AppLanguage
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                ConversationStatusView(activity: conversation.activity)
-                    .frame(width: 16)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(
-                        conversation.title
-                            ?? NotchText.projectName(cwd: conversation.cwd, language: language)
-                    )
-                        .font(.system(size: 13, weight: isPrimary ? .medium : .regular))
-                        .foregroundStyle(NotchPalette.primaryText.opacity(isPrimary ? 1 : 0.82))
-                        .lineLimit(1)
-                    Text(metadataText)
-                        .font(.system(size: 10.5, weight: .regular))
-                        .foregroundStyle(NotchPalette.secondaryText)
-                        .lineLimit(1)
-                        .monospacedDigit()
-                }
-
-                Spacer(minLength: 4)
-
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 10, weight: .regular))
-                    .foregroundStyle(NotchPalette.secondaryText)
-            }
-            .padding(.horizontal, 11)
-            .frame(maxWidth: .infinity, minHeight: 40, maxHeight: 40)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(NotchButtonStyle())
-    }
-
-    private var metadataText: String {
-        let project = NotchText.projectName(cwd: conversation.cwd, language: language)
-        switch conversation.activity {
-        case let .running(startedAt):
-            return language.localized(
-                chinese: "运行 \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)",
-                english: "Running \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)",
-                russian: "В работе \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)"
-            )
-        case let .completed(completedAt):
-            return language.localized(
-                chinese: "已完成 · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)",
-                english: "Completed · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)",
-                russian: "Завершено · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)"
-            )
-        }
     }
 }
 
@@ -2053,7 +1992,7 @@ enum QuotaColorScale {
     }
 }
 
-private enum NotchPalette {
+enum NotchPalette {
     static let background = Color.black
     static let primaryText = Color.white
     static let secondaryText = Color.white.opacity(0.6)

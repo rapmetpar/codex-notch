@@ -1,7 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [CONVERSATION-STATUS-001, ACTIVITY-STATE-007, SETTINGS-MOTION-021]
 supersedes: []
+superseded_by: 060-conversation-attention
 owner: project-maintainer
 ---
 
@@ -28,11 +29,3 @@ configuration, new turns, motion off/on, hidden and detached cleanup, static
 geometry, and the SwiftUI environment connection. Full verification is required.
 Real-notch animation smoothness and hover appearance still require physical
 hardware confirmation; automated animation requests are not visual acceptance.
-
-Verification: five focused status tests passed, including production-row
-identity during reorder. Full verification passed with 258 tests, two existing
-opt-in skips and zero failures, plus release build, resources and signature
-checks. The installed Swift toolchain defaults to swiftbuild, whose nested
-resource layout fails the existing asset tests; the full script was run with
-a temporary command wrapper selecting SwiftPM's native build system for
-test/build. No repository build scripts or resource contracts were changed.

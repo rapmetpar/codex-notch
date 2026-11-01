@@ -46,7 +46,9 @@ enum NotchPresentationReducer {
             conversations.append(
                 ConversationSummary(
                     session: completion.session,
-                    activity: .completed(completedAt: completion.completedAt)
+                    activity: .completed(completedAt: completion.completedAt),
+                    isViewed: input.readReceipts[completion.session.threadID]
+                        == ConversationReadReceipt(completion)
                 )
             )
         }

@@ -6,10 +6,22 @@ enum CodexThreadNavigationError: Error, Equatable {
 }
 
 struct CodexThreadNavigator {
-    private let workspace: NSWorkspace
+    private let openURL: (URL) -> Bool
+    private let activateApp: () -> Bool
 
     init(workspace: NSWorkspace = .shared) {
-        self.workspace = workspace
+        openURL = { workspace.open($0) }
+        activateApp = {
+            guard let appURL = workspace.urlForApplication(
+                withBundleIdentifier: AppIdentity.chatGPTCodexBundleIdentifier
+            ) else { return false }
+            return workspace.open(appURL)
+        }
+    }
+
+    init(openURL: @escaping (URL) -> Bool, activateApp: @escaping () -> Bool) {
+        self.openURL = openURL
+        self.activateApp = activateApp
     }
 
     static func threadURL(id: String) throws -> URL {
@@ -39,19 +51,16 @@ struct CodexThreadNavigator {
 
     @discardableResult
     func open(threadID: String) -> Bool {
-        guard let url = Self.threadURLIfValid(id: threadID) else {
-            return activateCodex()
+        if let url = Self.threadURLIfValid(id: threadID), openURL(url) {
+            return true
         }
-        return workspace.open(url) || activateCodex()
+        _ = activateCodex()
+        // An app-level fallback cannot acknowledge a specific conversation.
+        return false
     }
 
     @discardableResult
     func activateCodex() -> Bool {
-        guard let appURL = workspace.urlForApplication(
-            withBundleIdentifier: AppIdentity.chatGPTCodexBundleIdentifier
-        ) else {
-            return false
-        }
-        return workspace.open(appURL)
+        activateApp()
     }
 }

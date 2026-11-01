@@ -33,6 +33,7 @@ final class NotchRuntimeCoordinator {
     private let usageEndpoint: URL
     private let nowProvider: () -> Date
     private let userDefaults: UserDefaults
+    private let conversationReadStore: ConversationReadStore
     private let viewModel: NotchViewModel
     private let titleReadQueue = DispatchQueue(
         label: "com.david.codexnotch.thread-title-read",
@@ -85,6 +86,7 @@ final class NotchRuntimeCoordinator {
         self.usageEndpoint = usageEndpoint
         self.nowProvider = nowProvider
         self.userDefaults = userDefaults
+        self.conversationReadStore = ConversationReadStore(defaults: userDefaults)
         self.viewModel = NotchViewModel()
 
         let codexHome = CodexHomeLocator.home(
@@ -440,7 +442,15 @@ final class NotchRuntimeCoordinator {
     }
 
     private func openThread(_ threadID: String) {
-        _ = threadNavigator.open(threadID: threadID)
+        // Capture the completed turn before handing off. Opening a running
+        // thread must never acknowledge the answer that will arrive later.
+        let completion = activeSessions.contains(where: { $0.threadID == threadID })
+            ? nil : recentCompletions.first(where: { $0.session.threadID == threadID })
+        let opened = threadNavigator.open(threadID: threadID)
+        if let completion,
+           conversationReadStore.acknowledge(completion, threadLinkOpened: opened) {
+            render()
+        }
     }
 
     private func activateChatGPT() {
@@ -570,7 +580,8 @@ final class NotchRuntimeCoordinator {
             activeSessions: activeSessions,
             recentCompletions: recentCompletions,
             usage: usage,
-            isHovered: isHovered
+            isHovered: isHovered,
+            readReceipts: conversationReadStore.receipts
         )
 
         let state = NotchPresentationReducer.reduce(input)
@@ -583,7 +594,8 @@ final class NotchRuntimeCoordinator {
                     activeSessions: input.activeSessions,
                     recentCompletions: input.recentCompletions,
                     usage: input.usage,
-                    isHovered: true
+                    isHovered: true,
+                    readReceipts: input.readReceipts
                 )
             )
         } else {

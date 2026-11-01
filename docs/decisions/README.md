@@ -41,3 +41,5 @@ Record decisions here only when they affect active behavior contracts, could be 
 | [059-scrollable-recent-chats](059-scrollable-recent-chats.md) | active | `ACTIVITY-STATE-008` | Make twenty recent chats reachable in a five-row scrolling viewport |
 
 New decisions must include `status`, `contract_ids`, rejected alternatives, and consequences. When a decision changes, retain the old document and point to the new one with `superseded_by`.
+
+- [060: Conversation attention states](060-conversation-attention.md)
