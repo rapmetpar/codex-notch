@@ -26,9 +26,11 @@ enum QuotaRunningHaloMotion {
 
 struct QuotaRunningHaloView: NSViewRepresentable {
     let isAnimating: Bool
+    var color: QuotaColorScale.RGB? = nil
 
     func makeNSView(context _: Context) -> QuotaRunningHaloLayerView {
         let view = QuotaRunningHaloLayerView(frame: .zero)
+        view.setColor(color)
         view.setAnimationRequested(isAnimating)
         return view
     }
@@ -37,6 +39,7 @@ struct QuotaRunningHaloView: NSViewRepresentable {
         _ nsView: QuotaRunningHaloLayerView,
         context _: Context
     ) {
+        nsView.setColor(color)
         nsView.setAnimationRequested(isAnimating)
     }
 
@@ -83,6 +86,14 @@ final class QuotaRunningHaloLayerView: QuotaAnimatedLayerView {
         haloLayer.removeAnimation(forKey: AnimationKey.pulse)
         haloLayer.opacity = 0
         haloLayer.transform = CATransform3DIdentity
+    }
+
+    func setColor(_ color: QuotaColorScale.RGB?) {
+        let rgb = color ?? .init(red: 0.38, green: 0.72, blue: 1)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        haloLayer.strokeColor = NSColor(srgbRed: rgb.red, green: rgb.green, blue: rgb.blue, alpha: 1).cgColor
+        CATransaction.commit()
     }
 
     private func configureLayer() {

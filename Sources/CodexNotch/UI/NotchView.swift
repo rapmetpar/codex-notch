@@ -14,6 +14,8 @@ final class NotchViewModel: ObservableObject {
     @Published private(set) var animationsEnabled: Bool
     @Published private(set) var surfaceExpansionLimit: CGSize?
     @Published private(set) var isPointerInside = false
+    private var surfaceAnimationIdentifier = UUID()
+    private var isSurfaceAnimationInFlight = false
 
     var onOpenThread: (String) -> Void
     var onActivateChatGPT: () -> Void
@@ -98,14 +100,27 @@ final class NotchViewModel: ObservableObject {
             || self.isResetScheduleExpanded != isResetScheduleExpanded
 
         // A content-height reduction must start at the previous full size.
-        // Keep this ceiling through clock refreshes until another surface move.
-        let nextExpansionLimit = willBeExpanded ? CGSize(
-            width: max(self.surfaceSize.width, surfaceSize.width),
-            height: max(self.surfaceSize.height, surfaceSize.height)
-        ) : nil
+        // Keep this ceiling through clock refreshes and interrupted moves.
+        let nextExpansionLimit: CGSize?
+        if !animationsEnabled || self.layoutMode != layoutMode || state == .hidden {
+            nextExpansionLimit = willBeExpanded ? surfaceSize : nil
+        } else if (!willBeExpanded || isSurfaceAnimationInFlight),
+           let currentLimit = self.surfaceExpansionLimit {
+            nextExpansionLimit = CGSize(
+                width: max(currentLimit.width, self.surfaceSize.width, surfaceSize.width),
+                height: max(currentLimit.height, self.surfaceSize.height, surfaceSize.height)
+            )
+        } else if willBeExpanded {
+            nextExpansionLimit = CGSize(
+                width: max(self.surfaceSize.width, surfaceSize.width),
+                height: max(self.surfaceSize.height, surfaceSize.height)
+            )
+        } else {
+            nextExpansionLimit = nil
+        }
 
         let applyUpdate = {
-            if changesSurface && self.surfaceExpansionLimit != nextExpansionLimit {
+            if (changesSurface || !animationsEnabled) && self.surfaceExpansionLimit != nextExpansionLimit {
                 self.surfaceExpansionLimit = nextExpansionLimit
             }
             if self.state != state { self.state = state }
@@ -131,21 +146,28 @@ final class NotchViewModel: ObservableObject {
             changesSurface: changesSurface,
             animationsEnabled: animationsEnabled
         ) {
-            let expands = surfaceSize.height > self.surfaceSize.height + 0.5
-                || surfaceSize.width > self.surfaceSize.width + 0.5
-                || (isResetScheduleExpanded && !self.isResetScheduleExpanded)
+            let identifier = UUID()
+            surfaceAnimationIdentifier = identifier
+            isSurfaceAnimationInFlight = true
             withAnimation(
-                changesHoverFeedback ? NotchPresentationMotion.hover : NotchPresentationMotion.animation(
-                    forExpanding: expands, isCollapsingCard: wasExpanded && !willBeExpanded
-                ),
+                changesHoverFeedback ? NotchPresentationMotion.hover
+                    : (wasExpanded && !willBeExpanded ? NotchPresentationMotion.collapse : NotchPresentationMotion.surface),
                 completionCriteria: .removed
             ) {
                 applyUpdate()
             } completion: {
+                // Only the latest animation can release the retained bounds
+                // for the next opening. Keep the last ceiling while compact:
+                // clearing it here could still alter a final presented frame.
+                if self.surfaceAnimationIdentifier == identifier {
+                    self.isSurfaceAnimationInFlight = false
+                }
                 onSurfaceAnimationCompleted?()
             }
             return true
         } else if changesSurface || !animationsEnabled {
+            surfaceAnimationIdentifier = UUID()
+            isSurfaceAnimationInFlight = false
             var transaction = Transaction(animation: nil)
             transaction.disablesAnimations = true
             withTransaction(transaction) {
@@ -177,6 +199,9 @@ struct NotchView: View {
     @ObservedObject private var model: NotchViewModel
     @AppStorage(QuotaDisplayStyle.storageKey)
     private var quotaDisplayStyleRaw = QuotaDisplayStyle.defaultStyle.rawValue
+    @AppStorage(QuotaAppearance.enabledKey) private var customQuotaColorEnabled = false
+    @AppStorage(QuotaAppearance.colorKey) private var customQuotaColorHex = QuotaAppearance.defaultHex
+    @AppStorage(CustomStatusIcon.storageKey) private var customIconData = Data()
     @AppStorage(StatusIconStyle.storageKey)
     private var statusIconStyleRaw = StatusIconStyle.defaultStyle.rawValue
     @AppStorage(AppLanguage.storageKey)
@@ -445,6 +470,8 @@ struct NotchView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .environment(\.notchAppLanguage, appLanguage)
+        .environment(\.quotaAppearance, QuotaAppearance(enabled: customQuotaColorEnabled, hex: customQuotaColorHex))
+        .environment(\.customStatusIconData, customIconData)
         .environment(\.notchStatusIconStyle, StatusIconStyle.fromStoredValue(statusIconStyleRaw))
         .environment(\.notchMotionEnabled, motionEnabled)
         .transaction { transaction in
@@ -634,6 +661,7 @@ private struct CompactNotchView: View {
     let action: () -> Void
     @Environment(\.notchAppLanguage) private var language
     @Environment(\.notchStatusIconStyle) private var iconStyle
+    @Environment(\.quotaAppearance) private var quotaAppearance
 
     var body: some View {
         Button(action: action) {
@@ -728,7 +756,7 @@ private struct CompactNotchView: View {
     }
 
     private var compactAppIcon: some View {
-        CompactAppIconView(status: icon, theme: StatusIconTheme(usage: usage),
+        CompactAppIconView(status: icon, theme: StatusIconTheme(usage: usage, appearance: quotaAppearance),
                            layoutMode: layoutMode, compactHeight: compactHeight)
     }
 
@@ -773,6 +801,7 @@ private struct CompactAppIconView: View {
 }
 
 private struct CompactQuotaView: View {
+    @Environment(\.quotaAppearance) private var quotaAppearance
     let window: UsageWindow?
     let activity: QuotaRingActivity
     let style: QuotaDisplayStyle
@@ -792,7 +821,7 @@ private struct CompactQuotaView: View {
             ) {
                 // This is intentionally centered on the visible quota circle,
                 // never on the physical camera cutout in the middle.
-                QuotaRunningHaloView(isAnimating: true)
+                QuotaRunningHaloView(isAnimating: true, color: quotaAppearance.customColor)
                     .frame(
                         width: QuotaRunningHaloMotion.visualDiameter,
                         height: QuotaRunningHaloMotion.visualDiameter
@@ -880,12 +909,13 @@ private struct RunningStatusIcon: View {
     let iconStyle: StatusIconStyle
     let size: CGFloat
     let theme: StatusIconTheme
+    @Environment(\.customStatusIconData) private var customIconData
     @Environment(\.notchMotionEnabled) private var motionEnabled
 
     var body: some View {
         ZStack {
             if motionEnabled, iconStyle.templateImage != nil {
-                StatusMarkEchoLayer(isAnimating: true, iconStyle: iconStyle, color: theme.runningEcho)
+                StatusMarkEchoLayer(isAnimating: true, iconStyle: iconStyle, color: theme.runningEcho, customIconData: customIconData)
                     .frame(width: size, height: size)
                     .allowsHitTesting(false)
             } else {
@@ -1148,6 +1178,7 @@ private struct QuotaValueText: View {
 }
 
 private struct QuotaWaveBall: View {
+    @Environment(\.quotaAppearance) private var quotaAppearance
     let window: UsageWindow?
     let activity: QuotaRingActivity
     let diameter: CGFloat
@@ -1167,11 +1198,11 @@ private struct QuotaWaveBall: View {
 
     private var progressColor: Color {
         guard window != nil else { return NotchPalette.secondaryText }
-        return QuotaColorScale.color(for: remainingPercent)
+        return quotaAppearance.color(for: remainingPercent)
     }
 
     private var progressColorComponents: QuotaColorScale.RGB {
-        QuotaColorScale.components(for: remainingPercent)
+        quotaAppearance.components(for: remainingPercent)
     }
 
     var body: some View {
@@ -1264,6 +1295,7 @@ private struct QuotaWaveBall: View {
 }
 
 struct QuotaRing: View {
+    @Environment(\.quotaAppearance) private var quotaAppearance
     let style: QuotaDisplayStyle
     let window: UsageWindow?
     let activity: QuotaRingActivity
@@ -1284,11 +1316,11 @@ struct QuotaRing: View {
 
     private var progressColor: Color {
         guard window != nil else { return NotchPalette.secondaryText }
-        return QuotaColorScale.color(for: remainingPercent)
+        return quotaAppearance.color(for: remainingPercent)
     }
 
     private var progressColorComponents: QuotaColorScale.RGB {
-        QuotaColorScale.components(for: remainingPercent)
+        quotaAppearance.components(for: remainingPercent)
     }
 
     private var progressTrim: (from: CGFloat, to: CGFloat) {
@@ -1316,7 +1348,7 @@ struct QuotaRing: View {
                     motionEnabled: motionEnabled
                 ) {
                     QuotaGradientLayer(
-                        color: QuotaInnerGlowMotion.color,
+                        color: quotaAppearance.customColor ?? QuotaInnerGlowMotion.color,
                         isAnimating: true,
                         style: .innerGlow,
                         circularMask: QuotaGradientCircularMask(
@@ -1490,19 +1522,14 @@ private struct ExpandedNotchView: View {
 
                 Spacer(minLength: 8)
 
-                VStack(spacing: 0) {
-                    ForEach(
-                        Array(content.conversations.enumerated()),
-                        id: \.offset
-                    ) { _, conversation in
-                        ConversationRowView(
-                            conversation: conversation,
-                            isPrimary: conversation.threadID == content.sessions.first?.threadID,
-                            now: now,
-                            language: language,
-                            action: { onOpenThread(conversation.threadID) }
-                        )
+                if content.conversations.count > NotchExpandedLayout.maximumVisibleConversations {
+                    ScrollView(.vertical) {
+                        conversationRows
                     }
+                    .frame(height: CGFloat(NotchExpandedLayout.maximumVisibleConversations)
+                        * NotchExpandedLayout.conversationRowHeight)
+                } else {
+                    conversationRows
                 }
             }
 
@@ -1580,6 +1607,19 @@ private struct ExpandedNotchView: View {
         .padding(.top, expandedContentTopInset)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var conversationRows: some View {
+        VStack(spacing: 0) {
+            ForEach(content.conversations, id: \.threadID) { conversation in
+                ConversationRowView(
+                    conversation: conversation,
+                    now: now,
+                    language: language,
+                    action: { onOpenThread(conversation.threadID) }
+                )
+            }
+        }
     }
 
     private var displayOnLabel: String {
@@ -1661,81 +1701,6 @@ private struct ExpandedNotchView: View {
     }
 }
 
-private struct ConversationRowView: View {
-    let conversation: ConversationSummary
-    let isPrimary: Bool
-    let now: Date
-    let language: AppLanguage
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                ConversationStatusView(activity: conversation.activity)
-                    .frame(width: 16)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(
-                        conversation.title
-                            ?? NotchText.projectName(cwd: conversation.cwd, language: language)
-                    )
-                        .font(.system(size: 13, weight: isPrimary ? .medium : .regular))
-                        .foregroundStyle(NotchPalette.primaryText.opacity(isPrimary ? 1 : 0.82))
-                        .lineLimit(1)
-                    Text(metadataText)
-                        .font(.system(size: 10.5, weight: .regular))
-                        .foregroundStyle(NotchPalette.secondaryText)
-                        .lineLimit(1)
-                        .monospacedDigit()
-                }
-
-                Spacer(minLength: 4)
-
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 10, weight: .regular))
-                    .foregroundStyle(NotchPalette.secondaryText)
-            }
-            .padding(.horizontal, 11)
-            .frame(maxWidth: .infinity, minHeight: 40, maxHeight: 40)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(NotchButtonStyle())
-    }
-
-    private var metadataText: String {
-        let project = NotchText.projectName(cwd: conversation.cwd, language: language)
-        switch conversation.activity {
-        case let .running(startedAt):
-            return language.localized(
-                chinese: "运行 \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)",
-                english: "Running \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)",
-                russian: "В работе \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)"
-            )
-        case let .completed(completedAt):
-            return language.localized(
-                chinese: "已完成 · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)",
-                english: "Completed · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)",
-                russian: "Завершено · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)"
-            )
-        }
-    }
-}
-
-private struct ConversationStatusView: View {
-    let activity: ConversationActivity
-
-    var body: some View {
-        switch activity {
-        case .running:
-            RunningStatusDot()
-        case .completed:
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(NotchPalette.success)
-        }
-    }
-}
-
 private struct RunningStatusDot: View {
     @Environment(\.notchMotionEnabled) private var motionEnabled
     @State private var isPulsing = false
@@ -1812,6 +1777,7 @@ private struct QuotaWindowsProgressView: View {
 }
 
 private struct QuotaWindowProgressRow: View {
+    @Environment(\.quotaAppearance) private var quotaAppearance
     let kind: UsageWindowKind
     let window: UsageWindow?
     let now: Date
@@ -1819,7 +1785,7 @@ private struct QuotaWindowProgressRow: View {
 
     private var progressColor: Color {
         guard window != nil else { return NotchPalette.secondaryText }
-        return QuotaColorScale.color(for: window?.remainingPercent ?? 0)
+        return quotaAppearance.color(for: window?.remainingPercent ?? 0)
     }
 
     var body: some View {
@@ -2059,7 +2025,7 @@ enum QuotaColorScale {
     }
 }
 
-private enum NotchPalette {
+enum NotchPalette {
     static let background = Color.black
     static let primaryText = Color.white
     static let secondaryText = Color.white.opacity(0.6)

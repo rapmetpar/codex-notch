@@ -60,7 +60,8 @@ final class AppLanguageTests: XCTestCase {
 
     func testRussianRecentChatCountsUseCorrectForms() {
         XCTAssertEqual(RecentConversationLimit.allCases.map { $0.title(for: .russian) },
-                       ["0 чатов", "1 чат", "2 чата", "3 чата", "4 чата", "5 чатов"])
+                       ["0 чатов", "1 чат", "2 чата", "3 чата", "4 чата", "5 чатов"]
+                       + (6...20).map { "\($0) чатов" })
     }
 
     func testRussianSettingsAndFallbackCopy() {

@@ -21,15 +21,21 @@ struct ConversationSummary: Equatable, Identifiable, Sendable {
     let cwd: String?
     let lastActivityAt: Date
     let activity: ConversationActivity
+    let isViewed: Bool
 
     var id: String { threadID }
 
-    init(session: SessionActivity, activity: ConversationActivity) {
+    var attention: ConversationAttention {
+        activity.isRunning ? .running : (isViewed ? .viewed : .unread)
+    }
+
+    init(session: SessionActivity, activity: ConversationActivity, isViewed: Bool = false) {
         self.threadID = session.threadID
         self.title = session.title
         self.cwd = session.cwd
         self.lastActivityAt = session.lastActivityAt
         self.activity = activity
+        self.isViewed = isViewed
     }
 }
 
@@ -75,4 +81,7 @@ struct NotchPresentationInput: Equatable {
     let recentCompletions: [CompletedSession]
     let usage: UsageSnapshot?
     let isHovered: Bool
+    var readReceipts: [String: ConversationReadReceipt] = [:]
+    var nativeReadReceipts: [String: NativeConversationReadReceipt] = [:]
+    var conversationCategoryOrder: ConversationCategoryOrder = .defaultOrder
 }

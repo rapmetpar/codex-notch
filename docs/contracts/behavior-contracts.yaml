@@ -1,4 +1,79 @@
 contracts:
+  - id: CONVERSATION-STATUS-002
+    title: Running, new and locally viewed answers have distinct rows
+    status: superseded
+    statement: >-
+      Preserve CONVERSATION-STATUS-001 except completed-row appearance and the
+      placement of status copy. Retain the blue open-ring running animation and
+      the finite green completion check for new answers. Show explicit localized
+      Running, New and Viewed labels; new answers also use a stronger title and
+      faint green fill, while viewed answers use a static gray check and quiet
+      regular title. Preserve duration, completion time and project metadata.
+      Motion off retains all distinctions. A successful specific-thread link
+      acknowledges only the captured completed turn, matching turn ID and
+      completion instant; a running row, hover, frontmost app, app-only fallback
+      or failed handoff never acknowledges an answer. New completion becomes
+      New again. Persist only IDs and completion instants in app-owned versioned
+      preferences, at most 512 receipts; always keep the just-opened chat and
+      evict the oldest other completion. Initial or evicted history is New.
+      Tooltips and accessibility explain this local opening acknowledgement;
+      never claim native Codex read synchronization or confirmed consumption.
+      Preserve ACTIVITY-STATE-007 history order and limits, stable thread IDs,
+      40pt hit areas, compact status, quota, settings and fixed-canvas geometry.
+    rationale: The user could not distinguish chats in progress, unseen answers and already viewed chats in the list.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [recent-conversation-appearance, local-view-acknowledgements, navigation-result, accessibility]
+      exclude: [codex-read-state, message-content, activity-detection, compact-state, quotas, geometry, releases]
+    examples:
+      positive: A running row is blue; completion becomes green New; opening it turns it gray Viewed across restarts; the next completed turn becomes New again.
+      negative: Hovering clears New, app activation marks every chat Viewed, opening a running turn hides its later answer, or a failed thread link marks the chat Viewed.
+    guards:
+      - Tests/CodexNotchTests/ConversationAttentionTests.swift
+      - Tests/CodexNotchTests/CodexThreadNavigatorTests.swift
+      - Tests/CodexNotchTests/ConversationStatusTests.swift
+      - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
+      - docs/decisions/060-conversation-attention.md
+      - "manual: inspect all three row states and languages, actual thread navigation, restart, a new answer, VoiceOver, motion off/on, scrolling and unchanged hover/camera clearance on physical-notch and floating hardware"
+    supersedes: [CONVERSATION-STATUS-001]
+    superseded_by: CONVERSATION-STATUS-003
+    last_verified_commit: null
+
+  - id: CONVERSATION-STATUS-001
+    title: Each recent chat has a distinct running spinner and completion check
+    status: superseded
+    statement: >-
+      Recent conversation rows show a blue rotating open ring while their own
+      activity is running and a green closed ring with a check when completed.
+      Only a visible running-to-completed transition draws the check once;
+      opening existing history or reattaching a row must not replay completion.
+      Identify rows by thread ID so reordering cannot transfer motion to another
+      chat. Use the existing app motion switch and visible attached layer gates;
+      with motion off, both static shapes remain distinct and status still updates.
+      Stop layer animations when hidden or detached. Preserve ACTIVITY-STATE-007,
+      SETTINGS-MOTION-021, row navigation, titles, metadata, compact status cues,
+      quota semantics, settings, and fixed-canvas window geometry.
+    rationale: The user requested icon animation to distinguish working and completed chats.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [recent-conversation-status-icons, row-identity, visible-motion]
+      exclude: [activity-detection, compact-icons, quotas, settings, window-geometry, releases]
+    examples:
+      positive: Two running chats spin independently; completing one draws its check once while the other keeps spinning, and a new turn restores its spinner.
+      negative: Reordering gives a different chat the completion effect, reopening history replays completion, or disabling motion hides the status distinction.
+    guards:
+      - Tests/CodexNotchTests/ConversationStatusTests.swift
+      - Tests/CodexNotchTests/RecentConversationHistoryTests.swift
+      - docs/decisions/059-conversation-status-animation.md
+      - "manual: expand two running chats, complete one and start another turn; inspect check reveal, row reordering, reopen history, app motion off/on and unchanged physical-notch hover geometry"
+    supersedes: []
+    superseded_by: CONVERSATION-STATUS-002
+    last_verified_commit: null
+
   - id: LOCALIZATION-001
     title: Russian is an explicit persisted interface language
     status: active
@@ -143,7 +218,7 @@ contracts:
 
   - id: QUOTA-ALIGNMENT-056
     title: Quota layers stay concentric in offset and resized hosts
-    status: active
+    status: superseded
     statement: >-
       Preserve SETTINGS-MOTION-021 and all inherited quota values, colors,
       trim direction, dimensions, positions, glint timing, halo timing and
@@ -184,12 +259,12 @@ contracts:
       - docs/decisions/057-native-glint-mask.md
       - "manual: inspect the actual running notch at multiple glint phases and after hover expansion/collapse; confirm the inner glint and outer halo share the quota center"
     supersedes: []
-    superseded_by: null
+    superseded_by: SETTINGS-APPEARANCE-024
     last_verified_commit: null
 
   - id: CI-VERIFICATION-001
     title: Verify release source with a supported SDK before publication
-    status: superseded
+    status: active
     statement: >-
       CI must explicitly select Xcode 16.2 on macOS 14, record the checked-out
       source SHA and toolchain, and run the existing full verification entry
@@ -215,38 +290,6 @@ contracts:
       - docs/decisions/053-explicit-ci-toolchain.md
       - "manual: confirm successful CI and its checkout SHA before publication"
     supersedes: []
-    superseded_by: CI-VERIFICATION-002
-    last_verified_commit: null
-
-  - id: CI-VERIFICATION-002
-    title: Full CI verification uses an available macOS runner
-    status: active
-    statement: >-
-      Preserve CI-VERIFICATION-001 except the retired macOS 14 runner. Run CI
-      on macOS 15 with explicitly selected Xcode 16.2, record the checkout SHA,
-      OS, Xcode, Swift and SDK versions, and run the unchanged full verify.sh
-      entry point. All contracts, tests, release build, resources, bundle and
-      signing checks remain required. Failed, cancelled, pending or missing CI
-      is not success. Keep manual exact-source verification and require both
-      local and exact-source CI success before public release. Application
-      runtime support remains macOS 14 or later.
-    rationale: PR 1 CI was cancelled before checkout during the macOS 14 image brownout preceding its November 2 retirement.
-    source: github-actions-run-41317612859
-    owner: project-maintainer
-    risk: medium
-    scope:
-      include: [ci-runner, ci-toolchain, full-verification, release-publication]
-      exclude: [app-behavior, minimum-runtime-version, signing-key, published-archives, branch-protection]
-    examples:
-      positive: CI starts on macOS 15, logs Xcode 16.2 and the intended checkout SHA, and passes every existing verification stage.
-      negative: Continuing on retired macOS 14, using an implicit toolchain, skipping tests to obtain a green result, or treating an infrastructure cancellation as a pass.
-    guards:
-      - .github/workflows/ci.yml
-      - scripts/verify.sh
-      - docs/updating.md
-      - docs/decisions/059-supported-ci-runner.md
-      - "manual: confirm a successful GitHub CI run on macOS 15 for the exact PR head before merging"
-    supersedes: [CI-VERIFICATION-001]
     superseded_by: null
     last_verified_commit: null
 
@@ -972,7 +1015,7 @@ contracts:
       - docs/decisions/045-hover-response-and-shadow.md
       - "manual: record brief hover, full expansion, collapse and rapid reentry on the installed floating bar; confirm physical-notch clearance and Reduce Motion"
     supersedes: [NOTCH-READABILITY-007]
-    superseded_by: NOTCH-LEFT-001
+    superseded_by: NOTCH-MOTION-009
     last_verified_commit: null
 
   - id: SETTINGS-PREFERENCES-018
@@ -2919,7 +2962,7 @@ contracts:
 
   - id: ACTIVITY-STATE-007
     title: Recent conversations are limited by count, not age
-    status: active
+    status: superseded
     statement: >-
       Preserve ACTIVITY-STATE-006 except its 24-hour completion retention and discovery limit.
       Top-level completed conversations remain eligible regardless of age, including after restart
@@ -2954,5 +2997,227 @@ contracts:
       - docs/decisions/053-count-based-recent-history.md
       - "manual: restart the installed app and switch history between zero, one and five; confirm older local conversations remain available on physical-notch hardware"
     supersedes: [ACTIVITY-STATE-006]
+    superseded_by: ACTIVITY-STATE-008
+    last_verified_commit: null
+
+  - id: ACTIVITY-STATE-008
+    title: Up to twenty recent chats remain reachable in a bounded scrolling card
+    status: superseded
+    statement: >-
+      Preserve ACTIVITY-STATE-007 except its five-chat ceiling. Settings offers
+      every count from zero through twenty, persists the existing storage key,
+      retains default two and zero hiding, and applies changes live. Extend
+      LOCALIZATION-001 count labels to the full range. Override only inherited
+      five-chat limits in settings contracts. Discover enough distinct completed
+      threads for twenty, using the same metadata cutoff, active window,
+      incremental reads and deletion backfill. Preserve running-first ordering,
+      deduplication, history without age expiry, child exclusion, stale unfinished
+      task rejection, privacy and task navigation. Keep one-to-five-row card sizes;
+      longer lists scroll vertically within a five-row viewport on notch and
+      floating layouts. Quota, reset details and Settings remain outside that
+      viewport. Preserve fixed-canvas downward expansion, compact geometry,
+      collapse hit regions, quota semantics and motion preferences. Do not
+      introduce a persistent history cache or new data sources.
+    rationale: The user requested more chats because the maximum of five is too restrictive.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [recent-conversations, history-discovery, settings, expanded-state, scrolling]
+      exclude: [authentication, quota-semantics, compact-geometry, motion-design, releases]
+    examples:
+      positive: Select twenty, scroll from the newest five to the twentieth older chat, restart with the same setting, and switch to zero without losing quota or task state.
+      negative: Offering twenty but loading only five, growing a twenty-row island offscreen, resetting the existing preference, reading every old log, or consuming history slots with child tasks.
+    guards:
+      - Tests/CodexNotchTests/RecentConversationHistoryTests.swift
+      - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
+      - Tests/CodexNotchTests/QuotaDisplayStyleTests.swift
+      - Tests/CodexNotchTests/AppLanguageTests.swift
+      - Tests/CodexNotchTests/NotchGeometryTests.swift
+      - Tests/CodexNotchTests/RecentConversationScrollTests.swift
+      - docs/decisions/059-scrollable-recent-chats.md
+      - "manual: select twenty, scroll and open the last chat on a physical notch and floating bar; verify downward expansion, collapse hit regions, quotas, reset details, Settings, live limits and restart persistence"
+    supersedes: [ACTIVITY-STATE-007]
+    superseded_by: CONVERSATION-ORDER-001
+    last_verified_commit: null
+  - id: SETTINGS-APPEARANCE-024
+    title: Local custom color and image apply live without changing quota or task state
+    status: active
+    statement: >-
+      Preserve QUOTA-ALIGNMENT-056 and SETTINGS-MOTION-021 including all geometry,
+      animation phases, visibility gates, static cues, readable values and existing
+      defaults, except the opt-in color override. Custom color applies to available
+      quota rings, wave fills, expanded progress rows, running halos, inner glints
+      and status echoes. Default mode retains warning colors and critical neutral
+      echoes; missing quota remains neutral and completion checks remain green.
+      Settings explains that custom color replaces warning hues and offers reset.
+      Add custom to statusIconStyle without changing existing stored values or
+      Codex fallback. Import user-selected PNG/JPEG up to 8 MiB into a bounded
+      128px PNG, stripping source metadata. Persist only pixels locally; retain
+      original foreground color, transparency and aspect ratio inside existing
+      frames. Update echo masks without restarting motion. Missing or corrupt
+      pixels use the embedded fallback. Invalid imports and cancellation preserve
+      previous artwork; removal clears pixels and selects Codex. Persist all new
+      preferences across restarts and apply live in notch and floating layouts.
+      Retain five-hour quota priority, Off geometry, all languages, authentication
+      privacy, task navigation, Dock icon, runtime data and display routing.
+    rationale: The user requested a new branch with custom quota/glow color and a personal pet image as status artwork.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [settings, quota-color, status-artwork, local-image-import]
+      exclude: [quota-values, task-state, window-geometry, animated-pet-integration, authentication, releases]
+    examples:
+      positive: Choose purple and a transparent pet PNG, see the selected color live, restart after moving the source file, then restore the original palette without changing task or quota data.
+      negative: A custom icon reads another app bundle, failed import deletes the previous picture, changing color resets the pulse, missing quota looks available, or restore loses the original warning palette.
+    guards:
+      - Tests/CodexNotchTests/AppearanceCustomizationTests.swift
+      - Tests/CodexNotchTests/StatusIconStyleTests.swift
+      - Tests/CodexNotchTests/StatusIconThemeTests.swift
+      - Tests/CodexNotchTests/QuotaRingAlignmentTests.swift
+      - Tests/CodexNotchTests/QuotaRunningHaloMotionTests.swift
+      - Tests/CodexNotchTests/CompactLeftIndicatorPolicyTests.swift
+      - docs/decisions/059-custom-colors-and-status-image.md
+      - "manual: import/cancel/replace/remove images, change color and reset, restart; inspect all three settings languages, compact/expanded, running/completed/no-quota and motion-off states on physical-notch and floating screens"
+    supersedes: [QUOTA-ALIGNMENT-056]
+    superseded_by: null
+    last_verified_commit: null
+  - id: NOTCH-MOTION-009
+    title: Hover transitions ease into motion and preserve landing geometry
+    status: active
+    statement: >-
+      Supersede the opening, closing and compact-hover timing inherited from
+      NOTCH-MOTION-008, including the measured closing curve and pronounced
+      opening rebound from NOTCH-MOTION-005 and NOTCH-MOTION-006. Use a
+      restrained native spring for opening, reentry and expanded resizing.
+      Compact-hover feedback and closing use finite eased curves with zero
+      initial slope so their transparent canvas is promptly reclaimed.
+      Start gently and retain a subtle landing return. Reversing a transition must preserve
+      its visible size and landing bounds; only the latest completed surface
+      animation may release those bounds. Preserve the existing 180ms opening
+      and 120ms closing intent delays, final dimensions, stable-scale detail
+      transitions, typography, shadow, fixed top-center anchor, camera-safe
+      minimum, bounded floating compression, plain AppKit canvas, pre-layout
+      centering and completion-driven frame reclamation with stale-callback
+      rejection. Never resize the panel per animation frame. Preserve
+      SETTINGS-MOTION-021 independent app-switch behavior, compact running and
+      completed cues, hidden recovery, quota/task semantics and all settings.
+    rationale: >-
+      The user reported jerky hover motion. The old closing curve starts with
+      a strong initial velocity and opening has a large rebound. A regression
+      test also reproduced a visible geometry jump when a closing transition
+      dropped the opening landing bounds.
+    source: user-reported-incident
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [hover-motion, surface-retargeting, landing-bounds, animation-fixture]
+      exclude: [visual-redesign, final-geometry, settings, quotas, task-data, releases]
+    examples:
+      positive: A short hover, full opening, closing and rapid reentry move gently from the current visible size, keep the top anchor and return the panel to its exact compact hit area.
+      negative: An initial kick, exaggerated bounce, a size jump on reversal, an old completion clearing current bounds, a moving window or retained invisible hit area.
+    guards:
+      - Tests/CodexNotchTests/NotchCollapseMotionTests.swift
+      - Tests/CodexNotchTests/NotchHoverFeedbackTests.swift
+      - Tests/CodexNotchTests/FloatingCenterTests.swift
+      - Tests/CodexNotchTests/NotchRuntimePreferencesTests.swift
+      - Tests/CodexNotchTests/NotchMotionCaptureTests.swift
+      - docs/decisions/059-continuous-hover-spring.md
+      - "manual: inspect installed opening, closing, brief hover and rapid reentry on a physical notch; confirm camera clearance, stable icons, text, final hit area and the app animation switch"
+    supersedes: [NOTCH-MOTION-008]
+    superseded_by: null
+    last_verified_commit: null
+  - id: CONVERSATION-STATUS-003
+    title: Native Codex reads acknowledge only the matching published answer
+    status: superseded
+    statement: >-
+      Preserve CONVERSATION-STATUS-002 except its local-only read source and
+      tooltips. A completed row is Viewed when either its existing local
+      acknowledgement matches both turn and completion instant, or a valid
+      native receipt has first_unread_turn SQL NULL and last_published_turn
+      exactly equal to this completed turn ID. Revision must be a nonempty
+      bounded text identifier; it is opaque, not a timestamp or ordered cursor.
+      Missing rows are unknown, never proof of reading. Non-NULL unread markers
+      including empty strings, missing publication keys, old turns, invalid data,
+      unavailable/corrupt/locked databases and missing schemas fall back to local
+      acknowledgement only. Native unread does not revoke a successful local
+      opening acknowledgement while the native client catches up. New completed
+      turns are New unless independently acknowledged; active tasks always win.
+      Read only thread_id, first_unread_turn, revision and last_published_turn
+      for monitored completed threads from CODEX_HOME/state_5.sqlite. Use fresh
+      read-only connections on a utility queue, with a bounded lock wait and
+      five-second live refresh independent of rollout/title/focus changes. Observe
+      WAL commits and atomic replacement; reject superseded/stopped deliveries.
+      Native receipts stay in memory, are never converted to persistent local
+      receipts, and are cleared when unavailable. No Codex writes, global-state
+      JSON fallback, message/auth reads, bundle inspection or new permissions.
+      Preserve current history order and count limits, compact state, geometry,
+      quota, navigation, all motion cues and local receipt persistence. Viewed
+      means a read mark or accepted opening, never confirmed answer consumption.
+    rationale: Reading an answer in the native client should clear its New state without a second click in CodexNotch, while an old read must not hide a new answer.
+    source: user-request-and-verified-local-receipt-schema
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [native-read-metadata, recent-conversation-attention, live-refresh, accessibility-hints]
+      exclude: [category-sorting, codex-writes, message-content, authentication, app-bundles, permissions, quota, geometry, packaging, releases]
+    examples:
+      positive: Mark turn A read in Codex and its island row becomes Viewed without restart; turn B remains New until its own native mark or local opening, and running always stays Running.
+      negative: NULL without a matching publication key clears a new answer, an open window is treated as a receipt, a disappeared database leaves a cached Viewed state, or native metadata is written to persistent local preferences.
+    guards:
+      - Tests/CodexNotchTests/NativeConversationReadTests.swift
+      - Tests/CodexNotchTests/ConversationAttentionTests.swift
+      - Tests/CodexNotchTests/ConversationStatusTests.swift
+      - Tests/CodexNotchTests/CodexThreadNavigatorTests.swift
+      - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
+      - docs/decisions/061-native-conversation-read-sync.md
+      - "manual: read a completed answer in native Codex, leave focus/rollouts unchanged and observe Viewed within the recovery cadence; complete a new turn, confirm New and active priority, inspect physical-notch/floating states, all languages, VoiceOver and motion"
+    supersedes: [CONVERSATION-STATUS-002]
+    superseded_by: CONVERSATION-ORDER-001
+    last_verified_commit: null
+  - id: CONVERSATION-ORDER-001
+    title: Users can persist and immediately apply any order of the three chat categories
+    status: active
+    statement: >-
+      Inherit CONVERSATION-STATUS-003 and ACTIVITY-STATE-008 except their
+      chronological/running-first expanded-list ordering. General Settings
+      offers native keyboard-accessible up/down controls for Running, Completed
+      (new/unread) and Viewed categories in EN/RU/ZH. Default strictly to
+      running, unread, viewed; support all six permutations, persist the
+      app-owned versioned preference and apply changes through the existing
+      live preference observer. Missing, malformed, duplicate or unknown
+      stored orders use the default. Group by current ConversationAttention
+      before both the twenty-row candidate ceiling and user display limit
+      0–20. Inside each category sort newest first, by last activity for
+      running and completion instant for completed; break equal timestamps by
+      ascending thread ID regardless of input enumeration, retaining unique
+      stable thread IDs. An active thread wins
+      over its completion; the newest completion wins over duplicate turns.
+      The list preference never changes header or compact running priority,
+      compact completion, quota or reset data, motion policy, navigation,
+      count settings or zero hiding. Retain five visible scrolling rows,
+      geometry, bounded discovery, privacy and all attention-source semantics.
+      Do not implement native Codex read synchronization in this feature.
+    rationale: The user requested separate configurable positions for running, new completed and viewed chats while retaining unread visibility before the display limit.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [chat-category-order, settings, preference-persistence, expanded-list-order, localization]
+      exclude: [read-source, read-synchronization, compact-state, quota, geometry, motion-design, history-discovery, releases]
+    examples:
+      positive: Move Viewed first, immediately see viewed rows before new completions and running rows, restart with that order, and retain the compact running cue; the default places new completions before viewed.
+      negative: Sorting after a prefix hides the preferred category, invalid ranks create duplicate categories, a list setting changes the compact running state, or changing order resets the count or receipts.
+    guards:
+      - Tests/CodexNotchTests/ConversationCategoryOrderTests.swift
+      - Tests/CodexNotchTests/NativeConversationReadTests.swift
+      - Tests/CodexNotchTests/ConversationAttentionTests.swift
+      - Tests/CodexNotchTests/RecentConversationScrollTests.swift
+      - Tests/CodexNotchTests/NotchRuntimePreferencesTests.swift
+      - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
+      - docs/decisions/061-conversation-category-order.md
+      - "manual: reorder all three categories in each language with buttons and keyboard; verify immediate list changes, restart, scrolling and final-row navigation on notch/floating hardware; inspect camera clearance, hover/collapse, compact running and motion off/on"
+    supersedes: [CONVERSATION-STATUS-003, ACTIVITY-STATE-008]
     superseded_by: null
     last_verified_commit: null

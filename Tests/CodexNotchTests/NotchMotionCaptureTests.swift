@@ -32,7 +32,9 @@ final class NotchMotionCaptureTests: XCTestCase {
                           width: 480, height: expandedHeight + 70)
         let backdrop = NSPanel(contentRect: area, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         backdrop.backgroundColor = NSColor(white: 0.92, alpha: 1)
-        backdrop.level = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue - 1)
+        // Keep the synthetic fixture above the installed app, which may itself
+        // expand under the pointer. Captures must not include live task data.
+        backdrop.level = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue + 1)
         backdrop.hidesOnDeactivate = false
         backdrop.hasShadow = false
         backdrop.orderFrontRegardless()
@@ -73,6 +75,7 @@ final class NotchMotionCaptureTests: XCTestCase {
         let opened = NotchPresentationState.expanded(content)
         let model = NotchViewModel()
         let controller = NotchWindowController()
+        controller.window?.level = NSWindow.Level(rawValue: backdrop.level.rawValue + 1)
         let suite = "NotchMotionCapture.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }

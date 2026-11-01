@@ -4,8 +4,9 @@ import SwiftUI
 enum NotchPresentationMotion {
     static let expandDuration: TimeInterval = 0.65
     static let collapseDuration: TimeInterval = 0.50
-    // A bounded settling curve keeps a tiny hover from retaining a long spring tail.
-    static let hover = Animation.timingCurve(0.2, 0.8, 0.35, 1.06, duration: 0.20)
+    // Ease in from rest. Keep this tiny response finite so a canceled hover
+    // promptly releases its transparent canvas instead of retaining a spring tail.
+    static let hover = Animation.timingCurve(0.2, 0, 0.35, 1.04, duration: 0.20)
     static let shadowPadding: CGFloat = 12
 
     static func hoverSurfaceSize(_ compact: CGSize, isHovering: Bool, animationsEnabled: Bool) -> CGSize {
@@ -13,19 +14,16 @@ enum NotchPresentationMotion {
         return CGSize(width: compact.width + 4, height: compact.height + 2)
     }
 
-    // Let the outer shell land and rebound, while content keeps a stable scale.
-    // The surface frame bounds both opening and closing excursions.
-    static let expand = Animation.spring(
-        response: 0.48,
-        dampingFraction: 0.68,
-        blendDuration: 0
-    )
+    // A restrained native spring makes opening/reentry soft without the old
+    // exaggerated landing. Keep closing finite so its transparent hit area
+    // is released promptly, and begin its travel at rest rather than a kick.
+    static let surfaceSpring = Spring(response: 0.48, dampingRatio: 0.86)
+    static let surface = Animation.spring(surfaceSpring)
     static let collapseCurve = UnitCurve.bezier(
-        startControlPoint: UnitPoint(x: 0.175, y: 0.885),
+        startControlPoint: UnitPoint(x: 0.2, y: 0),
         endControlPoint: UnitPoint(x: 0.32, y: 1.1)
     )
     static let collapse = Animation.timingCurve(collapseCurve, duration: collapseDuration)
-    private static let contentResize = Animation.spring(response: 0.45, dampingFraction: 1, blendDuration: 0)
 
     // Render type at its final size throughout. The shell supplies the elastic
     // movement; a small translation/reveal avoids visibly resampling glyphs.
@@ -49,11 +47,6 @@ enum NotchPresentationMotion {
         ).animation(.easeOut(duration: 0.16)),
         removal: .identity
     )
-
-    static func animation(forExpanding isExpanding: Bool, isCollapsingCard: Bool) -> Animation {
-        if isExpanding { return expand }
-        return isCollapsingCard ? collapse : contentResize
-    }
 
     static func shouldAnimateSurface(
         changesSurface: Bool,

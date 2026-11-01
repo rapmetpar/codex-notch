@@ -41,22 +41,33 @@ enum NotchPresentationReducer {
                 )
             )
         }
-        for completion in input.recentCompletions
+        let completions = input.recentCompletions.enumerated().sorted { lhs, rhs in
+            if lhs.element.completedAt != rhs.element.completedAt {
+                return lhs.element.completedAt > rhs.element.completedAt
+            }
+            return lhs.offset < rhs.offset
+        }.map(\.element)
+        for completion in completions
             where seenThreadIDs.insert(completion.session.threadID).inserted {
             conversations.append(
                 ConversationSummary(
                     session: completion.session,
-                    activity: .completed(completedAt: completion.completedAt)
+                    activity: .completed(completedAt: completion.completedAt),
+                    isViewed: input.readReceipts[completion.session.threadID]
+                        == ConversationReadReceipt(completion)
+                        || input.nativeReadReceipts[completion.session.threadID]?.turnID
+                            == completion.session.turnID
                 )
             )
         }
 
         return ExpandedContent(
             sessions: sessions,
-            // Preserve enough data for the user's display preference. The
-            // coordinator applies that preference immediately before render.
+            // Group every candidate before either ceiling. In particular,
+            // running rows must not evict the preferred completed category.
             conversations: Array(
-                conversations.prefix(RecentConversationLimit.five.rawValue)
+                input.conversationCategoryOrder.sorted(conversations)
+                    .prefix(RecentConversationLimit.maximumCount)
             ),
             headerConversation: conversations.first,
             usage: input.usage

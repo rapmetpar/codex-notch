@@ -125,13 +125,13 @@ final class RolloutActivityMonitor {
         var retainedURLs = Set<URL>()
         var completionDates: [String: Date] = [:]
         for (url, modifiedAt) in rolloutFiles() {
-            // Local rollout writes are chronological. Once five distinct
+            // Local rollout writes are chronological. Once the maximum number of distinct
             // completions are newer than every remaining file, older files
             // cannot add a visible history row. Always discover active work.
             let requiredDates = completionDates.values.sorted(by: >)
             if modifiedAt < activeCutoff,
-               requiredDates.count >= RecentConversationLimit.five.rawValue,
-               modifiedAt < requiredDates[RecentConversationLimit.five.rawValue - 1] {
+               requiredDates.count >= RecentConversationLimit.maximumCount,
+               modifiedAt < requiredDates[RecentConversationLimit.maximumCount - 1] {
                 break
             }
             retainedURLs.insert(url)

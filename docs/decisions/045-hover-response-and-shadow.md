@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [NOTCH-MOTION-008, SETTINGS-PREFERENCES-018, NOTCH-LAYOUT-038]
 supersedes: [038-clean-expanded-typography]
-superseded_by: null
+superseded_by: 059-continuous-hover-spring
 owner: project-maintainer
 created_at: 2026-09-13
 ---

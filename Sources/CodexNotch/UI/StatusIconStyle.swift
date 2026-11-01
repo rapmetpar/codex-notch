@@ -4,6 +4,7 @@ import SwiftUI
 enum StatusIconStyle: String, CaseIterable, Identifiable, Sendable {
     case codex
     case chatGPT = "chatgpt"
+    case custom
     case off
 
     static let storageKey = "statusIconStyle"
@@ -19,6 +20,7 @@ enum StatusIconStyle: String, CaseIterable, Identifiable, Sendable {
 
     func title(for language: AppLanguage) -> String {
         switch self {
+        case .custom: return language.localized(chinese: "自定义图片", english: "Custom image", russian: "Своя картинка")
         case .codex: return "Codex"
         case .chatGPT: return "ChatGPT"
         case .off: return language.localized(chinese: "关闭", english: "Off", russian: "Выкл.")
@@ -29,6 +31,7 @@ enum StatusIconStyle: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .codex: return CodexMarkAsset.templateImage
         case .chatGPT: return ChatGPTMarkAsset.templateImage
+        case .custom: return CodexMarkAsset.templateImage
         case .off: return nil
         }
     }
@@ -41,6 +44,7 @@ enum StatusIconStyle: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .codex: return "terminal.fill"
         case .chatGPT: return "sparkles"
+        case .custom: return "photo"
         case .off: return "eye.slash"
         }
     }
@@ -56,10 +60,18 @@ struct StatusMark: View {
     var tint = Color.white.opacity(0.96)
     var monochrome = false
     var theme: StatusIconTheme?
+    @Environment(\.customStatusIconData) private var customIconData
 
     var body: some View {
         Group {
-            if !monochrome, style == .codex, let theme,
+            if style == .custom, let image = CustomStatusIcon.image(from: customIconData) {
+                Image(nsImage: image)
+                    .renderingMode(monochrome ? .template : .original)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .foregroundStyle(tint)
+            } else if !monochrome, style == .codex, let theme,
                let flower = style.templateImage,
                let prompt = CodexMarkAsset.promptTemplateImage {
                 ZStack {

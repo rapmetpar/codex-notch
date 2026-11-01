@@ -202,6 +202,36 @@ final class NotchPresentationReducerTests: XCTestCase {
         ])
     }
 
+    func testTwentyChatLimitKeepsRunningFirstAndDeduplicatesHistory() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let active = makeSession(id: "active", at: now)
+        let completions = [CompletedSession(session: active, completedAt: now)] + (0..<25).map { index in
+            let session = makeSession(id: "history-\(index)", at: now.addingTimeInterval(Double(-index - 1)))
+            return CompletedSession(session: session, completedAt: session.lastActivityAt)
+        }
+        let state = NotchPresentationReducer.reduce(NotchPresentationInput(
+            now: now, isChatGPTFrontmost: false, activeSessions: [active],
+            recentCompletions: completions, usage: nil, isHovered: true
+        ))
+        let suite = "TwentyChats.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        for count in 0...20 {
+            defaults.set(count, forKey: RecentConversationLimit.storageKey)
+            let preferences = NotchRuntimePreferences.read(from: defaults)
+            XCTAssertEqual(preferences.recentConversationLimit.rawValue, count)
+            guard case let .expanded(content) = state.limitingRecentConversations(to: preferences.recentConversationLimit) else {
+                return XCTFail("Expected expanded state")
+            }
+            XCTAssertEqual(content.conversations.count, count)
+            XCTAssertEqual(content.headerConversation?.threadID, "active")
+            XCTAssertEqual(content.sessions, [active])
+            if count > 0 {
+                XCTAssertEqual(content.conversations.map(\.threadID), ["active"] + (0..<(count - 1)).map { "history-\($0)" })
+            }
+        }
+    }
+
     func testZeroRecentConversationLimitHidesAllConversations() {
         let now = Date(timeIntervalSince1970: 2_000_000_000)
         let task = makeSession(id: "thread-active", at: now)

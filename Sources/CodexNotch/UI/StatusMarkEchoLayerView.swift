@@ -14,16 +14,17 @@ struct StatusMarkEchoLayer: NSViewRepresentable {
     let isAnimating: Bool
     let iconStyle: StatusIconStyle
     let color: QuotaColorScale.RGB
+    var customIconData = Data()
 
     func makeNSView(context _: Context) -> StatusMarkEchoLayerView {
         let view = StatusMarkEchoLayerView(frame: .zero)
         view.setAccessibilityElement(false)
-        view.configure(iconStyle: iconStyle, color: color, isAnimating: isAnimating)
+        view.configure(iconStyle: iconStyle, color: color, isAnimating: isAnimating, customIconData: customIconData)
         return view
     }
 
     func updateNSView(_ view: StatusMarkEchoLayerView, context _: Context) {
-        view.configure(iconStyle: iconStyle, color: color, isAnimating: isAnimating)
+        view.configure(iconStyle: iconStyle, color: color, isAnimating: isAnimating, customIconData: customIconData)
     }
 
     static func dismantleNSView(_ view: StatusMarkEchoLayerView, coordinator _: ()) {
@@ -36,6 +37,7 @@ final class StatusMarkEchoLayerView: QuotaAnimatedLayerView {
     private let echoLayer = CALayer()
     private let silhouetteMask = CALayer()
     private var iconStyle: StatusIconStyle?
+    private var customIconData = Data()
     private var currentColor: QuotaColorScale.RGB?
 
     override init(frame frameRect: NSRect) {
@@ -54,13 +56,18 @@ final class StatusMarkEchoLayerView: QuotaAnimatedLayerView {
     func configure(
         iconStyle: StatusIconStyle,
         color: QuotaColorScale.RGB = StatusIconTheme(usage: nil).accent,
-        isAnimating: Bool
+        isAnimating: Bool,
+        customIconData: Data = Data()
     ) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        if self.iconStyle != iconStyle {
+        if self.iconStyle != iconStyle || self.customIconData != customIconData {
+            self.customIconData = customIconData
             self.iconStyle = iconStyle
-            silhouetteMask.contents = iconStyle.templateImage?.cgImage(
+            let image = iconStyle == .custom
+                ? (CustomStatusIcon.image(from: customIconData) ?? iconStyle.templateImage)
+                : iconStyle.templateImage
+            silhouetteMask.contents = image?.cgImage(
                 forProposedRect: nil, context: nil, hints: nil
             )
         }

@@ -4,6 +4,7 @@ Record decisions here only when they affect active behavior contracts, could be 
 
 | Decision | Status | Related contract | Description |
 |---|---|---|---|
+| [059-conversation-status-animation](059-conversation-status-animation.md) | active | `CONVERSATION-STATUS-001` | Independent running spinners and one-time completion checks for recent chats |
 | [001-fixed-canvas-notch-motion](001-fixed-canvas-notch-motion.md) | superseded | `NOTCH-MOTION-002` | Fixed NSPanel canvas with an expanding inner SwiftUI island |
 | [004-zip-and-dmg-local-release](004-zip-and-dmg-local-release.md) | active | `PACKAGE-VERIFY-006`, `PACKAGE-DMG-018` | Keep a verified ZIP fallback while adding a verified DMG installation path |
 | [005-static-card-transitions-and-completion-cue](005-static-card-transitions-and-completion-cue.md) | active | `NOTCH-MOTION-003`, `NOTCH-LAYOUT-038` | Keep the fixed canvas while removing card transitions and completion fireworks |
@@ -34,7 +35,18 @@ Record decisions here only when they affect active behavior contracts, could be 
 
 | [047-sparkle-in-app-updates](047-sparkle-in-app-updates.md) | active | `APP-UPDATE-002` | Download, verify, install and relaunch signed updates inside the app |
 
-| [053-count-based-recent-history](053-count-based-recent-history.md) | active | `ACTIVITY-STATE-007` | Keep five recent conversation candidates without an age cutoff |
+| [053-count-based-recent-history](053-count-based-recent-history.md) | superseded | `ACTIVITY-STATE-007` | Keep five recent conversation candidates without an age cutoff |
 | [057-native-glint-mask](057-native-glint-mask.md) | active | `QUOTA-ALIGNMENT-056`, `SETTINGS-MOTION-021` | Keep the rotating inner glint and circular clipping in one native layer coordinate space |
 
+| [059-scrollable-recent-chats](059-scrollable-recent-chats.md) | active | `ACTIVITY-STATE-008` | Make twenty recent chats reachable in a five-row scrolling viewport |
+| [059-custom-colors-and-status-image](059-custom-colors-and-status-image.md) | active | `SETTINGS-APPEARANCE-024` | Persist an optional quota/glow color and a user-selected local status image |
+
 New decisions must include `status`, `contract_ids`, rejected alternatives, and consequences. When a decision changes, retain the old document and point to the new one with `superseded_by`.
+
+- [060: Conversation attention states](060-conversation-attention.md)
+
+- [059: Continuous hover spring](059-continuous-hover-spring.md)
+
+- [061: Native conversation read synchronization](061-native-conversation-read-sync.md)
+
+- [061: Conversation category order](061-conversation-category-order.md)
