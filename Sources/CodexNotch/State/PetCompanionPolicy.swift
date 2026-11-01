@@ -83,17 +83,9 @@ struct PetCompanionPolicy {
 }
 
 enum PetCompanionLayout {
-    static let stageHeight: CGFloat = 104
-    static let stageSpacing: CGFloat = 8
-    static let expandedHeight: CGFloat = stageHeight + stageSpacing
-
-    static func addingStage(to size: CGSize, enabled: Bool) -> CGSize {
-        CGSize(width: size.width, height: size.height + (enabled ? expandedHeight : 0))
-    }
-
     static func showsScene(layout: NotchLayoutMode, expanded: Bool, floatingStyle: FloatingCenterStyle,
                            physicalWingEnabled: Bool = false) -> Bool {
-        expanded || (layout == .notch && physicalWingEnabled) || (layout == .floatingBar && floatingStyle == .pet)
+        !expanded && ((layout == .notch && physicalWingEnabled) || (layout == .floatingBar && floatingStyle == .pet))
     }
 
     static func allowsMotion(appEnabled: Bool, reduceMotion: Bool, visible: Bool) -> Bool {

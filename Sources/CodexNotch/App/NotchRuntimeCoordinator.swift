@@ -667,14 +667,14 @@ final class NotchRuntimeCoordinator {
             metrics: metrics,
             leftIndicatorEnabled: preferences.leftIndicatorEnabled,
             companionEnabled: PetCompanionController.shared.hasSelectedPet,
-            quotaExpandedSize: PetCompanionLayout.addingStage(to: quotaExpandedContentSize(
+            quotaExpandedSize: quotaExpandedContentSize(
                 for: displayState,
                 isResetScheduleExpanded: isResetScheduleExpanded
-            ), enabled: PetCompanionController.shared.hasSelectedPet),
-            expandedSize: PetCompanionLayout.addingStage(to: expandedContentSize(
+            ),
+            expandedSize: expandedContentSize(
                 for: displayState,
                 isResetScheduleExpanded: isResetScheduleExpanded
-            ), enabled: PetCompanionController.shared.hasSelectedPet)
+            )
         )
         let targetFrame = layout.frame(for: displayState)
         // The controller allocates the final canvas before the SwiftUI state

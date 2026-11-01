@@ -339,7 +339,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
     }
 
     @MainActor
-    func testPhysicalHoverMovesSinglePetToStageAndOffKeepsWeeklyAnchoredDuringLayoutHandoff() throws {
+    func testPhysicalHoverHasNoLargeStageAndOffKeepsWeeklyAnchoredDuringLayoutHandoff() throws {
         _ = NSApplication.shared
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: temp) }
@@ -367,10 +367,12 @@ final class PetCompanionIntegrationTests: XCTestCase {
         hosting.frame = CGRect(x: 0, y: 0, width: 420, height: 440)
         hosting.layoutSubtreeIfNeeded()
         let stages = descendants(PetCompanionStageView.self, in: hosting)
-        XCTAssertEqual(stages.count, 1, "Hover must not create two pets sharing the event/session")
-        let stage = try XCTUnwrap(stages.first)
-        XCTAssertEqual(stage.bounds.height, 104, accuracy: 0.01)
-        XCTAssertGreaterThanOrEqual(stage.convert(stage.bounds, to: hosting).minY, 40)
+        // PET-EXPANDED-003 supersedes the old hover-transfer stage.
+        for stage in stages {
+            XCTAssertLessThanOrEqual(stage.bounds.height, 32, "Hover must not mount a large companion scene")
+            XCTAssertLessThanOrEqual(stage.convert(stage.bounds, to: hosting).maxY, 32,
+                "Any compact header companion stays outside the expanded body")
+        }
         XCTAssertEqual(descendants(CompactPetStatusView.self, in: hosting).count, 1)
         try exportRender(hosting, name: "compact-pet-expanded-transfer")
         // Selection publishes before the existing preference observer updates canvas geometry.
@@ -425,7 +427,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
     }
 
     @MainActor
-    func testHostedIslandUsesOwnStageBelowCameraAndLeavesCompactQuotaLanesAlone() throws {
+    func testHostedIslandHasNoExpandedStageAndLeavesCompactQuotaLanesAlone() throws {
         _ = NSApplication.shared
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: temp) }
@@ -470,15 +472,20 @@ final class PetCompanionIntegrationTests: XCTestCase {
                     hosting.layoutSubtreeIfNeeded()
                     try exportRender(hosting, name: "\(layout)-\(label)-motion-\(motion)")
                     let stages = descendants(PetCompanionStageView.self, in: hosting)
-                    XCTAssertEqual(stages.count, expanded || layout == .floatingBar ? 1 : 0,
-                        "\(layout) \(label) must have exactly the intended safe scene")
+                    if expanded {
+                        XCTAssertLessThanOrEqual(stages.count, 1, "No duplicate companion scenes")
+                    } else {
+                        XCTAssertEqual(stages.count, layout == .floatingBar ? 1 : 0,
+                            "\(layout) \(label) must have exactly the intended safe scene")
+                    }
                     for stage in stages {
                         let rect = stage.convert(stage.bounds, to: hosting)
                         XCTAssertGreaterThan(rect.width, 0)
                         XCTAssertLessThanOrEqual(rect.maxX, size.width + 0.01)
                         if expanded {
-                            XCTAssertGreaterThanOrEqual(rect.minY, height + 8 - 0.01)
-                            XCTAssertEqual(rect.height, PetCompanionLayout.stageHeight, accuracy: 0.01)
+                            XCTAssertLessThanOrEqual(rect.height, height)
+                            XCTAssertLessThanOrEqual(rect.maxY, height,
+                                "Expanded body never owns a companion stage")
                         }
                         XCTAssertFalse(stage.layerAnimationIsRunning, "Detached test surface must stay stopped")
                         XCTAssertFalse(stage.sprite.layerAnimationIsRunning)
@@ -504,6 +511,91 @@ final class PetCompanionIntegrationTests: XCTestCase {
             hosting.frame = CGRect(x: 0, y: 0, width: 528, height: 520)
             hosting.layoutSubtreeIfNeeded()
             try exportRender(hosting, name: "settings-\(language.rawValue)")
+        }
+    }
+
+    // PET-EXPANDED-003: compare the actual native expanded body against Off,
+    // at the original production sizes, so hiding art but leaving 112pt fails.
+    @MainActor
+    func testExpandedSelectedAndOffHaveIdenticalBodyWithoutReservedPetSpace() throws {
+        _ = NSApplication.shared
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: temp) }
+        try makeLibrary(at: temp.appendingPathComponent("package"))
+        let store = PetLibraryStore(rootURL: temp.appendingPathComponent("library"))
+        try store.importLibrary(from: temp.appendingPathComponent("package"))
+        let suite = "ExpandedPetRemoval.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set("en", forKey: AppLanguage.storageKey)
+        defaults.set("pet", forKey: FloatingCenterStyle.storageKey)
+        let companion = PetCompanionController(store: store, defaults: defaults, loadImmediately: false)
+        awaitOperation(companion) { companion.reload() }
+        let now = Date(timeIntervalSince1970: 20_000)
+        for mode in [NotchLayoutMode.notch, .floatingBar] {
+            for count in [0, 1, 5, 20] {
+                for usageKind in ["none", "weekly", "both"] {
+                    for stateName in ["idle", "running", "completed"] {
+                        let usage: UsageSnapshot? = usageKind == "none" ? nil : UsageSnapshot(windows:
+                            [UsageWindow(id: "weekly", kind: .weekly, usedPercent: 30,
+                                         resetAt: now.addingTimeInterval(86_400))]
+                            + (usageKind == "both" ? [UsageWindow(id: "five-hour", kind: .rolling(hours: 5), usedPercent: 40)] : []))
+                        let rows = (0..<count).map { index -> ConversationSummary in
+                            let task = SessionActivity(threadID: "synthetic-\(index)", turnID: "turn",
+                                title: "Synthetic chat \(index)", cwd: "/synthetic/Project \(index / 3)", originator: nil,
+                                startedAt: now, lastActivityAt: now)
+                            return ConversationSummary(session: task, activity: index == 0
+                                ? .running(startedAt: now) : .completed(completedAt: now), isViewed: false)
+                        }
+                        let content = ExpandedContent(sessions: stateName == "running" ? [session(at: now)] : [],
+                            conversations: rows, headerConversation: rows.first, usage: usage)
+                        let bodySize = count == 0
+                            ? NotchExpandedLayout.quotaContentSize(hasFiveHourWindow: usage?.fiveHourWindow != nil)
+                            : NotchExpandedLayout.taskContentSize(conversationCount: count,
+                                projectCount: content.projectSections.count, hasFiveHourWindow: usage?.fiveHourWindow != nil)
+                        let size = CGSize(width: bodySize.width, height: bodySize.height + 32)
+                        var offBody: Data?
+                        var offButtons: [CGRect] = []
+                        var offScroll: CGRect?
+                        for selected in [false, true] {
+                            awaitOperation(companion) { companion.select(selected ? "synthetic_one" : nil) }
+                            let model = NotchViewModel(state: .expanded(content), now: now, layoutMode: mode,
+                                cameraSafeAreaInset: mode == .notch ? 32 : 0, compactWidth: 257, compactHeight: 32,
+                                surfaceSize: size, animationsEnabled: false)
+                            let host = NSHostingView(rootView: NotchView(model: model, companion: companion)
+                                .defaultAppStorage(defaults)
+                                .environment(\.displayScale, 2).frame(width: size.width, height: size.height))
+                            host.sizingOptions = []
+                            host.frame = CGRect(origin: .zero, size: size)
+                            host.layoutSubtreeIfNeeded()
+                            for stage in descendants(PetCompanionStageView.self, in: host) {
+                                XCTAssertLessThanOrEqual(stage.bounds.height, 32)
+                                XCTAssertLessThanOrEqual(stage.convert(stage.bounds, to: host).maxY, 32)
+                            }
+                            let buttons = descendants(NSButton.self, in: host).map { $0.convert($0.bounds, to: host) }
+                            let scroll = descendants(NSScrollView.self, in: host).first
+                            if count >= 5 {
+                                XCTAssertEqual(try XCTUnwrap(scroll).contentSize.height, 200, accuracy: 1)
+                            } else { XCTAssertNil(scroll) }
+                            let rep = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                            host.cacheDisplay(in: host.bounds, to: rep)
+                            let scale = CGFloat(rep.pixelsWide) / size.width
+                            let image = try XCTUnwrap(rep.cgImage?.cropping(to: CGRect(x: 0, y: 40 * scale,
+                                width: size.width * scale, height: (size.height - 40) * scale)))
+                            let pixels = try XCTUnwrap(image.dataProvider?.data) as Data
+                            let scrollFrame = scroll.map { $0.convert($0.bounds, to: host) }
+                            if selected {
+                                XCTAssertEqual(pixels, offBody, "Selected pet must not displace quota, reset, projects or Settings")
+                                XCTAssertEqual(buttons, offButtons)
+                                XCTAssertEqual(scrollFrame, offScroll)
+                            } else { offBody = pixels; offButtons = buttons; offScroll = scrollFrame }
+                            if selected && stateName == "running" && usageKind == "both" {
+                                try exportRender(host, name: "no-expanded-stage-\(mode)-\(count)")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

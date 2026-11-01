@@ -71,15 +71,13 @@ final class PetCompanionPolicyTests: XCTestCase {
             XCTAssertFalse(PetCompanionLayout.showsScene(layout: .notch, expanded: false, floatingStyle: style))
             XCTAssertTrue(PetCompanionLayout.showsScene(layout: .notch, expanded: false, floatingStyle: style,
                 physicalWingEnabled: true))
-            XCTAssertTrue(PetCompanionLayout.showsScene(layout: .notch, expanded: true, floatingStyle: style))
+            XCTAssertFalse(PetCompanionLayout.showsScene(layout: .notch, expanded: true, floatingStyle: style))
+            XCTAssertFalse(PetCompanionLayout.showsScene(layout: .floatingBar, expanded: true, floatingStyle: style))
             XCTAssertEqual(PetCompanionLayout.showsScene(layout: .floatingBar, expanded: false, floatingStyle: style), style == .pet)
         }
         for app in [true, false] { for system in [true, false] { for visible in [true, false] {
             XCTAssertEqual(PetCompanionLayout.allowsMotion(appEnabled: app, reduceMotion: system, visible: visible),
                 app && !system && visible)
         } } }
-        let original = CGSize(width: 420, height: 250)
-        XCTAssertEqual(PetCompanionLayout.addingStage(to: original, enabled: false), original)
-        XCTAssertEqual(PetCompanionLayout.addingStage(to: original, enabled: true), CGSize(width: 420, height: 362))
     }
 }

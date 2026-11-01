@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [PET-COMPACT-002]
 supersedes: [062-pet-companion-stage]
-superseded_by: null
+superseded_by: 064-no-expanded-pet-stage
 owner: project-maintainer
 created_at: 2026-11-01
 ---

@@ -1518,7 +1518,6 @@ struct QuotaRing: View {
 }
 
 private struct ExpandedNotchView: View {
-    @Environment(\.petCompanionContext) private var petContext
     let content: ExpandedContent
     let now: Date
     let layoutMode: NotchLayoutMode
@@ -1559,11 +1558,6 @@ private struct ExpandedNotchView: View {
 
     private var detailContent: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let petContext {
-                PetCompanionScene(context: petContext)
-                    .frame(height: PetCompanionLayout.stageHeight)
-                Spacer(minLength: PetCompanionLayout.stageSpacing)
-            }
             QuotaWindowsProgressView(
                 usage: content.usage,
                 now: now,

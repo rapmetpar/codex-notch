@@ -3449,7 +3449,7 @@ contracts:
 
   - id: PET-COMPACT-002
     title: Selected companions live in the physical compact left wing without hover
-    status: active
+    status: superseded
     statement: >-
       Inherit PET-COMPANION-001 and its contracts except the ban on compact
       physical pets and unchanged left-lane artwork/priority. A selected local
@@ -3497,5 +3497,44 @@ contracts:
       - docs/decisions/063-compact-pet-wing.md
       - "manual: inspect selected companion with and without five-hour quota, running/completed/idle, motion switches, actual camera clearance and character size, pointer/click, downward hover/collapse and menu hit regions; select Off and confirm original appearance and restart persistence"
     supersedes: [PET-COMPANION-001]
+    superseded_by: PET-EXPANDED-003
+    last_verified_commit: null
+
+
+  - id: PET-EXPANDED-003
+    title: Expanded islands contain quota and conversations without a companion stage
+    status: active
+    statement: >-
+      Inherit PET-COMPACT-002 and PET-COMPANION-001 except their expanded stage,
+      hover transfer and expanded-stage fallback. A selected companion never
+      mounts a large scene in either physical or floating expanded cards.
+      Quota-only and conversation layouts reserve no 104pt stage or 8pt gap;
+      their expanded canvas sizes, quota/reset position, project viewport and
+      Settings footer are identical with a selected companion and Off. Keep
+      compact selection, floating Companion style, local library, preferences,
+      project order, task truth, weekly/five-hour values and existing motion
+      policies. Prepare a fixed final canvas once, expand downward from the
+      existing top anchor and reclaim transparent hit regions after collapse.
+      No personal art enters source. Compact same-slot presentation is owned
+      by a separate correction and is not redesigned by this successor.
+    rationale: The user explicitly removed the large expanded pet scene shown in their screenshot.
+    source: user-correction
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [expanded-stage-removal, expanded-content-height, companion-settings-copy]
+      exclude: [compact-left-presentation, spinner, atlas, preferences, project-order, quota-values, publishing]
+    examples:
+      positive: Hover with a selected pet or Off shows quota directly below the header and the same bounded project list and Settings footer; collapse restores the existing compact pet.
+      negative: A large pet appears on hover, a 112pt empty hole remains, quota/list/footer are displaced, or removing the stage disables the compact floating Companion style.
+    guards:
+      - Tests/CodexNotchTests/PetCompanionIntegrationTests.swift
+      - Tests/CodexNotchTests/PetCompanionPolicyTests.swift
+      - Tests/CodexNotchTests/ProjectIslandIntegrationTests.swift
+      - Tests/CodexNotchTests/NotchGeometryTests.swift
+      - Tests/CodexNotchTests/NotchCollapseMotionTests.swift
+      - docs/decisions/064-no-expanded-pet-stage.md
+      - "manual: selected pet and Off in physical/floating quota-only and grouped cards; inspect quota/reset/footer, no stage or empty gap, downward hover/collapse and reclaimed hit regions; real compact appearance and smoothness require hardware confirmation"
+    supersedes: [PET-COMPACT-002]
     superseded_by: null
     last_verified_commit: null
