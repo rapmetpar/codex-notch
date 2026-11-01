@@ -27,6 +27,10 @@ final class NotchRuntimeCoordinator {
     private let threadNavigator: CodexThreadNavigator
     private let authReader: CodexAuthReader
     private let sessionStore: ActiveSessionStore
+    private let threadProjectReader: ThreadProjectReading
+    private let projectOrderStore: ConversationProjectOrderStore
+    private var threadProjects: [String: NativeThreadProject] = [:]
+    private var metadataGeneration: UInt64 = 0
     private let threadTitleReader: ThreadTitleReading
     private let rolloutMonitor: RolloutActivityMonitor
     private let urlSession: URLSession
@@ -73,6 +77,7 @@ final class NotchRuntimeCoordinator {
         authReader: CodexAuthReader = CodexAuthReader(),
         sessionStore: ActiveSessionStore = ActiveSessionStore(),
         threadTitleReader: ThreadTitleReading? = nil,
+        threadProjectReader: ThreadProjectReading? = nil,
         nativeReadReader: NativeConversationReadReading? = nil,
         urlSession: URLSession = .shared,
         usageEndpoint: URL = CodexUsageClient.defaultEndpoint,
@@ -89,6 +94,7 @@ final class NotchRuntimeCoordinator {
         self.nowProvider = nowProvider
         self.userDefaults = userDefaults
         self.conversationReadStore = ConversationReadStore(defaults: userDefaults)
+        self.projectOrderStore = ConversationProjectOrderStore(defaults: userDefaults)
         self.viewModel = NotchViewModel()
 
         let codexHome = CodexHomeLocator.home(
@@ -96,6 +102,7 @@ final class NotchRuntimeCoordinator {
             homeDirectory: authReader.homeDirectory
         )
         self.threadTitleReader = threadTitleReader ?? CodexThreadTitleReader(codexHomeURL: codexHome)
+        self.threadProjectReader = threadProjectReader ?? CodexThreadProjectReader(codexHomeURL: codexHome)
         self.nativeReadMonitor = NativeConversationReadMonitor(
             reader: nativeReadReader ?? CodexConversationReadReader(codexHomeURL: codexHome)
         )
@@ -113,6 +120,10 @@ final class NotchRuntimeCoordinator {
             self?.toggleNotchDisplay()
         }
 
+        viewModel.onProjectOrderChange = { [weak self] ids in
+            guard let self, self.projectOrderStore.prioritize(ids) else { return }
+            self.render()
+        }
         viewModel.onOpenThread = { [weak self] threadID in
             self?.openThread(threadID)
         }
@@ -175,6 +186,9 @@ final class NotchRuntimeCoordinator {
     func stop() {
         guard started else { return }
         started = false
+        metadataGeneration &+= 1
+        threadProjects = [:]
+        lastTitleRefreshAt = nil
 
         sessionTimer?.invalidate()
         sessionTimer = nil
@@ -281,13 +295,21 @@ final class NotchRuntimeCoordinator {
         titleRefreshInFlight = true
         lastTitleRefreshAt = now
         let reader = threadTitleReader
+        let projectReader = threadProjectReader
+        let generation = metadataGeneration
         titleReadQueue.async { [weak self] in
             let titles = reader.titles(for: threadIDs)
+            let projects = projectReader.projects(for: threadIDs)
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.titleRefreshInFlight = false
-                guard self.started else { return }
+                guard self.started, generation == self.metadataGeneration else { return }
+                let visible = Set(self.visibleThreadIDs)
+                let resolvedProjects = projects.filter { visible.contains($0.key) }
+                let projectsChanged = resolvedProjects != self.threadProjects
+                self.threadProjects = resolvedProjects
                 self.applyResolvedTitles(titles)
+                if projectsChanged { self.render() }
             }
         }
     }
@@ -525,6 +547,7 @@ final class NotchRuntimeCoordinator {
         }
         return NotchExpandedLayout.taskContentSize(
             conversationCount: content.conversations.count,
+            projectCount: content.projectSections.count,
             isResetScheduleExpanded: isResetScheduleExpanded,
             resetCreditCount: content.usage?.resetCredits.count ?? 0,
             hasFiveHourWindow: content.usage?.fiveHourWindow != nil
@@ -600,7 +623,9 @@ final class NotchRuntimeCoordinator {
             isHovered: isHovered,
             readReceipts: conversationReadStore.receipts,
             nativeReadReceipts: nativeReadMonitor.receipts,
-            conversationCategoryOrder: preferences.conversationCategoryOrder
+            conversationCategoryOrder: preferences.conversationCategoryOrder,
+            threadProjects: threadProjects,
+            conversationProjectOrder: preferences.conversationProjectOrder
         )
 
         let state = NotchPresentationReducer.reduce(input)
@@ -616,11 +641,16 @@ final class NotchRuntimeCoordinator {
                     isHovered: true,
                     readReceipts: input.readReceipts,
                     nativeReadReceipts: input.nativeReadReceipts,
-                    conversationCategoryOrder: input.conversationCategoryOrder
+                    conversationCategoryOrder: input.conversationCategoryOrder,
+                    threadProjects: input.threadProjects,
+                    conversationProjectOrder: input.conversationProjectOrder
                 )
             )
         } else {
             stateForWindow = state
+        }
+        if case let .expanded(content) = stateForWindow {
+            projectOrderStore.discover(content.allProjectIDs)
         }
         let displayState = stateForWindow.limitingRecentConversations(
             to: recentConversationLimit

@@ -32,12 +32,19 @@ enum NotchPresentationReducer {
     ) -> ExpandedContent {
         var seenThreadIDs = Set<String>()
         var conversations: [ConversationSummary] = []
+        func project(for session: SessionActivity) -> ConversationProject {
+            if let native = input.threadProjects[session.threadID] {
+                return .native(id: native.id, name: native.name, cwd: session.cwd)
+            }
+            return .fallback(cwd: session.cwd)
+        }
 
         for session in sessions where seenThreadIDs.insert(session.threadID).inserted {
             conversations.append(
                 ConversationSummary(
                     session: session,
-                    activity: .running(startedAt: session.startedAt)
+                    activity: .running(startedAt: session.startedAt),
+                    project: project(for: session)
                 )
             )
         }
@@ -56,7 +63,8 @@ enum NotchPresentationReducer {
                     isViewed: input.readReceipts[completion.session.threadID]
                         == ConversationReadReceipt(completion)
                         || input.nativeReadReceipts[completion.session.threadID]?.turnID
-                            == completion.session.turnID
+                            == completion.session.turnID,
+                    project: project(for: completion.session)
                 )
             )
         }
@@ -66,11 +74,12 @@ enum NotchPresentationReducer {
             // Group every candidate before either ceiling. In particular,
             // running rows must not evict the preferred completed category.
             conversations: Array(
-                input.conversationCategoryOrder.sorted(conversations)
+                input.conversationProjectOrder.sorted(conversations, categories: input.conversationCategoryOrder)
                     .prefix(RecentConversationLimit.maximumCount)
             ),
             headerConversation: conversations.first,
-            usage: input.usage
+            usage: input.usage,
+            allProjectIDs: input.conversationProjectOrder.availableIDs(in: conversations)
         )
     }
 }

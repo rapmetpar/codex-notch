@@ -3178,7 +3178,7 @@ contracts:
     last_verified_commit: null
   - id: CONVERSATION-ORDER-001
     title: Users can persist and immediately apply any order of the three chat categories
-    status: active
+    status: superseded
     statement: >-
       Inherit CONVERSATION-STATUS-003 and ACTIVITY-STATE-008 except their
       chronological/running-first expanded-list ordering. General Settings
@@ -3219,6 +3219,63 @@ contracts:
       - docs/decisions/061-conversation-category-order.md
       - "manual: reorder all three categories in each language with buttons and keyboard; verify immediate list changes, restart, scrolling and final-row navigation on notch/floating hardware; inspect camera clearance, hover/collapse, compact running and motion off/on"
     supersedes: [CONVERSATION-STATUS-003, ACTIVITY-STATE-008]
+    superseded_by: PROJECT-GROUPS-001
+    last_verified_commit: null
+
+  - id: PROJECT-GROUPS-001
+    title: Group island chats by stable projects and reorder project headings locally
+    status: active
+    statement: >-
+      Inherit CONVERSATION-ORDER-001 and its inherited contracts except expanded
+      list category order being outermost and its five-full-row viewport. Projects
+      are outermost; apply all six configured Running/New/Viewed orders inside
+      each project, preserving newest-first and ascending thread-ID ties. Resolve
+      native project_id plus project name with a parameterized read-only query
+      only for already-known thread IDs from CODEX_HOME/state_5.sqlite; do not
+      query messages, authentication, project metadata blobs, native positions,
+      roots or other application bundles. Missing or incompatible metadata falls
+      back to canonical cwd identity, then a localized unassigned group. Identity
+      and persisted/drag values use opaque SHA-256 keys, never raw paths or names.
+      Same-name projects remain distinct, native rename retains identity, deletion
+      or metadata loss never removes chats. Project order is app-owned, versioned,
+      persisted, live and retained across restart. New projects append without
+      shuffling known ranks; invalid or duplicate stored IDs fall back safely.
+      The dedicated exported data type is declared without bundle identity changes;
+      Codable drag data is own-process only. Actual island headings support
+      native drag/drop to the target rank and
+      keyboard-accessible up/down buttons, with stable thread row identity. Group
+      every candidate before the twenty-chat ceiling and configured 0-20 limit;
+      headers never consume chat slots and zero hides all project headings too.
+      Preserve running compact/header priority regardless of project/category
+      preference, completion, native/local read receipts, quota, reset, navigation,
+      motion, discovery bounds and settings. Rows and 32pt project headings share
+      a viewport capped at 200pt; small cards add only the measured header space.
+      Weekly quota, reset and footer stay outside scroll. Preserve fixed canvas,
+      downward top anchor, camera safe areas and post-collapse hit reclamation;
+      never resize the panel frame per animation tick. Native Codex project order
+      is neither changed nor used as the user's CodexNotch priority preference.
+    rationale: The user needs project sections and direct project prioritization within the expanded island.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [project-identity, scoped-read-only-project-metadata, project-order, island-drag-and-accessibility, grouped-list-viewport]
+      exclude: [native-project-writes, messages, auth, compact-state-policy, quotas, pet-scenes, releases]
+    examples:
+      positive: Drag project B onto project A to prioritize B immediately; restart retains B first, category order applies inside B, and the compact island still shows a running task from A.
+      negative: Same names merge distinct projects, sorting after a prefix drops a preferred project, a heading consumes one of twenty chat slots, a path escapes in drag data, or reordering modifies Codex project positions.
+    guards:
+      - Tests/CodexNotchTests/ConversationProjectTests.swift
+      - Tests/CodexNotchTests/CodexThreadProjectReaderTests.swift
+      - Tests/CodexNotchTests/ProjectIslandIntegrationTests.swift
+      - Tests/CodexNotchTests/RecentConversationScrollTests.swift
+      - Tests/CodexNotchTests/ConversationCategoryOrderTests.swift
+      - Tests/CodexNotchTests/NativeConversationReadTests.swift
+      - Tests/CodexNotchTests/NotchGeometryTests.swift
+      - Tests/CodexNotchTests/NotchCollapseMotionTests.swift
+      - docs/decisions/062-project-island-groups.md
+      - "manual: drag headers in both directions on physical-notch and floating hardware, keyboard/VoiceOver buttons, restart, native rename/delete/fallback, scroll to final chat and navigate; inspect quota/footer, camera clearance, downward expansion/collapse hit regions and motion off/on"
+    supersedes: [CONVERSATION-ORDER-001]
     superseded_by: null
     last_verified_commit: null
 

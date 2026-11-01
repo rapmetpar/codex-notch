@@ -17,6 +17,8 @@ final class NotchViewModel: ObservableObject {
     private var surfaceAnimationIdentifier = UUID()
     private var isSurfaceAnimationInFlight = false
 
+    var onProjectOrderChange: ([String]) -> Void = { _ in }
+
     var onOpenThread: (String) -> Void
     var onActivateChatGPT: () -> Void
     var onHoverChanged: (Bool) -> Void
@@ -387,6 +389,8 @@ struct NotchView: View {
             isResetScheduleExpanded: model.isResetScheduleExpanded,
             onActivateChatGPT: model.onActivateChatGPT,
             onOpenThread: model.onOpenThread,
+            onDropProjects: model.dropProjects,
+            onMoveProject: model.moveProject,
             onResetScheduleExpandedChanged: model.onResetScheduleExpandedChanged,
             notchDisplayEnabled: notchDisplayEnabled,
             onNotchDisplayEnabledChanged: { notchDisplayEnabled = $0 }
@@ -1487,6 +1491,8 @@ private struct ExpandedNotchView: View {
     let isResetScheduleExpanded: Bool
     let onActivateChatGPT: () -> Void
     let onOpenThread: (String) -> Void
+    let onDropProjects: ([ProjectDragToken], String) -> Bool
+    let onMoveProject: (String, Int) -> Void
     let onResetScheduleExpandedChanged: (Bool) -> Void
     let notchDisplayEnabled: Bool
     let onNotchDisplayEnabledChanged: (Bool) -> Void
@@ -1535,15 +1541,9 @@ private struct ExpandedNotchView: View {
 
                 Spacer(minLength: 8)
 
-                if content.conversations.count > NotchExpandedLayout.maximumVisibleConversations {
-                    ScrollView(.vertical) {
-                        conversationRows
-                    }
-                    .frame(height: CGFloat(NotchExpandedLayout.maximumVisibleConversations)
-                        * NotchExpandedLayout.conversationRowHeight)
-                } else {
-                    conversationRows
-                }
+                ProjectConversationListView(content: content, now: now, language: language,
+                    onOpenThread: onOpenThread, onDropProjects: onDropProjects,
+                    onMoveProject: onMoveProject)
             }
 
             Spacer(minLength: 6)
@@ -1620,19 +1620,6 @@ private struct ExpandedNotchView: View {
         .padding(.top, expandedContentTopInset)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-
-    private var conversationRows: some View {
-        VStack(spacing: 0) {
-            ForEach(content.conversations, id: \.threadID) { conversation in
-                ConversationRowView(
-                    conversation: conversation,
-                    now: now,
-                    language: language,
-                    action: { onOpenThread(conversation.threadID) }
-                )
-            }
-        }
     }
 
     private var displayOnLabel: String {

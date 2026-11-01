@@ -30,12 +30,14 @@ final class RecentConversationScrollTests: XCTestCase {
     }
 
     @MainActor
-    func testZeroThroughFiveChatsKeepTheirUnscrolledLayout() {
+    func testZeroThroughTwentyChatsUseBoundedGroupedViewportAndZeroHidesHeadings() {
         _ = NSApplication.shared
-        for count in 0...5 {
+        for count in 0...20 {
             let (hosting, _, window) = makeHost(count: count, mode: .notch, motionEnabled: false)
             defer { window.contentView = nil }
-            XCTAssertTrue(scrollViews(in: hosting).isEmpty)
+            // PROJECT-GROUPS-001 supersedes five chat rows: headings consume pixels,
+            // never display slots. Four rows plus one header fit; five must scroll.
+            XCTAssertEqual(scrollViews(in: hosting).isEmpty, count <= 4)
         }
     }
 
@@ -54,7 +56,7 @@ final class RecentConversationScrollTests: XCTestCase {
                                       headerConversation: conversations.first, usage: nil)
         let size = NSSize(width: 420, height: 32 + (count == 0
             ? NotchExpandedLayout.quotaContentHeight
-            : NotchExpandedLayout.taskContentHeight(conversationCount: count)))
+            : NotchExpandedLayout.taskContentHeight(conversationCount: count, projectCount: count == 0 ? 0 : 1)))
         let model = NotchViewModel(state: .expanded(content), now: now, layoutMode: mode,
                                   cameraSafeAreaInset: mode == .notch ? 32 : 0,
                                   compactWidth: 257, compactHeight: 32,

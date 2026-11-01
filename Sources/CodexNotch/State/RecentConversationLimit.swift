@@ -70,6 +70,8 @@ struct NotchRuntimePreferences: Equatable, Sendable {
     var petLibraryRevision: Int = 0
     var conversationCategoryOrder: ConversationCategoryOrder = .defaultOrder
 
+    var conversationProjectOrder = ConversationProjectOrder()
+
     static func read(from userDefaults: UserDefaults) -> NotchRuntimePreferences {
         let recentConversationLimit = (userDefaults.object(
             forKey: RecentConversationLimit.storageKey
@@ -88,7 +90,8 @@ struct NotchRuntimePreferences: Equatable, Sendable {
             petLibraryRevision: userDefaults.integer(forKey: PetCompanionController.revisionKey),
             conversationCategoryOrder: ConversationCategoryOrder.fromStoredValue(
                 userDefaults.string(forKey: ConversationCategoryOrder.storageKey)
-            )
+            ),
+            conversationProjectOrder: .read(from: userDefaults)
         )
     }
 }
