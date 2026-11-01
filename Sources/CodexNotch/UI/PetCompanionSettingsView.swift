@@ -30,9 +30,9 @@ struct PetCompanionSettingsView: View {
                 Text(language.localized(chinese: "岛上的伙伴", english: "Island companion", russian: "Питомец на островке"))
             } footer: {
                 Text(language.localized(
-                    chinese: "展开时，宠物在摄像头下方的独立空间中活动。浮动横条可选择“宠物”中央样式。关闭后保留原有布局。",
-                    english: "Expand to see your companion on its own stage below the camera. The floating bar also offers a Companion center style. Off restores the original layout.",
-                    russian: "При раскрытии питомец появляется на своей сцене ниже камеры. Для плавающей панели доступен стиль центра «Питомец». Выкл. возвращает прежний вид."
+                    chinese: "宠物始终显示在刘海左侧，5 小时额度与任务状态各有独立位置；空间不足时仅在展开场景显示。浮动横条可选择“宠物”中央样式。关闭宠物后恢复原有左侧设置。",
+                    english: "Your companion stays beside the left of the notch, with separate quota and status slots. If space is insufficient, it uses the expanded stage. Floating Bar offers a Companion center style. Off restores your original left-side setting.",
+                    russian: "Питомец постоянно виден слева от выреза, рядом с отдельными квотой и статусом. Если места мало, доступна сцена при раскрытии. В плавающей панели есть стиль центра «Питомец». Выкл. возвращает прежнюю настройку левой стороны."
                 ))
             }
             Section {

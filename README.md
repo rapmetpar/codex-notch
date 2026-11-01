@@ -128,9 +128,9 @@ Displays without a notch, including mirrored displays, use a floating bar center
 
 ### Animated companions
 
-In **Companions**, choose **Import companion library…**, select a local library folder, then choose any imported companion. Companions are **Off** by default; choosing Off removes the companion stage. The library and selection are saved locally, so the original import folder can be moved or deleted.
+In **Companions**, choose **Import companion library…**, select a local library folder, then choose any imported companion. Companions are **Off** by default; choosing Off restores the original left-side icon setting and removes the companion stage. The library and selection are saved locally, so the original import folder can be moved or deleted.
 
-The expanded island gives the companion its own animated stage below the camera, keeping quota and status indicators in their existing lanes. For compact floating bars, select **Companion** as the center style in **Floating Bar**. The other center styles remain available; physical compact notches keep their camera area clear.
+On a physical notch, the selected companion is animated in the compact left wing without hovering. Separate slots keep the five-hour quota and running/completed cue visible; weekly quota stays in place. The left wing grows to make room. Hovering moves the companion to its larger stage below the camera. If the measured safe area is too small, it remains available in the expanded stage. For compact floating bars, select **Companion** as the center style in **Floating Bar**. The other center styles remain available; physical compact notches keep their camera area clear.
 
 The companion works while tasks run, jumps once for a newly observed completion, occasionally strolls at rest, and greets on hover with a cooldown. Opening old history does not replay completion celebrations. Companion motion requires **Animations** to be on and system **Reduce Motion** to be off; either setting stops its motion while keeping a static pose. Existing quota and status animations retain their independent app-switch behavior.
 

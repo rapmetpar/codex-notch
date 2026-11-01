@@ -91,8 +91,9 @@ enum PetCompanionLayout {
         CGSize(width: size.width, height: size.height + (enabled ? expandedHeight : 0))
     }
 
-    static func showsScene(layout: NotchLayoutMode, expanded: Bool, floatingStyle: FloatingCenterStyle) -> Bool {
-        expanded || (layout == .floatingBar && floatingStyle == .pet)
+    static func showsScene(layout: NotchLayoutMode, expanded: Bool, floatingStyle: FloatingCenterStyle,
+                           physicalWingEnabled: Bool = false) -> Bool {
+        expanded || (layout == .notch && physicalWingEnabled) || (layout == .floatingBar && floatingStyle == .pet)
     }
 
     static func allowsMotion(appEnabled: Bool, reduceMotion: Bool, visible: Bool) -> Bool {

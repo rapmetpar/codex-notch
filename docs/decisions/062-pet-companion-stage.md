@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [PET-COMPANION-001]
 supersedes: []
-superseded_by: null
+superseded_by: 063-compact-pet-wing
 owner: project-maintainer
 created_at: 2026-11-01
 ---

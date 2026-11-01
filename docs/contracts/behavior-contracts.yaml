@@ -3361,7 +3361,7 @@ contracts:
     last_verified_commit: null
   - id: PET-COMPANION-001
     title: Optional local companions have their own bounded island stage
-    status: active
+    status: superseded
     statement: >-
       Inherit PET-SPRITE-001 and its SETTINGS-MOTION-021 exception; the companion
       respects BOTH the persisted app switch and system Reduce Motion. Do not
@@ -3405,7 +3405,7 @@ contracts:
       - docs/decisions/062-pet-companion-stage.md
       - "manual: select every imported pet and Off; inspect physical camera and quota clearance, downward hover/collapse hit regions, fresh completion/hover cooldown, floating center and all old modes, all languages, system/app motion combinations, restart and actual smoothness"
     supersedes: []
-    superseded_by: null
+    superseded_by: PET-COMPACT-002
     last_verified_commit: null
 
   - id: SETTINGS-PERSISTENCE-001
@@ -3444,5 +3444,58 @@ contracts:
       - docs/decisions/062-stable-app-preferences.md
       - "manual: close all CodexNotch instances, replace the app without deleting support/preferences, launch the exact installed path and verify chosen settings, artwork and new feature stores; confirm real Settings/live UI behavior"
     supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: PET-COMPACT-002
+    title: Selected companions live in the physical compact left wing without hover
+    status: active
+    statement: >-
+      Inherit PET-COMPANION-001 and its contracts except the ban on compact
+      physical pets and unchanged left-lane artwork/priority. A selected local
+      companion replaces the status artwork without requiring hover. Reserve
+      distinct full-size five-hour quota, 12pt truthful running/completed cue,
+      and 30pt companion slots; do not overlay them. The pet remains at the old
+      app-mark center, the weekly quota stays at its old screen position, and
+      measured camera height/top anchor are unchanged. Add 42pt only to the
+      visible left wing. Keep a symmetric internal canvas at the camera anchor,
+      crop its unused 42pt right portion from both shell and settled NSPanel,
+      and preserve one-time fixed-canvas preparation and stale-collapse guards.
+      Allocate this layout only if measured left/right safe areas contain it,
+      height is at least 24pt and the final expanded canvas can contain it.
+      Otherwise retain the original compact layout and explicit expanded-stage
+      fallback; never guess camera clearance or silently shrink quota artwork.
+      Selected companion overrides the old Left side Off only for this physical
+      wing so the pet, state cue and returned five-hour quota coexist. Companion
+      Off restores the exact original icon choice, quota priority and cropping.
+      Preserve all stored keys and app-owned data, native read/history/project
+      grouping and task navigation. Idle has no false completed cue; running
+      remains blue, completed retains a green check even with five-hour data.
+      The compact pet uses authored native frames with both app/system motion
+      gates and visible/occluded/detached lifecycle. Hover transfers it to the
+      existing expanded scene instead of mounting two animated copies. No new
+      pet window, per-frame SwiftUI or NSPanel mutation, artwork generation,
+      credential access or personal assets in source. Physical camera clearance,
+      tiny-character legibility, menu interaction and smoothness require real
+      user hardware acceptance; geometry and rendered fixtures are not proof.
+    rationale: The user clarified that the selected living companion must replace the compact left icon rather than appear only on hover.
+    source: user-correction
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [compact-pet-wing, safe-area-allocation, independent-quota-and-status-slots, right-canvas-reclamation, companion-settings-copy]
+      exclude: [pet-artwork, catalog-import, preference-migration, read-state, project-grouping, task-detection, quota-values, publishing]
+    examples:
+      positive: Without hovering, the selected pet works beside a separate blue cue and five-hour ring; completion keeps a green check, weekly does not move, and turning the pet Off restores the prior icon/crop.
+      negative: The pet only appears on hover, quota replaces it, a completion check is hidden behind it, art crosses the camera, Off resets preferences, or unused canvas intercepts menu clicks after collapse.
+    guards:
+      - Tests/CodexNotchTests/CompactPetGeometryTests.swift
+      - Tests/CodexNotchTests/PetCompanionIntegrationTests.swift
+      - Tests/CodexNotchTests/PetCompanionPolicyTests.swift
+      - Tests/CodexNotchTests/NotchHeightViewTests.swift
+      - Tests/CodexNotchTests/HiddenLeftWingTests.swift
+      - docs/decisions/063-compact-pet-wing.md
+      - "manual: inspect selected companion with and without five-hour quota, running/completed/idle, motion switches, actual camera clearance and character size, pointer/click, downward hover/collapse and menu hit regions; select Off and confirm original appearance and restart persistence"
+    supersedes: [PET-COMPANION-001]
     superseded_by: null
     last_verified_commit: null

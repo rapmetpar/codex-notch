@@ -242,9 +242,9 @@ struct NotchSettingsView: View {
                 Text(appLanguage.localized(chinese: "顶部显示", english: "Top display", russian: "Панель вверху экрана"))
             } footer: {
                 Text(appLanguage.localized(
-                    chinese: "刘海左侧优先显示 5 小时额度。选择“关闭”可减少菜单栏遮挡，额度仍可展开查看。",
-                    english: "Five-hour quota takes priority beside the notch. Select Off to reduce overlap with the menu bar. Quota remains available in the expanded card.",
-                    russian: "Рядом с вырезом в первую очередь показан лимит на 5 часов. Выберите «Выкл.», чтобы освободить строку меню. Лимиты останутся в раскрытой карточке."
+                    chinese: "未启用宠物时，左侧优先显示 5 小时额度；选择“关闭”可隐藏该区域，额度仍可展开查看。已选宠物在刘海左侧使用独立区域。",
+                    english: "Without a companion, five-hour quota takes priority on the left; Off hides that lane while keeping expanded quota details. A selected companion uses its own physical-notch wing.",
+                    russian: "Без питомца слева приоритет у лимита на 5 часов; «Выкл.» скрывает эту область, сохраняя лимиты в карточке. Выбранный питомец использует своё левое крыло у выреза."
                 ))
             }
 

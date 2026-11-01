@@ -61,10 +61,11 @@ struct NotchLayout: Equatable {
     let quotaExpandedFrame: NSRect
     let expandedFrame: NSRect
     var compactLeadingInset: CGFloat = 0
+    var compactTrailingInset: CGFloat = 0
 
     var visibleCompactFrame: NSRect {
         NSRect(x: compactFrame.minX + compactLeadingInset, y: compactFrame.minY,
-               width: compactFrame.width - compactLeadingInset, height: compactFrame.height)
+               width: max(0, compactFrame.width - compactLeadingInset - compactTrailingInset), height: compactFrame.height)
     }
 }
 
@@ -245,6 +246,7 @@ enum NotchGeometry {
     static func layout(
         metrics: NotchScreenMetrics,
         leftIndicatorEnabled: Bool = true,
+        companionEnabled: Bool = false,
         compactSize: NSSize = NSSize(
             width: NotchCompactLayout.minimumWidth,
             height: NotchCompactLayout.height
@@ -298,11 +300,23 @@ enum NotchGeometry {
             width: expandedSize.width,
             height: expandedSize.height + cameraAttachmentHeight
         )
-        let compactFrame = frame(
+        var compactFrame = frame(
             centeredAt: centerX,
             size: NSSize(width: compactWidth, height: compactHeight),
             screenFrame: metrics.frame, visibleFrame: metrics.visibleFrame, topInset: 0
         )
+        // Preserve the camera/content anchor and the original weekly position.
+        // Only the visible left wing grows; crop the symmetric canvas on the right.
+        let petWingFits = companionEnabled && metrics.safeAreaInsets.top >= 24
+            && left.minY <= metrics.frame.maxY - compactHeight && left.maxY >= metrics.frame.maxY
+            && right.minY <= metrics.frame.maxY - compactHeight && right.maxY >= metrics.frame.maxY
+            && compactFrame.minX - CompactPetWingLayout.extraWidth >= max(left.minX, metrics.frame.minX)
+            && compactFrame.maxX <= min(right.maxX, metrics.frame.maxX)
+            && abs(compactFrame.midX - centerX) < 0.01
+            && compactFrame.width + 2 * CompactPetWingLayout.extraWidth <= min(quotaExpandedSize.width, expandedSize.width)
+        if petWingFits {
+            compactFrame = compactFrame.insetBy(dx: -CompactPetWingLayout.extraWidth, dy: 0)
+        }
         return NotchLayout(
             mode: .notch,
             centerX: centerX,
@@ -328,7 +342,8 @@ enum NotchGeometry {
                 visibleFrame: metrics.visibleFrame,
                 topInset: 0
             ),
-            compactLeadingInset: leftIndicatorEnabled ? 0 : max(0, left.maxX - compactFrame.minX)
+            compactLeadingInset: leftIndicatorEnabled || petWingFits ? 0 : max(0, left.maxX - compactFrame.minX),
+            compactTrailingInset: petWingFits ? CompactPetWingLayout.extraWidth : 0
         )
     }
 

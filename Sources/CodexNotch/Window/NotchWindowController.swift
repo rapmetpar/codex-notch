@@ -93,7 +93,7 @@ final class NotchWindowController: NSWindowController {
         }
 
         requestedLayoutMode = layout.mode
-        contentCenterX = layout.compactLeadingInset > 0 ? layout.centerX : nil
+        contentCenterX = layout.compactLeadingInset > 0 || layout.compactTrailingInset > 0 ? layout.centerX : nil
         hideFallbackMenu()
         let targetFrame = layout.frame(for: state)
         let isExpanded: Bool

@@ -586,7 +586,8 @@ final class NotchRuntimeCoordinator {
             return
         }
         let metrics = NotchScreenMetrics(screen: screen)
-        let baseLayout = NotchGeometry.layout(metrics: metrics, leftIndicatorEnabled: preferences.leftIndicatorEnabled)
+        let baseLayout = NotchGeometry.layout(metrics: metrics, leftIndicatorEnabled: preferences.leftIndicatorEnabled,
+            companionEnabled: PetCompanionController.shared.hasSelectedPet)
 
         if NotchPanelVisibilityPolicy.shouldUseMenuBarFallback(
             layoutMode: baseLayout.mode,
@@ -665,6 +666,7 @@ final class NotchRuntimeCoordinator {
         let layout = NotchGeometry.layout(
             metrics: metrics,
             leftIndicatorEnabled: preferences.leftIndicatorEnabled,
+            companionEnabled: PetCompanionController.shared.hasSelectedPet,
             quotaExpandedSize: PetCompanionLayout.addingStage(to: quotaExpandedContentSize(
                 for: displayState,
                 isResetScheduleExpanded: isResetScheduleExpanded
@@ -694,6 +696,7 @@ final class NotchRuntimeCoordinator {
             compactWidth: layout.compactFrame.width,
             compactHeight: layout.compactFrame.height,
             compactLeadingInset: layout.compactLeadingInset,
+            compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: targetFrame.size,
             isResetScheduleExpanded: isResetScheduleExpanded,
             isPointerInside: isPointerInside,
@@ -717,7 +720,7 @@ final class NotchRuntimeCoordinator {
         screen: NSScreen,
         metrics: NotchScreenMetrics
     ) {
-        let layout = NotchGeometry.layout(metrics: metrics, leftIndicatorEnabled: runtimePreferences.leftIndicatorEnabled)
+        let layout = NotchGeometry.layout(metrics: metrics, leftIndicatorEnabled: runtimePreferences.leftIndicatorEnabled, companionEnabled: PetCompanionController.shared.hasSelectedPet)
         guard layout.mode != .menuBarFallback else {
             windowController.showDisplayDisabledFallback()
             return
@@ -738,6 +741,7 @@ final class NotchRuntimeCoordinator {
             compactWidth: layout.compactFrame.width,
             compactHeight: layout.compactFrame.height,
             compactLeadingInset: layout.compactLeadingInset,
+            compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: targetFrame.size,
             isResetScheduleExpanded: false,
             animationsEnabled: false
@@ -755,7 +759,7 @@ final class NotchRuntimeCoordinator {
         screen: NSScreen,
         metrics: NotchScreenMetrics
     ) {
-        let layout = NotchGeometry.layout(metrics: metrics, leftIndicatorEnabled: runtimePreferences.leftIndicatorEnabled)
+        let layout = NotchGeometry.layout(metrics: metrics, leftIndicatorEnabled: runtimePreferences.leftIndicatorEnabled, companionEnabled: PetCompanionController.shared.hasSelectedPet)
         let targetFrame = layout.frame(for: displayState)
         let transitionIdentifier = windowController.prepare(
             layout: layout,
@@ -773,6 +777,7 @@ final class NotchRuntimeCoordinator {
             compactWidth: layout.compactFrame.width,
             compactHeight: layout.compactFrame.height,
             compactLeadingInset: layout.compactLeadingInset,
+            compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: displayState == .hidden ? targetFrame.size : layout.compactFrame.size,
             isResetScheduleExpanded: false,
             isPointerInside: isPointerInside && displayState != .hidden,

@@ -69,6 +69,8 @@ final class PetCompanionPolicyTests: XCTestCase {
     func testCameraSceneAndBothMotionSwitchesHaveExplicitBoundaries() {
         for style in FloatingCenterStyle.allCases {
             XCTAssertFalse(PetCompanionLayout.showsScene(layout: .notch, expanded: false, floatingStyle: style))
+            XCTAssertTrue(PetCompanionLayout.showsScene(layout: .notch, expanded: false, floatingStyle: style,
+                physicalWingEnabled: true))
             XCTAssertTrue(PetCompanionLayout.showsScene(layout: .notch, expanded: true, floatingStyle: style))
             XCTAssertEqual(PetCompanionLayout.showsScene(layout: .floatingBar, expanded: false, floatingStyle: style), style == .pet)
         }
