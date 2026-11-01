@@ -42,7 +42,7 @@ final class NotchWindowController: NSWindowController {
 
     private var appLanguage: AppLanguage {
         AppLanguage.fromStoredValue(
-            UserDefaults.standard.string(forKey: AppLanguage.storageKey)
+            AppPreferences.store.string(forKey: AppLanguage.storageKey)
         )
     }
 
@@ -549,7 +549,7 @@ final class NotchWindowController: NSWindowController {
     @objc private func handleStatusItemAction(_ sender: NSMenuItem) {
         guard let representedObject = sender.representedObject as? String else { return }
         if representedObject == "__show_notch__" {
-            UserDefaults.standard.set(
+            AppPreferences.store.set(
                 true,
                 forKey: NotchDisplayPreference.storageKey
             )

@@ -15,6 +15,9 @@ INFO_PLIST="$APP_PATH/Contents/Info.plist"
 [[ -f "$INFO_PLIST" ]] || { echo "error: Info.plist missing: $INFO_PLIST" >&2; exit 1; }
 
 plutil -lint "$INFO_PLIST"
+[[ "$(plutil -extract CFBundleIdentifier raw -o - "$INFO_PLIST")" == "com.david.codexnotch" ]] || {
+    echo "error: bundle identity drift would split existing preferences" >&2; exit 1;
+}
 
 FRAMEWORK="$APP_PATH/Contents/Frameworks/Sparkle.framework"
 [[ -L "$FRAMEWORK/Versions/Current" && -x "$FRAMEWORK/Sparkle" ]] || {

@@ -82,7 +82,7 @@ final class NotchRuntimeCoordinator {
         urlSession: URLSession = .shared,
         usageEndpoint: URL = CodexUsageClient.defaultEndpoint,
         nowProvider: @escaping () -> Date = { .now },
-        userDefaults: UserDefaults = .standard
+        userDefaults: UserDefaults = AppPreferences.store
     ) {
         self.windowController = windowController
         self.frontmostMonitor = frontmostMonitor
@@ -146,7 +146,7 @@ final class NotchRuntimeCoordinator {
         windowController.onActivateChatGPT = { [weak self] in
             self?.activateChatGPT()
         }
-        windowController.setRootView(NotchView(model: viewModel))
+        windowController.setRootView(NotchView(model: viewModel).defaultAppStorage(userDefaults))
 
         frontmostMonitor.onChange = { [weak self] isFrontmost in
             DispatchQueue.main.async {

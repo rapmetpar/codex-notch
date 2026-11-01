@@ -3407,3 +3407,42 @@ contracts:
     supersedes: []
     superseded_by: null
     last_verified_commit: null
+
+  - id: SETTINGS-PERSISTENCE-001
+    title: App-owned choices keep the released identity across replacement and launch paths
+    status: active
+    statement: >-
+      Preserve every existing setting key, default, valid value and live update
+      flow. Use com.david.codexnotch as the stable app-owned preference domain
+      for Settings, command language, hosted island, runtime and fallback menu,
+      both in packaged apps and unbundled development launches. The same-ID
+      bundled launch uses its standard domain; an unbundled launch explicitly
+      opens that domain. Retain zero chat count, false switches, category order,
+      floating text and custom image pixels across restart, bundle replacement
+      and relocation. Do not import test or foreign domains, overwrite existing
+      choices, register defaults as persistent values or resurrect explicit
+      resets. Missing/corrupt settings retain their existing fallback behavior.
+      Keep pet libraries and other app-owned files outside the replaceable
+      bundle. Login-item state remains system-owned, never a second preference.
+      Verification never writes real preferences, login items, Codex state or
+      authentication. Reject accidental packaged identity drift. A successful
+      synthetic process guard does not prove the user's actual installer or UI.
+    rationale: A reinstall report prompted a guard that disproved same-ID replacement loss but reproduced separate implicit domains for unbundled launches.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [preference-identity, preference-persistence, packaged-identity-guard, replacement-fixture]
+      exclude: [settings-redesign, auth, codex-data, login-registration, pet-rendering, project-grouping, releases]
+    examples:
+      positive: A prior packaged version writes chosen language and artwork; a replacement at another path and an unbundled launch retain them, while an explicit reset remains reset.
+      negative: A worktree name changes the store, replacing an app deletes preferences, foreign test values are imported, a zero count becomes two or a reset revives old artwork.
+    guards:
+      - Tests/CodexNotchTests/AppPreferencesTests.swift
+      - scripts/verify_preferences.py
+      - scripts/verify_app.sh
+      - docs/decisions/062-stable-app-preferences.md
+      - "manual: close all CodexNotch instances, replace the app without deleting support/preferences, launch the exact installed path and verify chosen settings, artwork and new feature stores; confirm real Settings/live UI behavior"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
