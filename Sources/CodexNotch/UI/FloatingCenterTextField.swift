@@ -5,7 +5,7 @@ struct FloatingCenterTextField: View {
     let language: AppLanguage
 
     var body: some View {
-        let label = language.localized(chinese: "自定义文字", english: "Custom text")
+        let label = language.localized(chinese: "自定义文字", english: "Custom text", russian: "Свой текст")
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
             // The grouped Form's automatic trailing-aligned field hides

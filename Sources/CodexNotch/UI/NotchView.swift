@@ -285,7 +285,8 @@ struct NotchView: View {
                     icon: .quota,
                     title: appLanguage.localized(
                         chinese: "Codex 就绪",
-                        english: "Codex ready"
+                        english: "Codex ready",
+                        russian: "Codex готов"
                     ),
                     subtitle: NotchText.quotaSubtitle(usage: usage, language: appLanguage),
                     usage: usage,
@@ -301,17 +302,20 @@ struct NotchView: View {
                         primary.title,
                         fallback: appLanguage.localized(
                             chinese: "Codex 运行中",
-                            english: "Codex running"
+                            english: "Codex running",
+                            russian: "Codex работает"
                         )
                     ),
                     subtitle: count > 1
                         ? appLanguage.localized(
                             chinese: "\(count) 个任务",
-                            english: "\(count) tasks"
+                            english: "\(count) tasks",
+                            russian: "Задач: \(count)"
                         )
                         : appLanguage.localized(
                             chinese: "已运行 \(NotchText.formatDuration(seconds: max(0, model.now.timeIntervalSince(primary.startedAt))))",
-                            english: "Running for \(NotchText.formatDuration(seconds: max(0, model.now.timeIntervalSince(primary.startedAt))))"
+                            english: "Running for \(NotchText.formatDuration(seconds: max(0, model.now.timeIntervalSince(primary.startedAt))))",
+                            russian: "В работе \(NotchText.formatDuration(seconds: max(0, model.now.timeIntervalSince(primary.startedAt))))"
                         ),
                     usage: usage,
                     quotaDisplayStyle: quotaDisplayStyle,
@@ -328,7 +332,8 @@ struct NotchView: View {
                         session.title,
                         fallback: appLanguage.localized(
                             chinese: "Codex 已完成",
-                            english: "Codex completed"
+                            english: "Codex completed",
+                            russian: "Codex завершил работу"
                         )
                     ),
                     subtitle: NotchText.projectName(cwd: session.cwd, language: appLanguage),
@@ -422,7 +427,8 @@ struct NotchView: View {
                 Label(
                     appLanguage.localized(
                         chinese: model.layoutMode == .floatingBar ? "隐藏悬浮岛" : "隐藏刘海",
-                        english: model.layoutMode == .floatingBar ? "Hide activity island" : "Hide notch"
+                        english: model.layoutMode == .floatingBar ? "Hide activity island" : "Hide notch",
+                        russian: model.layoutMode == .floatingBar ? "Скрыть островок" : "Скрыть панель"
                     ),
                     systemImage: "eye.slash"
                 )
@@ -432,7 +438,7 @@ struct NotchView: View {
 
             NotchSettingsButton {
                 Label(
-                    appLanguage.localized(chinese: "设置…", english: "Settings…"),
+                    appLanguage.localized(chinese: "设置…", english: "Settings…", russian: "Настройки…"),
                     systemImage: "gearshape"
                 )
             }
@@ -731,7 +737,7 @@ private struct CompactNotchView: View {
         if let usage, !usage.windows.isEmpty {
             parts.append(NotchText.quotaSubtitle(usage: usage, language: language))
         }
-        return parts.joined(separator: language == .english ? ", " : "，")
+        return parts.joined(separator: language == .chinese ? "，" : ", ")
     }
 
 }
@@ -1478,7 +1484,7 @@ private struct ExpandedNotchView: View {
             if !content.conversations.isEmpty {
                 Spacer(minLength: 16)
 
-                Text(language.localized(chinese: "最近对话", english: "Recent conversations"))
+                Text(language.localized(chinese: "最近对话", english: "Recent conversations", russian: "Недавние чаты"))
                     .font(.system(size: 11.5, weight: .regular))
                     .foregroundStyle(NotchPalette.secondaryText)
 
@@ -1541,18 +1547,19 @@ private struct ExpandedNotchView: View {
                 .accessibilityLabel(
                     language.localized(
                         chinese: layoutMode == .floatingBar ? "显示悬浮岛" : "显示刘海",
-                        english: layoutMode == .floatingBar ? "Show activity island" : "Show notch"
+                        english: layoutMode == .floatingBar ? "Show activity island" : "Show notch",
+                        russian: layoutMode == .floatingBar ? "Показать островок" : "Показать панель"
                     )
                 )
                 .accessibilityValue(
                     notchDisplayEnabled
-                        ? language.localized(chinese: "开启", english: "On")
-                        : language.localized(chinese: "关闭", english: "Off")
+                        ? language.localized(chinese: "开启", english: "On", russian: "Вкл.")
+                        : language.localized(chinese: "关闭", english: "Off", russian: "Выкл.")
                 )
 
                 NotchSettingsButton {
                     Label(
-                        language.localized(chinese: "设置", english: "Settings"),
+                        language.localized(chinese: "设置", english: "Settings", russian: "Настройки"),
                         systemImage: "gearshape"
                     )
                         .font(.system(size: 10.5, weight: .regular))
@@ -1563,7 +1570,7 @@ private struct ExpandedNotchView: View {
                 }
                 .buttonStyle(NotchButtonStyle())
                 .accessibilityLabel(
-                    language.localized(chinese: "打开设置", english: "Open settings")
+                    language.localized(chinese: "打开设置", english: "Open settings", russian: "Открыть настройки")
                 )
             }
         }
@@ -1578,14 +1585,16 @@ private struct ExpandedNotchView: View {
     private var displayOnLabel: String {
         language.localized(
             chinese: layoutMode == .floatingBar ? "悬浮岛开启" : "刘海开启",
-            english: layoutMode == .floatingBar ? "Activity island On" : "Notch On"
+            english: layoutMode == .floatingBar ? "Activity island On" : "Notch On",
+            russian: layoutMode == .floatingBar ? "Островок включён" : "Панель включена"
         )
     }
 
     private var displayOffLabel: String {
         language.localized(
             chinese: layoutMode == .floatingBar ? "悬浮岛关闭" : "刘海关闭",
-            english: layoutMode == .floatingBar ? "Activity island Off" : "Notch Off"
+            english: layoutMode == .floatingBar ? "Activity island Off" : "Notch Off",
+            russian: layoutMode == .floatingBar ? "Островок выключен" : "Панель выключена"
         )
     }
 
@@ -1613,7 +1622,8 @@ private struct ExpandedNotchView: View {
                 content.sessions.first?.title,
                 fallback: language.localized(
                     chinese: "Codex 运行中",
-                    english: "Codex running"
+                    english: "Codex running",
+                    russian: "Codex работает"
                 )
             )
         case .completed:
@@ -1621,11 +1631,12 @@ private struct ExpandedNotchView: View {
                 content.headerConversation?.title,
                 fallback: language.localized(
                     chinese: "Codex 已完成",
-                    english: "Codex completed"
+                    english: "Codex completed",
+                    russian: "Codex завершил работу"
                 )
             )
         case .quota:
-            return language.localized(chinese: "Codex 就绪", english: "Codex ready")
+            return language.localized(chinese: "Codex 就绪", english: "Codex ready", russian: "Codex готов")
         }
     }
 
@@ -1697,12 +1708,14 @@ private struct ConversationRowView: View {
         case let .running(startedAt):
             return language.localized(
                 chinese: "运行 \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)",
-                english: "Running \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)"
+                english: "Running \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)",
+                russian: "В работе \(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)"
             )
         case let .completed(completedAt):
             return language.localized(
                 chinese: "已完成 · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)",
-                english: "Completed · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)"
+                english: "Completed · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)",
+                russian: "Завершено · \(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)"
             )
         }
     }
@@ -1849,7 +1862,8 @@ private struct QuotaWindowProgressRow: View {
                 Text(
                     language.localized(
                         chinese: "还剩 \(resetCountdownText)",
-                        english: "\(resetCountdownText) remaining"
+                        english: "\(resetCountdownText) remaining",
+                        russian: "Осталось \(resetCountdownText)"
                     )
                 )
                     .font(.system(size: 10, weight: .regular))
@@ -1865,12 +1879,14 @@ private struct QuotaWindowProgressRow: View {
         guard let resetAt = window?.resetAt else {
             return language.localized(
                 chinese: "重置时间暂不可用",
-                english: "Reset time unavailable"
+                english: "Reset time unavailable",
+                russian: "Время сброса недоступно"
             )
         }
         return language.localized(
             chinese: "重置于 \(NotchText.resetTimestamp(resetAt))",
-            english: "Resets at \(NotchText.resetTimestamp(resetAt))"
+            english: "Resets at \(NotchText.resetTimestamp(resetAt))",
+            russian: "Сброс: \(NotchText.resetTimestamp(resetAt))"
         )
     }
 
@@ -1936,18 +1952,21 @@ private struct ResetScheduleDisclosure: View {
             .accessibilityLabel(
                 language.localized(
                     chinese: "重置次数：\(title)",
-                    english: "Reset credits: \(title)"
+                    english: "Reset credits: \(title)",
+                    russian: "Сбросы лимита: \(title)"
                 )
             )
             .accessibilityHint(
                 credits.isEmpty
                     ? language.localized(
                         chinese: "接口暂未返回重置券明细",
-                        english: "The service has not returned reset-credit details"
+                        english: "The service has not returned reset-credit details",
+                        russian: "Сервис не вернул сведения о сбросах лимита"
                     )
                     : language.localized(
                         chinese: "点击展开或收起对应重置次数的到期时间",
-                        english: "Click to show or hide reset-credit expiry times"
+                        english: "Click to show or hide reset-credit expiry times",
+                        russian: "Нажмите, чтобы показать или скрыть сроки действия сбросов"
                     )
             )
 
@@ -1991,7 +2010,8 @@ private struct ResetScheduleRow: View {
                 credit.expiresAt.map {
                     language.localized(
                         chinese: "还剩 \(NotchText.resetCountdown(resetAt: $0, now: now, language: language))",
-                        english: "\(NotchText.resetCountdown(resetAt: $0, now: now, language: language)) remaining"
+                        english: "\(NotchText.resetCountdown(resetAt: $0, now: now, language: language)) remaining",
+                        russian: "Осталось \(NotchText.resetCountdown(resetAt: $0, now: now, language: language))"
                     )
                 } ?? "—"
             )
@@ -2083,12 +2103,13 @@ enum NotchText {
         case let .rolling(hours):
             return language.localized(
                 chinese: "滚动 \(hours)h",
-                english: "Rolling \(hours)h"
+                english: "Rolling \(hours)h",
+                russian: "За \(hours) ч"
             )
         case .daily:
-            return language.localized(chinese: "每日", english: "Daily")
+            return language.localized(chinese: "每日", english: "Daily", russian: "За день")
         case .weekly:
-            return language.localized(chinese: "每周", english: "Weekly")
+            return language.localized(chinese: "每周", english: "Weekly", russian: "За неделю")
         case let .custom(seconds):
             return formatDuration(seconds: seconds)
         }
@@ -2100,18 +2121,20 @@ enum NotchText {
     ) -> String {
         switch kind {
         case .weekly:
-            return language.localized(chinese: "本周剩余", english: "Weekly remaining")
+            return language.localized(chinese: "本周剩余", english: "Weekly remaining", russian: "Остаток на неделю")
         case let .rolling(hours):
             return language.localized(
                 chinese: "\(hours)h 剩余",
-                english: "\(hours)h remaining"
+                english: "\(hours)h remaining",
+                russian: "Остаток на \(hours) ч"
             )
         case .daily:
-            return language.localized(chinese: "每日剩余", english: "Daily remaining")
+            return language.localized(chinese: "每日剩余", english: "Daily remaining", russian: "Остаток на день")
         case let .custom(seconds):
             return language.localized(
                 chinese: "\(formatDuration(seconds: seconds)) 剩余",
-                english: "\(formatDuration(seconds: seconds)) remaining"
+                english: "\(formatDuration(seconds: seconds)) remaining",
+                russian: "Остаток на \(formatDuration(seconds: seconds))"
             )
         }
     }
@@ -2122,7 +2145,8 @@ enum NotchText {
     ) -> String {
         language.localized(
             chinese: "\(windowLabel(window.kind, language: language))余\(percent(window.remainingPercent))",
-            english: "\(windowLabel(window.kind, language: language)) \(percent(window.remainingPercent)) left"
+            english: "\(windowLabel(window.kind, language: language)) \(percent(window.remainingPercent)) left",
+            russian: "\(windowLabel(window.kind, language: language)): осталось \(percent(window.remainingPercent))"
         )
     }
 
@@ -2141,7 +2165,8 @@ enum NotchText {
         guard let usage else {
             return language.localized(
                 chinese: "额度暂不可用",
-                english: "Quota unavailable"
+                english: "Quota unavailable",
+                russian: "Лимит недоступен"
             )
         }
 
@@ -2159,7 +2184,8 @@ enum NotchText {
         guard !windows.isEmpty else {
             return language.localized(
                 chinese: "额度暂不可用",
-                english: "Quota unavailable"
+                english: "Quota unavailable",
+                russian: "Лимит недоступен"
             )
         }
 
@@ -2178,23 +2204,27 @@ enum NotchText {
         case .weekly:
             return language.localized(
                 chinese: "每周剩余 \(remaining) · 已用 \(used)",
-                english: "Weekly \(remaining) remaining · \(used) used"
+                english: "Weekly \(remaining) remaining · \(used) used",
+                russian: "За неделю: осталось \(remaining) · использовано \(used)"
             )
         case let .rolling(hours):
             return language.localized(
                 chinese: "\(hours)h 剩余 \(remaining) · 已用 \(used)",
-                english: "\(hours)h \(remaining) remaining · \(used) used"
+                english: "\(hours)h \(remaining) remaining · \(used) used",
+                russian: "За \(hours) ч: осталось \(remaining) · использовано \(used)"
             )
         case .daily:
             return language.localized(
                 chinese: "每日剩余 \(remaining) · 已用 \(used)",
-                english: "Daily \(remaining) remaining · \(used) used"
+                english: "Daily \(remaining) remaining · \(used) used",
+                russian: "За день: осталось \(remaining) · использовано \(used)"
             )
         case let .custom(seconds):
             let label = formatDuration(seconds: seconds)
             return language.localized(
                 chinese: "\(label) 剩余 \(remaining) · 已用 \(used)",
-                english: "\(label) \(remaining) remaining · \(used) used"
+                english: "\(label) \(remaining) remaining · \(used) used",
+                russian: "За \(label): осталось \(remaining) · использовано \(used)"
             )
         }
     }
@@ -2204,11 +2234,12 @@ enum NotchText {
         language: AppLanguage = .chinese
     ) -> String {
         guard let credits = usage?.resetCreditsAvailable else {
-            return language.localized(chinese: "重置 —", english: "Resets —")
+            return language.localized(chinese: "重置 —", english: "Resets —", russian: "Сбросы —")
         }
         return language.localized(
             chinese: "可重置 \(credits) 次",
-            english: "\(credits) resets available"
+            english: "\(credits) resets available",
+            russian: "Доступно сбросов: \(credits)"
         )
     }
 
@@ -2218,7 +2249,7 @@ enum NotchText {
     ) -> String {
         let title = credit.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return title.isEmpty
-            ? language.localized(chinese: "使用限额重置", english: "Usage reset")
+            ? language.localized(chinese: "使用限额重置", english: "Usage reset", russian: "Сброс лимита")
             : title
     }
 
@@ -2230,12 +2261,14 @@ enum NotchText {
         guard let expiresAt = credit.expiresAt else {
             return language.localized(
                 chinese: "到期时间暂不可用",
-                english: "Expiry unavailable"
+                english: "Expiry unavailable",
+                russian: "Срок действия недоступен"
             )
         }
         return language.localized(
             chinese: "到期 \(resetTimestamp(expiresAt, timeZone: timeZone))",
-            english: "Expires \(resetTimestamp(expiresAt, timeZone: timeZone))"
+            english: "Expires \(resetTimestamp(expiresAt, timeZone: timeZone))",
+            russian: "До \(resetTimestamp(expiresAt, timeZone: timeZone))"
         )
     }
 
@@ -2246,7 +2279,8 @@ enum NotchText {
     ) -> String {
         language.localized(
             chinese: "\(projectName(cwd: session.cwd, language: language)) · 已运行 \(formatDuration(seconds: max(0, now.timeIntervalSince(session.startedAt))))",
-            english: "\(projectName(cwd: session.cwd, language: language)) · Running for \(formatDuration(seconds: max(0, now.timeIntervalSince(session.startedAt))))"
+            english: "\(projectName(cwd: session.cwd, language: language)) · Running for \(formatDuration(seconds: max(0, now.timeIntervalSince(session.startedAt))))",
+            russian: "\(projectName(cwd: session.cwd, language: language)) · В работе \(formatDuration(seconds: max(0, now.timeIntervalSince(session.startedAt))))"
         )
     }
 
@@ -2255,7 +2289,7 @@ enum NotchText {
         language: AppLanguage = .chinese
     ) -> String {
         guard let cwd, !cwd.isEmpty else {
-            return language.localized(chinese: "未命名任务", english: "Unnamed task")
+            return language.localized(chinese: "未命名任务", english: "Unnamed task", russian: "Задача без названия")
         }
         let name = URL(fileURLWithPath: cwd).lastPathComponent
         return name.isEmpty ? cwd : name
@@ -2268,23 +2302,26 @@ enum NotchText {
     ) -> String {
         let seconds = max(0, Int(now.timeIntervalSince(date).rounded(.down)))
         if seconds < 60 {
-            return language.localized(chinese: "刚刚", english: "just now")
+            return language.localized(chinese: "刚刚", english: "just now", russian: "только что")
         }
         if seconds < 3_600 {
             return language.localized(
                 chinese: "\(seconds / 60)分钟前",
-                english: "\(seconds / 60)m ago"
+                english: "\(seconds / 60)m ago",
+                russian: "\(seconds / 60) мин назад"
             )
         }
         if seconds < 86_400 {
             return language.localized(
                 chinese: "\(seconds / 3_600)小时前",
-                english: "\(seconds / 3_600)h ago"
+                english: "\(seconds / 3_600)h ago",
+                russian: "\(seconds / 3_600) ч назад"
             )
         }
         return language.localized(
             chinese: "\(seconds / 86_400)天前",
-            english: "\(seconds / 86_400)d ago"
+            english: "\(seconds / 86_400)d ago",
+            russian: "\(seconds / 86_400) дн. назад"
         )
     }
 
@@ -2326,7 +2363,8 @@ enum NotchText {
         if days > 0 {
             return language.localized(
                 chinese: String(format: "%d天 %02d:%02d:%02d", days, hours, minutes, seconds),
-                english: String(format: "%dd %02d:%02d:%02d", days, hours, minutes, seconds)
+                english: String(format: "%dd %02d:%02d:%02d", days, hours, minutes, seconds),
+                russian: String(format: "%d дн. %02d:%02d:%02d", days, hours, minutes, seconds)
             )
         }
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)

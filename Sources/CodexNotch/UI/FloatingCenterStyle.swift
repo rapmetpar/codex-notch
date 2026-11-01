@@ -16,10 +16,10 @@ enum FloatingCenterStyle: String, CaseIterable, Identifiable, Sendable {
 
     func title(for language: AppLanguage) -> String {
         switch self {
-        case .signature: return language.localized(chinese: "个人签名", english: "Signature")
-        case .orbit: return language.localized(chinese: "轨道签名", english: "Orbit")
-        case .elapsed: return language.localized(chinese: "运行计时", english: "Elapsed time")
-        case .flow: return language.localized(chinese: "细流光", english: "Light flow")
+        case .signature: return language.localized(chinese: "个人签名", english: "Signature", russian: "Подпись")
+        case .orbit: return language.localized(chinese: "轨道签名", english: "Orbit", russian: "Орбита")
+        case .elapsed: return language.localized(chinese: "运行计时", english: "Elapsed time", russian: "Таймер")
+        case .flow: return language.localized(chinese: "细流光", english: "Light flow", russian: "Световой поток")
         }
     }
 
@@ -28,13 +28,13 @@ enum FloatingCenterStyle: String, CaseIterable, Identifiable, Sendable {
     func explanation(for language: AppLanguage) -> String {
         switch self {
         case .signature:
-            return language.localized(chinese: "显示自定义文字，带有柔和的流光效果。", english: "Displays custom text with a subtle shimmer.")
+            return language.localized(chinese: "显示自定义文字，带有柔和的流光效果。", english: "Displays custom text with a subtle shimmer.", russian: "Показывает ваш текст с мягким переливом.")
         case .orbit:
-            return language.localized(chinese: "任务运行时，文字旁的圆点沿轨道旋转。", english: "A dot orbits beside the text while a task is running.")
+            return language.localized(chinese: "任务运行时，文字旁的圆点沿轨道旋转。", english: "A dot orbits beside the text while a task is running.", russian: "Во время работы рядом с текстом вращается точка.")
         case .elapsed:
-            return language.localized(chinese: "任务运行时显示已用时间，结束后显示自定义文字。", english: "Displays elapsed time while a task is running, then custom text when it ends.")
+            return language.localized(chinese: "任务运行时显示已用时间，结束后显示自定义文字。", english: "Displays elapsed time while a task is running, then custom text when it ends.", russian: "Во время работы показывает таймер, после завершения — ваш текст.")
         case .flow:
-            return language.localized(chinese: "任务运行时播放流光动画，结束后停止。", english: "Displays an animated light while a task is running. The animation stops when the task ends.")
+            return language.localized(chinese: "任务运行时播放流光动画，结束后停止。", english: "Displays an animated light while a task is running. The animation stops when the task ends.", russian: "Во время работы показывает световой поток, после завершения он останавливается.")
         }
     }
 }

@@ -1,4 +1,40 @@
 contracts:
+  - id: LOCALIZATION-001
+    title: Russian is an explicit persisted interface language
+    status: active
+    statement: >-
+      Extend the inherited SETTINGS-PREFERENCES-017 language choice with
+      Russian as ru with the native title Русский alongside the existing
+      en and zh-Hans choices. Keep English as the default and unknown-value
+      fallback, the appLanguage storage key and all existing preference values.
+      Switching languages updates app-owned settings, notch and floating copy,
+      menu-bar fallback, accessibility labels, quota text and time units through
+      the existing live preference flow without changing tasks, quota values,
+      reset instants, window geometry or motion. Every localized call requires
+      all three translations. Russian recent-chat counts use the correct forms
+      for zero through five. Keep exact timestamps, countdown seconds and service
+      supplied reset-credit titles. System and Sparkle dialogs and underlying
+      localized error descriptions retain their own localization behavior.
+    rationale: The user requested localization of CodexNotch in a Russian-language session.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [interface-copy, language-preference, accessibility-copy, time-unit-copy]
+      exclude: [quota-values, task-state, geometry, motion, authentication, releases, third-party-dialogs]
+    examples:
+      positive: Select Русский, see Russian settings and quota labels immediately, restart with ru retained, and switch back to English or Chinese without resetting other preferences.
+      negative: Russian selects Chinese copy, changing language resets recent-chat count, unknown stored values stop falling back to English, or a translation loses reset seconds.
+    guards:
+      - Tests/CodexNotchTests/AppLanguageTests.swift
+      - Tests/CodexNotchTests/NotchTextTests.swift
+      - Tests/CodexNotchTests/NotchRuntimePreferencesTests.swift
+      - docs/decisions/058-russian-localization.md
+      - "manual: select Russian and inspect all settings tabs, compact/expanded states, no-quota text, fallback menu and VoiceOver labels; confirm no clipping on a physical notch and in floating mode, restart and switch back to each original language"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
   - id: NOTCH-HEIGHT-001
     title: Physical notch wings follow the measured camera height
     status: active
@@ -153,7 +189,7 @@ contracts:
 
   - id: CI-VERIFICATION-001
     title: Verify release source with a supported SDK before publication
-    status: active
+    status: superseded
     statement: >-
       CI must explicitly select Xcode 16.2 on macOS 14, record the checked-out
       source SHA and toolchain, and run the existing full verification entry
@@ -179,6 +215,38 @@ contracts:
       - docs/decisions/053-explicit-ci-toolchain.md
       - "manual: confirm successful CI and its checkout SHA before publication"
     supersedes: []
+    superseded_by: CI-VERIFICATION-002
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-002
+    title: Full CI verification uses an available macOS runner
+    status: active
+    statement: >-
+      Preserve CI-VERIFICATION-001 except the retired macOS 14 runner. Run CI
+      on macOS 15 with explicitly selected Xcode 16.2, record the checkout SHA,
+      OS, Xcode, Swift and SDK versions, and run the unchanged full verify.sh
+      entry point. All contracts, tests, release build, resources, bundle and
+      signing checks remain required. Failed, cancelled, pending or missing CI
+      is not success. Keep manual exact-source verification and require both
+      local and exact-source CI success before public release. Application
+      runtime support remains macOS 14 or later.
+    rationale: PR 1 CI was cancelled before checkout during the macOS 14 image brownout preceding its November 2 retirement.
+    source: github-actions-run-41317612859
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner, ci-toolchain, full-verification, release-publication]
+      exclude: [app-behavior, minimum-runtime-version, signing-key, published-archives, branch-protection]
+    examples:
+      positive: CI starts on macOS 15, logs Xcode 16.2 and the intended checkout SHA, and passes every existing verification stage.
+      negative: Continuing on retired macOS 14, using an implicit toolchain, skipping tests to obtain a green result, or treating an infrastructure cancellation as a pass.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/updating.md
+      - docs/decisions/059-supported-ci-runner.md
+      - "manual: confirm a successful GitHub CI run on macOS 15 for the exact PR head before merging"
+    supersedes: [CI-VERIFICATION-001]
     superseded_by: null
     last_verified_commit: null
 

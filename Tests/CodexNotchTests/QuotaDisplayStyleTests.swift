@@ -431,13 +431,14 @@ final class QuotaDisplayStyleTests: XCTestCase {
         )
     }
 
-    func testAppLanguageOffersChineseAndEnglishAndFallsBackToEnglish() {
-        XCTAssertEqual(AppLanguage.allCases, [.chinese, .english])
+    // LOCALIZATION-001 extends the original two-language choice.
+    func testAppLanguageOffersChineseEnglishAndRussianAndFallsBackToEnglish() {
+        XCTAssertEqual(AppLanguage.allCases, [.chinese, .english, .russian])
         XCTAssertEqual(AppLanguage.fromStoredValue("en"), .english)
         XCTAssertEqual(AppLanguage.fromStoredValue("unknown"), .english)
         XCTAssertEqual(AppLanguage.fromStoredValue(nil), .english)
         XCTAssertEqual(
-            AppLanguage.english.localized(chinese: "中文", english: "English"),
+            AppLanguage.english.localized(chinese: "中文", english: "English", russian: "Русский"),
             "English"
         )
     }

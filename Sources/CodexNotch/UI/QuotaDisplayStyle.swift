@@ -16,9 +16,9 @@ enum QuotaDisplayStyle: String, CaseIterable, Identifiable, Sendable {
     func title(for language: AppLanguage) -> String {
         switch self {
         case .clockwiseRing:
-            return language.localized(chinese: "顺时针圆环", english: "Clockwise ring")
+            return language.localized(chinese: "顺时针圆环", english: "Clockwise ring", russian: "Кольцо")
         case .waveBall:
-            return language.localized(chinese: "波浪球", english: "Wave ball")
+            return language.localized(chinese: "波浪球", english: "Wave ball", russian: "Волна")
         }
     }
 
@@ -31,12 +31,14 @@ enum QuotaDisplayStyle: String, CaseIterable, Identifiable, Sendable {
         case .clockwiseRing:
             return language.localized(
                 chinese: "缺口从12点顺时针展开；运行时渐变流动",
-                english: "The gap starts at 12 o'clock; the gradient flows while running"
+                english: "The gap starts at 12 o'clock; the gradient flows while running",
+                russian: "Разрыв сверху; градиент движется во время работы"
             )
         case .waveBall:
             return language.localized(
                 chinese: "任务运行时液面轻微起伏",
-                english: "The liquid level gently moves while running"
+                english: "The liquid level gently moves while running",
+                russian: "Уровень плавно колеблется во время работы"
             )
         }
     }

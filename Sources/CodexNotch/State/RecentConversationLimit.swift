@@ -20,8 +20,17 @@ enum RecentConversationLimit: Int, CaseIterable, Identifiable, Sendable {
     func title(for language: AppLanguage) -> String {
         language.localized(
             chinese: "\(rawValue) 条",
-            english: rawValue == 1 ? "1 conversation" : "\(rawValue) conversations"
+            english: rawValue == 1 ? "1 conversation" : "\(rawValue) conversations",
+            russian: russianConversationCount
         )
+    }
+
+    private var russianConversationCount: String {
+        switch self {
+        case .one: return "1 чат"
+        case .two, .three, .four: return "\(rawValue) чата"
+        case .none, .five: return "\(rawValue) чатов"
+        }
     }
 
     static func fromStoredValue(_ rawValue: Int) -> RecentConversationLimit {

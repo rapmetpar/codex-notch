@@ -51,7 +51,7 @@ struct FloatingCenterContent: View {
             case .elapsed:
                 if let elapsed = FloatingCenterText.elapsedText(activity: activity, startedAt: startedAt, now: now) {
                     HStack(spacing: 6) {
-                        Text(language.localized(chinese: "运行", english: "RUN"))
+                        Text(language.localized(chinese: "运行", english: "RUN", russian: "ИДЁТ"))
                             .font(.system(size: 8.5, weight: .medium))
                             .foregroundStyle(color.opacity(0.85))
                         Text(elapsed)

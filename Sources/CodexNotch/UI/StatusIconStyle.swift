@@ -21,7 +21,7 @@ enum StatusIconStyle: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .codex: return "Codex"
         case .chatGPT: return "ChatGPT"
-        case .off: return language.localized(chinese: "关闭", english: "Off")
+        case .off: return language.localized(chinese: "关闭", english: "Off", russian: "Выкл.")
         }
     }
 
