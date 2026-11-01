@@ -3221,3 +3221,40 @@ contracts:
     supersedes: [CONVERSATION-STATUS-003, ACTIVITY-STATE-008]
     superseded_by: null
     last_verified_commit: null
+  - id: PET-LIBRARY-001
+    title: Explicit local pet imports remain portable private and atomic
+    status: active
+    statement: >-
+      Import a user-selected directory package with schemaVersion 1 into
+      app-owned Application Support/CodexNotch/PetLibrary. Expose stable unique
+      IDs, plain names, owned atlas URLs and explicit standard v1/v2 metadata
+      independently from renderer or UI. Validate safe relative paths without
+      symbolic links, bounded manifest/count/file/total bytes, PNG/WebP MIME,
+      complete single-image decode, exact 1536x1872 or 1536x2288 dimensions,
+      192x208 cells and exact standard nine-clip timings. Reject malformed or
+      unsupported packages without changing prior library or selection. Copy
+      only listed atlas bytes and known manifest fields, no URLs or source
+      paths. Atomically commit a whole generation and persist only an optional
+      selected stable ID; import defaults off, preserves a still-present choice
+      and clears an absent choice. Restart after source deletion still works.
+      Use exported local bytes only, without network/authentication, collection
+      mutation, other-app bundles, private account inventory or personal assets
+      in universal source. Preserve all existing quota/status/settings/geometry
+      behavior; runtime compatibility does not claim artistic authoring QA.
+    rationale: The user requested all compatible exported pets while keeping their personal collection outside public source and independent of the native account service.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [local-pet-catalog, atlas-metadata, directory-import, selection-persistence, import-validation]
+      exclude: [pet-rendering, island-ui, collection-service, network, authentication, geometry, quota, releases]
+    examples:
+      positive: Import v1 and v2, select a stable ID, remove the original directory and restart with the same owned atlas and selection; reimport a renamed entry without losing its choice.
+      negative: A traversal or symlink reads outside the package, bad dimensions replace a working library, duplicate IDs alias pets, source deletion breaks display or imports silently activate a pet.
+    guards:
+      - Tests/CodexNotchTests/PetLibraryStoreTests.swift
+      - docs/decisions/062-local-pet-library.md
+      - "manual: after scene integration import a directory in Settings, restart after moving the source, test rejection feedback and verify rendering/motion/camera clearance on real hardware"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
