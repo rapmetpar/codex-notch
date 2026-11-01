@@ -117,7 +117,7 @@ final class NativeConversationReadTests: XCTestCase {
             local: ["thread": ConversationReadReceipt(completion())]), .viewed)
     }
 
-    func testNativeReadDoesNotChangeCompactCompletionHistoryOrderOrLimits() {
+    func testNativeReadPreservesCompactCompletionAndUsesCategoryOrderWithinLimits() {
         let first = completion()
         let second = completion(thread: "older")
         var input = NotchPresentationInput(now: now, isChatGPTFrontmost: false,
@@ -129,9 +129,41 @@ final class NativeConversationReadTests: XCTestCase {
             activeSessions: [], recentCompletions: [first, second], usage: nil, isHovered: true,
             nativeReadReceipts: input.nativeReadReceipts)
         guard case let .expanded(content) = NotchPresentationReducer.reduce(expanded) else { return XCTFail("Expected expanded") }
-        XCTAssertEqual(content.conversations.map(\.threadID), ["thread", "older"])
-        XCTAssertEqual(content.conversations.map(\.attention), [.viewed, .unread])
+        XCTAssertEqual(content.conversations.map(\.threadID), ["older", "thread"])
+        XCTAssertEqual(content.conversations.map(\.attention), [.unread, .viewed])
         XCTAssertTrue(content.limitingRecentConversations(to: .none).conversations.isEmpty)
+    }
+
+    func testNativeReadReclassifiesBeforeDisplayLimitAndRespectsCustomOrder() throws {
+        let db = try Database()
+        try db.receipt("newest")
+        let newest = completion(thread: "newest")
+        let older = CompletedSession(session: completion(thread: "older").session,
+                                     completedAt: now.addingTimeInterval(-60))
+        let native = db.reader.receipts(for: ["newest", "older"])
+        var completions = [newest, older]
+        var order = ConversationCategoryOrder.defaultOrder
+        func visible() -> [ConversationSummary] {
+            let input = NotchPresentationInput(now: now, isChatGPTFrontmost: false,
+                activeSessions: [], recentCompletions: completions, usage: nil,
+                isHovered: true, nativeReadReceipts: native, conversationCategoryOrder: order)
+            guard case let .expanded(content) = NotchPresentationReducer.reduce(input) else { return [] }
+            return content.limitingRecentConversations(to: .one).conversations
+        }
+        XCTAssertEqual(visible().map(\.threadID), ["older"], "Native read moves newest into Viewed before limiting")
+        XCTAssertEqual(visible().map(\.attention), [.unread])
+        order = .viewedUnreadRunning
+        XCTAssertEqual(visible().map(\.threadID), ["newest"], "Custom order uses the same native receipt")
+        XCTAssertEqual(visible().map(\.attention), [.viewed])
+        completions = [completion(thread: "newest", turn: "turn-2"), older]
+        XCTAssertEqual(visible().map(\.threadID), ["newest"])
+        XCTAssertEqual(visible().map(\.attention), [.unread], "Previous native read cannot hide a new answer")
+        let compact = NotchPresentationInput(now: now, isChatGPTFrontmost: false,
+            activeSessions: [newest.session], recentCompletions: completions, usage: nil,
+            isHovered: false, nativeReadReceipts: native, conversationCategoryOrder: order)
+        guard case .workingCompact = NotchPresentationReducer.reduce(compact) else {
+            return XCTFail("Custom order and native read must preserve compact running priority")
+        }
     }
 
     func testReaderObservesWALCommitsAndClearsRemovedReceiptsWithoutRecreation() throws {

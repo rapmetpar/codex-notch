@@ -75,3 +75,12 @@ ran outside the restricted execution sandbox; no project scripts or regression
 checks were weakened. No application was installed or launched. Verification
 covers this isolated baseline plus the order feature; the combined native-read
 integration must run its own full verification.
+
+## Combined read and order integration
+
+CONVERSATION-ORDER-001 inherits native receipt semantics from
+CONVERSATION-STATUS-003 and supersedes only its list ordering. The earlier native
+read guard now expects unread before viewed while retaining compact-state and
+zero-limit assertions. A combined SQLite-backed guard checks native read
+reclassification before a one-row limit, custom Viewed-first order, a new turn
+with a stale receipt, and compact running priority.
