@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [ACTIVITY-STATE-007]
 supersedes: []
-superseded_by: null
+superseded_by: 059-scrollable-recent-chats
 owner: project-maintainer
 created_at: 2026-09-14
 ---

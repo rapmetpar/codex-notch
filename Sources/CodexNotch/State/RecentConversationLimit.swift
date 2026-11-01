@@ -7,6 +7,23 @@ enum RecentConversationLimit: Int, CaseIterable, Identifiable, Sendable {
     case three = 3
     case four = 4
     case five = 5
+    case six = 6
+    case seven = 7
+    case eight = 8
+    case nine = 9
+    case ten = 10
+    case eleven = 11
+    case twelve = 12
+    case thirteen = 13
+    case fourteen = 14
+    case fifteen = 15
+    case sixteen = 16
+    case seventeen = 17
+    case eighteen = 18
+    case nineteen = 19
+    case twenty = 20
+
+    static let maximumCount = RecentConversationLimit.twenty.rawValue
 
     static let storageKey = "recentConversationLimit"
     static let defaultLimit: RecentConversationLimit = .two
@@ -26,11 +43,17 @@ enum RecentConversationLimit: Int, CaseIterable, Identifiable, Sendable {
     }
 
     private var russianConversationCount: String {
-        switch self {
-        case .one: return "1 чат"
-        case .two, .three, .four: return "\(rawValue) чата"
-        case .none, .five: return "\(rawValue) чатов"
+        let suffix: String
+        if (11...14).contains(rawValue % 100) {
+            suffix = "чатов"
+        } else {
+            switch rawValue % 10 {
+            case 1: suffix = "чат"
+            case 2...4: suffix = "чата"
+            default: suffix = "чатов"
+            }
         }
+        return "\(rawValue) \(suffix)"
     }
 
     static func fromStoredValue(_ rawValue: Int) -> RecentConversationLimit {

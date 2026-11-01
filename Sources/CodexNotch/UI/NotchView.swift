@@ -1490,19 +1490,14 @@ private struct ExpandedNotchView: View {
 
                 Spacer(minLength: 8)
 
-                VStack(spacing: 0) {
-                    ForEach(
-                        Array(content.conversations.enumerated()),
-                        id: \.offset
-                    ) { _, conversation in
-                        ConversationRowView(
-                            conversation: conversation,
-                            isPrimary: conversation.threadID == content.sessions.first?.threadID,
-                            now: now,
-                            language: language,
-                            action: { onOpenThread(conversation.threadID) }
-                        )
+                if content.conversations.count > NotchExpandedLayout.maximumVisibleConversations {
+                    ScrollView(.vertical) {
+                        conversationRows
                     }
+                    .frame(height: CGFloat(NotchExpandedLayout.maximumVisibleConversations)
+                        * NotchExpandedLayout.conversationRowHeight)
+                } else {
+                    conversationRows
                 }
             }
 
@@ -1580,6 +1575,20 @@ private struct ExpandedNotchView: View {
         .padding(.top, expandedContentTopInset)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var conversationRows: some View {
+        VStack(spacing: 0) {
+            ForEach(content.conversations, id: \.threadID) { conversation in
+                ConversationRowView(
+                    conversation: conversation,
+                    isPrimary: conversation.threadID == content.sessions.first?.threadID,
+                    now: now,
+                    language: language,
+                    action: { onOpenThread(conversation.threadID) }
+                )
+            }
+        }
     }
 
     private var displayOnLabel: String {

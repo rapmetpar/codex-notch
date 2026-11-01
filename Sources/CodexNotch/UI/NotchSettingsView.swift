@@ -107,9 +107,9 @@ struct NotchSettingsView: View {
                 Text(appLanguage.localized(chinese: "日常使用", english: "Everyday use", russian: "Общие настройки"))
             } footer: {
                 Text(appLanguage.localized(
-                    chinese: "将指针移至屏幕顶部可查看最近任务。设为 0 时隐藏列表。",
-                    english: "Hover over CodexNotch at the top of the screen to view recent tasks. Set to 0 to hide the list.",
-                    russian: "Наведите указатель на CodexNotch вверху экрана, чтобы увидеть недавние задачи. Значение 0 скрывает список."
+                    chinese: "将指针移至屏幕顶部可查看最近任务。超过 5 条时可滚动查看，设为 0 时隐藏列表。",
+                    english: "Hover over CodexNotch to view recent tasks. Scroll to see more than 5. Set to 0 to hide the list.",
+                    russian: "Наведите указатель на CodexNotch, чтобы увидеть недавние чаты. Если их больше 5, прокрутите список. Значение 0 скрывает список."
                 ))
             }
 

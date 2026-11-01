@@ -160,6 +160,21 @@ final class NotchGeometryTests: XCTestCase {
         XCTAssertEqual(layout.expandedFrame.maxY, 982, accuracy: 0.1)
     }
 
+    func testTwentyChatsKeepTheFiveRowCardHeight() {
+        for hasFiveHourWindow in [false, true] {
+            for resetCreditCount in [0, 2] {
+                XCTAssertEqual(
+                    NotchExpandedLayout.taskContentSize(conversationCount: 20,
+                        isResetScheduleExpanded: true, resetCreditCount: resetCreditCount,
+                        hasFiveHourWindow: hasFiveHourWindow),
+                    NotchExpandedLayout.taskContentSize(conversationCount: 5,
+                        isResetScheduleExpanded: true, resetCreditCount: resetCreditCount,
+                        hasFiveHourWindow: hasFiveHourWindow)
+                )
+            }
+        }
+    }
+
     func testConversationCountOnlyExtendsTheCardBelowTheNotchAnchor() {
         let metrics = NotchScreenMetrics(
             frame: NSRect(x: 0, y: 0, width: 1512, height: 982),

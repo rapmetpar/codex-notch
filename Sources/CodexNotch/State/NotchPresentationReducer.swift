@@ -56,7 +56,7 @@ enum NotchPresentationReducer {
             // Preserve enough data for the user's display preference. The
             // coordinator applies that preference immediately before render.
             conversations: Array(
-                conversations.prefix(RecentConversationLimit.five.rawValue)
+                conversations.prefix(RecentConversationLimit.maximumCount)
             ),
             headerConversation: conversations.first,
             usage: input.usage

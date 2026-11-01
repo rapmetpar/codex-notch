@@ -45,7 +45,7 @@ final class RecentConversationHistoryTests: XCTestCase {
         let root = try temporaryRoot()
         defer { try? FileManager.default.removeItem(at: root) }
         var files: [URL] = []
-        for index in 0..<8 {
+        for index in 0..<23 {
             files.append(try writeRollout(root: root, name: "history-\(index)", thread: "thread-\(index)", daysAgo: 3 + index))
         }
         let reader = HistoryCountingReader()
@@ -53,33 +53,33 @@ final class RecentConversationHistoryTests: XCTestCase {
         let monitor = RolloutActivityMonitor(rootURL: root, store: store, reader: reader)
         monitor.start()
         defer { monitor.stop() }
-        _ = await waitForHistory(store, count: 5)
+        _ = await waitForHistory(store, count: 20)
         monitor.rescan()
         try await Task.sleep(nanoseconds: 250_000_000)
-        XCTAssertEqual(reader.reads, 5, "Do not parse older logs or reread unchanged history")
+        XCTAssertEqual(reader.reads, 20, "Do not parse older logs or reread unchanged history")
 
         // Delayed file notifications can include older files skipped at startup.
         // Exercise this deterministically instead of depending on FSEvents timing.
         monitor.filesDidChange(files)
         try await Task.sleep(nanoseconds: 250_000_000)
-        XCTAssertEqual(reader.reads, 5, "File notifications must preserve bounded discovery")
+        XCTAssertEqual(reader.reads, 20, "File notifications must preserve bounded discovery")
 
         try FileManager.default.removeItem(at: files[0])
         monitor.filesDidChange([files[0]])
         monitor.rescan()
         var snapshot = await store.snapshot()
-        for _ in 0..<100 where snapshot.recentCompletions.last?.session.threadID != "thread-5" {
+        for _ in 0..<100 where snapshot.recentCompletions.last?.session.threadID != "thread-20" {
             try await Task.sleep(nanoseconds: 20_000_000)
             snapshot = await store.snapshot()
         }
-        XCTAssertEqual(snapshot.recentCompletions.map(\.session.threadID), (1...5).map { "thread-\($0)" })
-        XCTAssertEqual(reader.reads, 6, "Backfill should only read the next older rollout")
+        XCTAssertEqual(snapshot.recentCompletions.map(\.session.threadID), (1...20).map { "thread-\($0)" })
+        XCTAssertEqual(reader.reads, 21, "Backfill should only read the next older rollout")
     }
 
     func testRecentlyTouchedOldLogDoesNotDisplaceNewerConversations() async throws {
         let root = try temporaryRoot()
         defer { try? FileManager.default.removeItem(at: root) }
-        for index in 0..<6 {
+        for index in 0..<21 {
             try writeRollout(root: root, name: "history-\(index)", thread: "thread-\(index)", daysAgo: 3 + index)
         }
         let oldLog = try writeRollout(root: root, name: "touched", thread: "ancient", daysAgo: 365)
@@ -89,14 +89,42 @@ final class RecentConversationHistoryTests: XCTestCase {
         let monitor = RolloutActivityMonitor(rootURL: root, store: store, reader: reader)
         monitor.start()
         defer { monitor.stop() }
-        let snapshot = await waitForHistory(store, count: 6)
+        let snapshot = await waitForHistory(store, count: 21)
         let state = NotchPresentationReducer.reduce(NotchPresentationInput(
             now: .now, isChatGPTFrontmost: false, activeSessions: snapshot.activeSessions,
             recentCompletions: snapshot.recentCompletions, usage: nil, isHovered: true
         )).limitingRecentConversations(to: .five)
         guard case let .expanded(content) = state else { return XCTFail("Expected expanded history") }
         XCTAssertEqual(content.conversations.map(\.threadID), (0..<5).map { "thread-\($0)" })
-        XCTAssertEqual(reader.reads, 6)
+        XCTAssertEqual(reader.reads, 21)
+    }
+
+    func testRestartLoadsTwentyDistinctChatsAndKeepsDiscoveryBounded() async throws {
+        let root = try temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        for index in 0..<23 {
+            try writeRollout(root: root, name: "history-\(index)", thread: "thread-\(index)", daysAgo: 3 + index)
+        }
+        try writeRollout(root: root, name: "child", thread: "child", daysAgo: 1, subagent: true)
+        try writeRollout(root: root, name: "unfinished", thread: "unfinished", daysAgo: 2, complete: false)
+        try writeRollout(root: root, name: "duplicate", thread: "thread-0", daysAgo: 4)
+        for _ in 0..<2 {
+            let store = ActiveSessionStore()
+            let reader = HistoryCountingReader()
+            let monitor = RolloutActivityMonitor(rootURL: root, store: store, reader: reader)
+            monitor.start()
+            let snapshot = await waitForHistory(store, count: 20)
+            monitor.stop()
+            XCTAssertTrue(snapshot.activeSessions.isEmpty)
+            XCTAssertEqual(snapshot.recentCompletions.map(\.session.threadID), (0..<20).map { "thread-\($0)" })
+            XCTAssertEqual(reader.reads, 23, "Only twenty history rows plus the child, stale task and duplicate should be read")
+            let state = NotchPresentationReducer.reduce(NotchPresentationInput(
+                now: .now, isChatGPTFrontmost: false, activeSessions: snapshot.activeSessions,
+                recentCompletions: snapshot.recentCompletions, usage: nil, isHovered: true
+            ))
+            guard case let .expanded(content) = state else { return XCTFail("Expected expanded history") }
+            XCTAssertEqual(content.conversations.count, 20)
+        }
     }
 
     private func temporaryRoot() throws -> URL {

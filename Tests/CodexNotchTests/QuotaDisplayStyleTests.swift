@@ -409,11 +409,17 @@ final class QuotaDisplayStyleTests: XCTestCase {
         )
     }
 
-    func testRecentConversationLimitOffersZeroThroughFiveAndFallsBackToTwo() {
+    func testRecentConversationLimitOffersZeroThroughTwentyAndFallsBackToTwo() {
         XCTAssertEqual(
             RecentConversationLimit.allCases.map(\.rawValue),
-            [0, 1, 2, 3, 4, 5]
+            Array(0...20)
         )
+        // ACTIVITY-STATE-008 supersedes the old five-chat ceiling.
+        for count in 0...20 {
+            XCTAssertEqual(RecentConversationLimit.fromStoredValue(count).rawValue, count)
+        }
+        XCTAssertEqual(RecentConversationLimit.fromStoredValue(-1), .two)
+        XCTAssertEqual(RecentConversationLimit.fromStoredValue(21), .two)
         XCTAssertEqual(
             RecentConversationLimit.fromStoredValue(99),
             .two

@@ -39,7 +39,7 @@ open dist/CodexNotch.app
 
 - The current ChatGPT/Codex app has bundle identifier `com.openai.codex`; `com.openai.chatgpt.classic` is Classic and must not be treated as the current target.
 - Quota comes from the local Codex/ChatGPT login state. Never commit authentication files, access tokens, or any private `~/.codex` content.
-- Session activity comes from local rollout/session logs. Recent conversations do not expire by age; show the latest configured number (0–5). The six-hour stale fallback applies only to unfinished tasks. See `ACTIVITY-STATE-007`.
+- Session activity comes from local rollout/session logs. Recent conversations do not expire by age; show the latest configured number (0–20). The six-hour stale fallback applies only to unfinished tasks. See `ACTIVITY-STATE-007`.
 - An active task always shows the running state. With no active task but a recent completion, the compact notch remains in the completed state with a green check; a new task immediately switches back to the running animation.
 
 ## Confirmed Visual and Interaction Constraints
@@ -51,7 +51,7 @@ open dist/CodexNotch.app
 - Expansion intentionally follows Atoll's layered approach: `NotchWindowController` prepares the final transparent canvas once, and SwiftUI expands the visible island inside that canvas. Do not restore the old frame-per-frame `NSPanel` resizing approach; it was not smooth and once caused crashes during SwiftUI text layout.
 - Reclaim the transparent canvas after collapse so it does not intercept mouse events outside the compact notch.
 - The running state uses a blue ChatGPT visual echo on the left; the completed state uses one green echo and a clear green checkmark. Preserve static state cues when motion is reduced.
-- The expanded card shows weekly quota, the exact reset time, and recent conversations. Settings control the language (English by default) and the number of recent conversations (0–5); 0 hides that section, and the Settings window must be able to come to the front automatically.
+- The expanded card shows weekly quota, the exact reset time, and recent conversations. Settings control the language (English by default) and the number of recent conversations (0–20); 0 hides that section, and the Settings window must be able to come to the front automatically.
 
 ## User Collaboration Preferences
 

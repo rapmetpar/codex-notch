@@ -149,6 +149,7 @@ enum NotchExpandedLayout {
     static let twoConversationContentHeight: CGFloat = 221
         + resetScheduleControlHeight
         + settingsFooterHeight
+    static let maximumVisibleConversations = 5
     static let conversationRowHeight: CGFloat = 40
     static let conversationSeparatorHeight: CGFloat = 0.5
     static let resetScheduleRowHeight: CGFloat = 34
@@ -180,7 +181,7 @@ enum NotchExpandedLayout {
         resetCreditCount: Int = 0,
         hasFiveHourWindow: Bool = false
     ) -> CGFloat {
-        let count = max(1, conversationCount)
+        let count = min(maximumVisibleConversations, max(1, conversationCount))
         return twoConversationContentHeight
             + CGFloat(count - 2)
             * (conversationRowHeight + conversationSeparatorHeight)

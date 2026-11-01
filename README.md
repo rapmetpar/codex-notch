@@ -111,7 +111,7 @@ Hover over the physical notch and use **Settings** at the lower-right of the exp
 - Switch between the clockwise quota ring and wave ball
 - Choose a floating-bar center style and set a signature of up to 12 characters
 - Choose Chinese, English, or Russian for the app interface (English by default)
-- Show 0–5 recent conversations in the expanded card
+- Show 0–20 recent conversations in the expanded card
 - Check for stable updates and download, install, and relaunch inside the app (from 0.2.1)
 - Apply changes immediately and save them locally
 - Start automatically at login when enabled in General
@@ -145,7 +145,7 @@ The usage endpoint is an internal ChatGPT endpoint and its fields may change. If
 <details>
 <summary><strong>Build from source</strong></summary>
 
-Contributors need Xcode 16 or newer and a macOS version supported by that Xcode release. The built app supports macOS 14 or later. CI uses Xcode 16.2 on macOS 15:
+Contributors need Xcode 16 or newer and a macOS version supported by that Xcode release. The built app supports macOS 14 or later. CI uses Xcode 16.2 on macOS 14:
 
 ```sh
 swift test

@@ -189,7 +189,7 @@ contracts:
 
   - id: CI-VERIFICATION-001
     title: Verify release source with a supported SDK before publication
-    status: superseded
+    status: active
     statement: >-
       CI must explicitly select Xcode 16.2 on macOS 14, record the checked-out
       source SHA and toolchain, and run the existing full verification entry
@@ -215,38 +215,6 @@ contracts:
       - docs/decisions/053-explicit-ci-toolchain.md
       - "manual: confirm successful CI and its checkout SHA before publication"
     supersedes: []
-    superseded_by: CI-VERIFICATION-002
-    last_verified_commit: null
-
-  - id: CI-VERIFICATION-002
-    title: Full CI verification uses an available macOS runner
-    status: active
-    statement: >-
-      Preserve CI-VERIFICATION-001 except the retired macOS 14 runner. Run CI
-      on macOS 15 with explicitly selected Xcode 16.2, record the checkout SHA,
-      OS, Xcode, Swift and SDK versions, and run the unchanged full verify.sh
-      entry point. All contracts, tests, release build, resources, bundle and
-      signing checks remain required. Failed, cancelled, pending or missing CI
-      is not success. Keep manual exact-source verification and require both
-      local and exact-source CI success before public release. Application
-      runtime support remains macOS 14 or later.
-    rationale: PR 1 CI was cancelled before checkout during the macOS 14 image brownout preceding its November 2 retirement.
-    source: github-actions-run-41317612859
-    owner: project-maintainer
-    risk: medium
-    scope:
-      include: [ci-runner, ci-toolchain, full-verification, release-publication]
-      exclude: [app-behavior, minimum-runtime-version, signing-key, published-archives, branch-protection]
-    examples:
-      positive: CI starts on macOS 15, logs Xcode 16.2 and the intended checkout SHA, and passes every existing verification stage.
-      negative: Continuing on retired macOS 14, using an implicit toolchain, skipping tests to obtain a green result, or treating an infrastructure cancellation as a pass.
-    guards:
-      - .github/workflows/ci.yml
-      - scripts/verify.sh
-      - docs/updating.md
-      - docs/decisions/059-supported-ci-runner.md
-      - "manual: confirm a successful GitHub CI run on macOS 15 for the exact PR head before merging"
-    supersedes: [CI-VERIFICATION-001]
     superseded_by: null
     last_verified_commit: null
 
@@ -2919,7 +2887,7 @@ contracts:
 
   - id: ACTIVITY-STATE-007
     title: Recent conversations are limited by count, not age
-    status: active
+    status: superseded
     statement: >-
       Preserve ACTIVITY-STATE-006 except its 24-hour completion retention and discovery limit.
       Top-level completed conversations remain eligible regardless of age, including after restart
@@ -2954,5 +2922,46 @@ contracts:
       - docs/decisions/053-count-based-recent-history.md
       - "manual: restart the installed app and switch history between zero, one and five; confirm older local conversations remain available on physical-notch hardware"
     supersedes: [ACTIVITY-STATE-006]
+    superseded_by: ACTIVITY-STATE-008
+    last_verified_commit: null
+
+  - id: ACTIVITY-STATE-008
+    title: Up to twenty recent chats remain reachable in a bounded scrolling card
+    status: active
+    statement: >-
+      Preserve ACTIVITY-STATE-007 except its five-chat ceiling. Settings offers
+      every count from zero through twenty, persists the existing storage key,
+      retains default two and zero hiding, and applies changes live. Extend
+      LOCALIZATION-001 count labels to the full range. Override only inherited
+      five-chat limits in settings contracts. Discover enough distinct completed
+      threads for twenty, using the same metadata cutoff, active window,
+      incremental reads and deletion backfill. Preserve running-first ordering,
+      deduplication, history without age expiry, child exclusion, stale unfinished
+      task rejection, privacy and task navigation. Keep one-to-five-row card sizes;
+      longer lists scroll vertically within a five-row viewport on notch and
+      floating layouts. Quota, reset details and Settings remain outside that
+      viewport. Preserve fixed-canvas downward expansion, compact geometry,
+      collapse hit regions, quota semantics and motion preferences. Do not
+      introduce a persistent history cache or new data sources.
+    rationale: The user requested more chats because the maximum of five is too restrictive.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [recent-conversations, history-discovery, settings, expanded-state, scrolling]
+      exclude: [authentication, quota-semantics, compact-geometry, motion-design, releases]
+    examples:
+      positive: Select twenty, scroll from the newest five to the twentieth older chat, restart with the same setting, and switch to zero without losing quota or task state.
+      negative: Offering twenty but loading only five, growing a twenty-row island offscreen, resetting the existing preference, reading every old log, or consuming history slots with child tasks.
+    guards:
+      - Tests/CodexNotchTests/RecentConversationHistoryTests.swift
+      - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
+      - Tests/CodexNotchTests/QuotaDisplayStyleTests.swift
+      - Tests/CodexNotchTests/AppLanguageTests.swift
+      - Tests/CodexNotchTests/NotchGeometryTests.swift
+      - Tests/CodexNotchTests/RecentConversationScrollTests.swift
+      - docs/decisions/059-scrollable-recent-chats.md
+      - "manual: select twenty, scroll and open the last chat on a physical notch and floating bar; verify downward expansion, collapse hit regions, quotas, reset details, Settings, live limits and restart persistence"
+    supersedes: [ACTIVITY-STATE-007]
     superseded_by: null
     last_verified_commit: null
