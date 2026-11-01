@@ -1015,7 +1015,7 @@ contracts:
       - docs/decisions/045-hover-response-and-shadow.md
       - "manual: record brief hover, full expansion, collapse and rapid reentry on the installed floating bar; confirm physical-notch clearance and Reduce Motion"
     supersedes: [NOTCH-READABILITY-007]
-    superseded_by: NOTCH-LEFT-001
+    superseded_by: NOTCH-MOTION-009
     last_verified_commit: null
 
   - id: SETTINGS-PREFERENCES-018
@@ -3081,5 +3081,50 @@ contracts:
       - docs/decisions/059-custom-colors-and-status-image.md
       - "manual: import/cancel/replace/remove images, change color and reset, restart; inspect all three settings languages, compact/expanded, running/completed/no-quota and motion-off states on physical-notch and floating screens"
     supersedes: [QUOTA-ALIGNMENT-056]
+    superseded_by: null
+    last_verified_commit: null
+  - id: NOTCH-MOTION-009
+    title: Hover transitions ease into motion and preserve landing geometry
+    status: active
+    statement: >-
+      Supersede the opening, closing and compact-hover timing inherited from
+      NOTCH-MOTION-008, including the measured closing curve and pronounced
+      opening rebound from NOTCH-MOTION-005 and NOTCH-MOTION-006. Use a
+      restrained native spring for opening, reentry and expanded resizing.
+      Compact-hover feedback and closing use finite eased curves with zero
+      initial slope so their transparent canvas is promptly reclaimed.
+      Start gently and retain a subtle landing return. Reversing a transition must preserve
+      its visible size and landing bounds; only the latest completed surface
+      animation may release those bounds. Preserve the existing 180ms opening
+      and 120ms closing intent delays, final dimensions, stable-scale detail
+      transitions, typography, shadow, fixed top-center anchor, camera-safe
+      minimum, bounded floating compression, plain AppKit canvas, pre-layout
+      centering and completion-driven frame reclamation with stale-callback
+      rejection. Never resize the panel per animation frame. Preserve
+      SETTINGS-MOTION-021 independent app-switch behavior, compact running and
+      completed cues, hidden recovery, quota/task semantics and all settings.
+    rationale: >-
+      The user reported jerky hover motion. The old closing curve starts with
+      a strong initial velocity and opening has a large rebound. A regression
+      test also reproduced a visible geometry jump when a closing transition
+      dropped the opening landing bounds.
+    source: user-reported-incident
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [hover-motion, surface-retargeting, landing-bounds, animation-fixture]
+      exclude: [visual-redesign, final-geometry, settings, quotas, task-data, releases]
+    examples:
+      positive: A short hover, full opening, closing and rapid reentry move gently from the current visible size, keep the top anchor and return the panel to its exact compact hit area.
+      negative: An initial kick, exaggerated bounce, a size jump on reversal, an old completion clearing current bounds, a moving window or retained invisible hit area.
+    guards:
+      - Tests/CodexNotchTests/NotchCollapseMotionTests.swift
+      - Tests/CodexNotchTests/NotchHoverFeedbackTests.swift
+      - Tests/CodexNotchTests/FloatingCenterTests.swift
+      - Tests/CodexNotchTests/NotchRuntimePreferencesTests.swift
+      - Tests/CodexNotchTests/NotchMotionCaptureTests.swift
+      - docs/decisions/059-continuous-hover-spring.md
+      - "manual: inspect installed opening, closing, brief hover and rapid reentry on a physical notch; confirm camera clearance, stable icons, text, final hit area and the app animation switch"
+    supersedes: [NOTCH-MOTION-008]
     superseded_by: null
     last_verified_commit: null

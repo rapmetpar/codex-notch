@@ -44,3 +44,5 @@ Record decisions here only when they affect active behavior contracts, could be 
 New decisions must include `status`, `contract_ids`, rejected alternatives, and consequences. When a decision changes, retain the old document and point to the new one with `superseded_by`.
 
 - [060: Conversation attention states](060-conversation-attention.md)
+
+- [059: Continuous hover spring](059-continuous-hover-spring.md)

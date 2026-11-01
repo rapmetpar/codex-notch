@@ -14,6 +14,8 @@ final class NotchViewModel: ObservableObject {
     @Published private(set) var animationsEnabled: Bool
     @Published private(set) var surfaceExpansionLimit: CGSize?
     @Published private(set) var isPointerInside = false
+    private var surfaceAnimationIdentifier = UUID()
+    private var isSurfaceAnimationInFlight = false
 
     var onOpenThread: (String) -> Void
     var onActivateChatGPT: () -> Void
@@ -98,14 +100,27 @@ final class NotchViewModel: ObservableObject {
             || self.isResetScheduleExpanded != isResetScheduleExpanded
 
         // A content-height reduction must start at the previous full size.
-        // Keep this ceiling through clock refreshes until another surface move.
-        let nextExpansionLimit = willBeExpanded ? CGSize(
-            width: max(self.surfaceSize.width, surfaceSize.width),
-            height: max(self.surfaceSize.height, surfaceSize.height)
-        ) : nil
+        // Keep this ceiling through clock refreshes and interrupted moves.
+        let nextExpansionLimit: CGSize?
+        if !animationsEnabled || self.layoutMode != layoutMode || state == .hidden {
+            nextExpansionLimit = willBeExpanded ? surfaceSize : nil
+        } else if (!willBeExpanded || isSurfaceAnimationInFlight),
+           let currentLimit = self.surfaceExpansionLimit {
+            nextExpansionLimit = CGSize(
+                width: max(currentLimit.width, self.surfaceSize.width, surfaceSize.width),
+                height: max(currentLimit.height, self.surfaceSize.height, surfaceSize.height)
+            )
+        } else if willBeExpanded {
+            nextExpansionLimit = CGSize(
+                width: max(self.surfaceSize.width, surfaceSize.width),
+                height: max(self.surfaceSize.height, surfaceSize.height)
+            )
+        } else {
+            nextExpansionLimit = nil
+        }
 
         let applyUpdate = {
-            if changesSurface && self.surfaceExpansionLimit != nextExpansionLimit {
+            if (changesSurface || !animationsEnabled) && self.surfaceExpansionLimit != nextExpansionLimit {
                 self.surfaceExpansionLimit = nextExpansionLimit
             }
             if self.state != state { self.state = state }
@@ -131,21 +146,28 @@ final class NotchViewModel: ObservableObject {
             changesSurface: changesSurface,
             animationsEnabled: animationsEnabled
         ) {
-            let expands = surfaceSize.height > self.surfaceSize.height + 0.5
-                || surfaceSize.width > self.surfaceSize.width + 0.5
-                || (isResetScheduleExpanded && !self.isResetScheduleExpanded)
+            let identifier = UUID()
+            surfaceAnimationIdentifier = identifier
+            isSurfaceAnimationInFlight = true
             withAnimation(
-                changesHoverFeedback ? NotchPresentationMotion.hover : NotchPresentationMotion.animation(
-                    forExpanding: expands, isCollapsingCard: wasExpanded && !willBeExpanded
-                ),
+                changesHoverFeedback ? NotchPresentationMotion.hover
+                    : (wasExpanded && !willBeExpanded ? NotchPresentationMotion.collapse : NotchPresentationMotion.surface),
                 completionCriteria: .removed
             ) {
                 applyUpdate()
             } completion: {
+                // Only the latest animation can release the retained bounds
+                // for the next opening. Keep the last ceiling while compact:
+                // clearing it here could still alter a final presented frame.
+                if self.surfaceAnimationIdentifier == identifier {
+                    self.isSurfaceAnimationInFlight = false
+                }
                 onSurfaceAnimationCompleted?()
             }
             return true
         } else if changesSurface || !animationsEnabled {
+            surfaceAnimationIdentifier = UUID()
+            isSurfaceAnimationInFlight = false
             var transaction = Transaction(animation: nil)
             transaction.disablesAnimations = true
             withTransaction(transaction) {
