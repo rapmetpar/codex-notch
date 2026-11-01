@@ -290,10 +290,13 @@ final class PetCompanionIntegrationTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 20_000)
         let session = session(at: now)
         companion.observe(activeSessions: [session], completions: [], isHovered: false, now: now)
-        let layout = NotchGeometry.layout(metrics: compactMetrics(height: 32), companionEnabled: true)
+        let screen = try XCTUnwrap(NSScreen.main)
+        let syntheticLayout = NotchGeometry.layout(metrics: compactMetrics(height: 32), companionEnabled: true)
+        let layout = NativeNotchTestPlacement.centered(syntheticLayout, in: screen.visibleFrame)
+        XCTAssertTrue(screen.visibleFrame.contains(layout.visibleCompactFrame))
         let state = NotchPresentationState.workingCompact(primary: session, count: 1, usage: nil)
         let model = NotchViewModel(state: state, now: now, layoutMode: .notch, cameraSafeAreaInset: 32,
-            compactWidth: layout.compactFrame.width, compactHeight: 32, compactTrailingInset: 42,
+            compactWidth: layout.compactFrame.width, compactHeight: 32, compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: layout.compactFrame.size, animationsEnabled: true)
         let controller = NotchWindowController()
         controller.setRootView(NotchView(model: model, companion: companion).defaultAppStorage(defaults))
@@ -309,7 +312,9 @@ final class PetCompanionIntegrationTests: XCTestCase {
             if panel.occlusionState.contains(.visible) { break }
             try await Task.sleep(for: .milliseconds(50))
         }
-        XCTAssertTrue(panel.occlusionState.contains(.visible))
+        XCTAssertTrue(panel.occlusionState.contains(.visible),
+            "Native playback requires an onscreen window: panel=\(panel.frame), screen=\(screen.visibleFrame), occlusion=\(panel.occlusionState.rawValue)")
+        XCTAssertTrue(screen.visibleFrame.contains(panel.frame))
         let hosting = try XCTUnwrap(panel.contentView?.subviews.first)
         hosting.layoutSubtreeIfNeeded()
         let stage = try XCTUnwrap(descendants(PetCompanionStageView.self, in: hosting).first)
@@ -327,7 +332,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
             XCTAssertEqual(refreshed.beginTime, frames.beginTime)
         }
         model.update(state: state, now: now, layoutMode: .notch, cameraSafeAreaInset: 32,
-            compactWidth: layout.compactFrame.width, compactHeight: 32, compactTrailingInset: 42,
+            compactWidth: layout.compactFrame.width, compactHeight: 32, compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: layout.compactFrame.size, animationsEnabled: false)
         hosting.layoutSubtreeIfNeeded()
         XCTAssertFalse(stage.sprite.animationIsRequested)
