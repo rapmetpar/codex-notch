@@ -9,7 +9,7 @@ last_verified_commit: 0d37196
 
 ## Goals and Adoption Level
 
-CodexNotch uses a lightweight harness with executable acceptance checks. It is a continuously maintained native macOS app with local and GitHub CI verification, but no online service, database migration, or configured branch-protection checks. The harness prevents fixes to notch visuals or the state machine from overwriting confirmed user experience, privacy boundaries, and packaging behavior.
+CodexNotch uses a lightweight harness with executable acceptance checks. It is a continuously maintained native macOS app with local and GitHub CI verification, but no online service or database migration. The personal rapmetpar/codex-notch main branch requires an up-to-date pull request and the GitHub Actions test check, including for administrators; force pushes and branch deletion are disabled. Review approvals are not required for solo maintenance. The harness prevents fixes to notch visuals or the state machine from overwriting confirmed user experience, privacy boundaries, and packaging behavior.
 
 Completion does not mean that the code compiles. Completion must demonstrate that the requested outcome occurred, protected behavior did not regress, historical failures have guards, and any unperformed real-hardware verification is explicitly called out.
 
@@ -97,6 +97,6 @@ Do not use a static screenshot as proof that an animation is correct; describe t
 | Frequent hotspots | `NotchView`, `NotchRuntimeCoordinator`, `NotchWindowController`, `NotchPresentationReducer`, and quota parsing |
 | Current contracts | `docs/contracts/behavior-contracts.yaml` |
 | L3 | Authentication/token handling, privacy data, usage API permissions, and formal public release |
-| CI verification | GitHub CI runs full verification on macOS 15 with Xcode 16.2; release publication requires a successful run for the exact source. Branch-protection checks are not configured. |
+| CI verification | GitHub CI runs full verification on macOS 15 with Xcode 16.2; release publication requires a successful run for the exact source. The personal rapmetpar/codex-notch main branch requires an up-to-date PR and successful GitHub Actions test, including for administrators; no review approvals are required. |
 | Deployment target | None; a release is a locally distributable archive, not automatic deployment |
-| Template sections not adopted | Branch-protection checks, online deployment evidence, canaries, and data migrations; this project has no corresponding runtime or data layer |
+| Template sections not adopted | Online deployment evidence, canaries, and data migrations; this project has no corresponding runtime or data layer |

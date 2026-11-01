@@ -3,7 +3,7 @@ import Foundation
 
 /// One app-owned library and one event ledger, independent of individual SwiftUI mounts.
 final class PetCompanionController: ObservableObject {
-    static let shared = PetCompanionController()
+    static let shared = PetCompanionController(defaults: AppPreferences.store)
     static let revisionKey = "petLibraryRevision.v1"
     @Published private(set) var library = PetLibrarySnapshot.empty
     @Published private(set) var atlas: PetSpriteAtlas?
