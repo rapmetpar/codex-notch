@@ -3500,10 +3500,9 @@ contracts:
     superseded_by: PET-EXPANDED-003
     last_verified_commit: null
 
-
   - id: PET-EXPANDED-003
     title: Expanded islands contain quota and conversations without a companion stage
-    status: active
+    status: superseded
     statement: >-
       Inherit PET-COMPACT-002 and PET-COMPANION-001 except their expanded stage,
       hover transfer and expanded-stage fallback. A selected companion never
@@ -3536,5 +3535,47 @@ contracts:
       - docs/decisions/064-no-expanded-pet-stage.md
       - "manual: selected pet and Off in physical/floating quota-only and grouped cards; inspect quota/reset/footer, no stage or empty gap, downward hover/collapse and reclaimed hit regions; real compact appearance and smoothness require hardware confirmation"
     supersedes: [PET-COMPACT-002]
+    superseded_by: PET-COMPACT-003
+    last_verified_commit: null
+
+  - id: PET-COMPACT-003
+    title: Pet quota and completion share the original compact left slot
+    status: active
+    statement: >-
+      Inherit PET-EXPANDED-003 and PET-COMPACT-002 except its 42pt enlargement, trailing canvas crop,
+      separate quota/status slots, blue running cue and expanded-stage transfer.
+      Restore the pre-pet compact width, camera anchor and hit regions. Center
+      the selected pet, actual five-hour quota and truthful completed check in
+      the same bounded left slot, crossfading with at least four seconds of
+      fully readable quota and pet holds. Never invent absent five-hour data or
+      a completion. Running uses authored pet work and accessible task state,
+      without a blue loading spinner or an extra status slot. Weekly stays in
+      its original right wing. Clock rerenders and value updates do not reset
+      the cadence. Use native opacity fades and at most one low-frequency
+      phase-boundary timer; stop timers and pet motion when hidden, occluded or
+      detached. No per-frame SwiftUI updates, panel resizing or new window.
+      Both app motion off and Reduce Motion select a static quota-first,
+      then completion, then pet fallback; the enclosing button always names
+      actual task state and all available quota values and retains click/hover
+      navigation so expanded details remain accessible. Off restores the old
+      icon preference and crop. Preserve stored settings, private library,
+      history/project order, task truth and quota semantics. Expanded details retain no large companion stage or additional height.
+    rationale: The user's screenshots rejected the separate blue spinner and enlarged island and requested fading indicators at the former left-icon position.
+    source: user-correction
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [compact-shared-slot, native-crossfade, original-compact-geometry, compact-accessibility]
+      exclude: [expanded-detail-layout, pet-artwork, catalog-import, preference-migration, project-grouping, quota-values, release]
+    examples:
+      positive: A running pet fades to a real five-hour value for four seconds then returns in the same rect; completion adds a green check phase and weekly stays fixed.
+      negative: A separate blue spinner remains, a selected pet adds width, clock refresh restarts the pet hold, absent data shows a number, a hidden slot keeps a timer or reduced motion pulses.
+    guards:
+      - Tests/CodexNotchTests/CompactPetGeometryTests.swift
+      - Tests/CodexNotchTests/CompactPetSlotTests.swift
+      - Tests/CodexNotchTests/PetCompanionIntegrationTests.swift
+      - docs/decisions/064-compact-shared-slot.md
+      - "manual: physical camera/wings, tiny pet and quota legibility, actual fade smoothness, running/completed/idle and absent quota, app/system motion switches, click/hover/collapse hit regions"
+    supersedes: [PET-EXPANDED-003]
     superseded_by: null
     last_verified_commit: null

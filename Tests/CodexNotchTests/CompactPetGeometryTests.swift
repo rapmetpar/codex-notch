@@ -14,14 +14,22 @@ final class CompactPetGeometryTests: XCTestCase {
                 y: origin.y + 956 - height, width: 1470 - leftWidth - notchWidth, height: height))
     }
 
-    func testOnlyLeftWingGrowsAndWeeklyCameraHeightAndExpandedBoundsStayAnchored() {
+    func testSelectedPetDoesNotEnlargeOriginalCompactSurface() {
+        for height: CGFloat in [24, 32, 38] {
+            let original = NotchGeometry.layout(metrics: metrics(height: height))
+            let selected = NotchGeometry.layout(metrics: metrics(height: height), companionEnabled: true)
+            XCTAssertEqual(selected.compactFrame, original.compactFrame)
+            XCTAssertEqual(selected.visibleCompactFrame, original.visibleCompactFrame)
+        }
+    }
+
+    func testOriginalCompactGeometryWeeklyCameraHeightAndExpandedBoundsStayAnchored() {
         for height: CGFloat in [24, 28, 32, 38] {
             for origin in [CGPoint.zero, CGPoint(x: -1470, y: 400)] {
                 let metrics = metrics(height: height, origin: origin)
                 let off = NotchGeometry.layout(metrics: metrics)
                 let pet = NotchGeometry.layout(metrics: metrics, companionEnabled: true)
-                XCTAssertEqual(pet.compactTrailingInset, CompactPetWingLayout.extraWidth)
-                XCTAssertEqual(pet.visibleCompactFrame.minX, off.compactFrame.minX - 42)
+                XCTAssertEqual(pet.visibleCompactFrame.minX, off.compactFrame.minX)
                 XCTAssertEqual(pet.visibleCompactFrame.maxX, off.compactFrame.maxX)
                 XCTAssertEqual(pet.compactFrame.midX, off.compactFrame.midX)
                 XCTAssertEqual(pet.compactFrame.height, height)
@@ -42,17 +50,15 @@ final class CompactPetGeometryTests: XCTestCase {
         let pet = NotchGeometry.layout(metrics: metrics, leftIndicatorEnabled: false, companionEnabled: true)
         XCTAssertGreaterThan(hiddenIcon.compactLeadingInset, 0)
         XCTAssertEqual(pet.compactLeadingInset, 0)
-        XCTAssertEqual(pet.compactTrailingInset, 42)
         let restored = NotchGeometry.layout(metrics: metrics, leftIndicatorEnabled: false, companionEnabled: false)
         XCTAssertEqual(restored, hiddenIcon)
     }
 
-    func testUnsafeWidthHeightAndOversizedCompactCanvasFailClosedWithoutMovingOriginalContent() {
+    func testUnusualHeightWidthAndFloatingFallbackDoNotMoveOriginalContent() {
         for metrics in [metrics(height: 0), metrics(height: 20), metrics(leftWidth: 30), metrics(leftWidth: 500, notchWidth: 320)] {
             let original = NotchGeometry.layout(metrics: metrics)
             let requested = NotchGeometry.layout(metrics: metrics, companionEnabled: true)
-            XCTAssertEqual(requested.compactTrailingInset, 0)
-            XCTAssertEqual(requested, original, "Insufficient safe space must retain the original lane, not guess coordinates")
+            XCTAssertEqual(requested, original, "Companion selection must retain original geometry")
         }
         let floating = NotchScreenMetrics(frame: CGRect(x: 0, y: 0, width: 1470, height: 956),
             visibleFrame: CGRect(x: 0, y: 0, width: 1470, height: 924),
@@ -60,18 +66,18 @@ final class CompactPetGeometryTests: XCTestCase {
         XCTAssertEqual(NotchGeometry.layout(metrics: floating, companionEnabled: true), NotchGeometry.layout(metrics: floating))
     }
 
-    func testTrailingCropRemovesBackgroundAndHitRegionOutsideOldWeeklyEdge() {
+    func testOriginalSurfaceAndHitRegionReturnWithoutTrailingCompensation() {
         let layout = NotchGeometry.layout(metrics: metrics(), companionEnabled: true)
         let bounds = CGRect(origin: .zero, size: layout.compactFrame.size)
         let path = NotchSurfaceShape(layoutMode: .notch, shoulderDepth: 6, bottomRadius: 14,
-            trailingInset: layout.compactTrailingInset).path(in: bounds)
-        XCTAssertEqual(path.boundingRect.maxX, bounds.maxX - 42)
-        XCTAssertFalse(path.contains(CGPoint(x: bounds.maxX - 20, y: 16)))
+            leadingInset: layout.compactLeadingInset).path(in: bounds)
+        XCTAssertEqual(path.boundingRect.maxX, bounds.maxX)
+        XCTAssertTrue(path.contains(CGPoint(x: bounds.maxX - 20, y: 16)))
         XCTAssertTrue(path.contains(CGPoint(x: bounds.maxX - 60, y: 16)))
     }
 
     @MainActor
-    func testPanelSettlesToAsymmetricWingAndRejectsStaleCollapseWithoutPerFrameResize() throws {
+    func testPanelSettlesToOriginalCompactAndRejectsStaleCollapseWithoutPerFrameResize() throws {
         _ = NSApplication.shared
         let controller = NotchWindowController()
         controller.setRootView(Color.clear)
@@ -95,7 +101,7 @@ final class CompactPetGeometryTests: XCTestCase {
         controller.finishSurfaceAnimation(identifier: reopened, targetFrame: layout.frame(for: expanded))
         controller.prepare(layout: layout, state: compact, animationsEnabled: false)
         controller.settleFrame(layout: layout, state: compact, animationsEnabled: false)
-        XCTAssertEqual(panel.frame, layout.visibleCompactFrame, "Unused right canvas must stop intercepting the menu bar")
+        XCTAssertEqual(panel.frame, layout.visibleCompactFrame, "Expanded canvas must stop intercepting the menu bar")
         XCTAssertEqual(panel.frame.minX + hosting.frame.midX, layout.centerX, accuracy: 0.01)
     }
 }

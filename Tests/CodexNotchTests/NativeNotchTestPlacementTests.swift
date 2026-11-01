@@ -10,13 +10,13 @@ final class NativeNotchTestPlacementTests: XCTestCase {
         for viewport in viewports {
             // Also covers an uncropped single slot and the original icon-Off
             // crop. Placement must not depend on the superseded wider pet wing.
-            for (leading, trailing): (CGFloat, CGFloat) in [(0, 0), (36, 0), (0, 42)] {
+            for leading: CGFloat in [0, 36] {
                 let source = NotchLayout(mode: .notch, centerX: 570.5,
                     hoverSensorFrame: CGRect(x: 478, y: 1968, width: 185, height: 32),
                     compactFrame: CGRect(x: 400, y: 1968, width: 341, height: 32),
                     quotaExpandedFrame: CGRect(x: 360.5, y: 1740, width: 420, height: 260),
                     expandedFrame: CGRect(x: 360.5, y: 1560, width: 420, height: 440),
-                    compactLeadingInset: leading, compactTrailingInset: trailing)
+                    compactLeadingInset: leading)
                 XCTAssertFalse(viewport.contains(source.visibleCompactFrame), "The original global-coordinate fixture is offscreen")
                 let placed = NativeNotchTestPlacement.centered(source, in: viewport)
                 XCTAssertTrue(viewport.contains(placed.visibleCompactFrame))
@@ -24,7 +24,6 @@ final class NativeNotchTestPlacementTests: XCTestCase {
                 XCTAssertEqual(placed.visibleCompactFrame.midY, viewport.midY)
                 XCTAssertEqual(placed.mode, source.mode)
                 XCTAssertEqual(placed.compactLeadingInset, leading)
-                XCTAssertEqual(placed.compactTrailingInset, trailing)
                 XCTAssertEqual(placed.centerX - placed.compactFrame.minX,
                     source.centerX - source.compactFrame.minX, "Keep the camera/content anchor")
                 let dx = placed.centerX - source.centerX

@@ -696,7 +696,6 @@ final class NotchRuntimeCoordinator {
             compactWidth: layout.compactFrame.width,
             compactHeight: layout.compactFrame.height,
             compactLeadingInset: layout.compactLeadingInset,
-            compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: targetFrame.size,
             isResetScheduleExpanded: isResetScheduleExpanded,
             isPointerInside: isPointerInside,
@@ -741,7 +740,6 @@ final class NotchRuntimeCoordinator {
             compactWidth: layout.compactFrame.width,
             compactHeight: layout.compactFrame.height,
             compactLeadingInset: layout.compactLeadingInset,
-            compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: targetFrame.size,
             isResetScheduleExpanded: false,
             animationsEnabled: false
@@ -777,7 +775,6 @@ final class NotchRuntimeCoordinator {
             compactWidth: layout.compactFrame.width,
             compactHeight: layout.compactFrame.height,
             compactLeadingInset: layout.compactLeadingInset,
-            compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: displayState == .hidden ? targetFrame.size : layout.compactFrame.size,
             isResetScheduleExpanded: false,
             isPointerInside: isPointerInside && displayState != .hidden,

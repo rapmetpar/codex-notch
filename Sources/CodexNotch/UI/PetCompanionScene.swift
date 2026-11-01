@@ -156,9 +156,11 @@ final class PetCompanionStageView: QuotaAnimatedLayerView {
         if changedSize { setAnimationRequested(false) }
         let safe = bounds.insetBy(dx: compact ? 3 : 12, dy: 2)
         let height: CGFloat = compact ? max(0, bounds.height - 4) : 72
+        let fittedHeight = min(height, max(0, safe.height), max(0, safe.width) * 208 / 192)
+        let baseline = compact ? safe.midY + fittedHeight / 2 : safe.maxY
         let sample = PetSpriteMotion.stationary.sample(elapsed: 0, in: safe,
             spriteSize: CGSize(width: height * 192 / 208, height: height),
-            baseline: safe.maxY, startingX: safe.midX)
+            baseline: baseline, startingX: safe.midX)
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         sprite.frame = CGRect(x: sample.center.x - sample.size.width / 2,
@@ -182,7 +184,7 @@ final class PetCompanionStageView: QuotaAnimatedLayerView {
         }
         let safe = bounds.insetBy(dx: compact ? 3 : 12, dy: 2)
         guard let track = motion.track(in: safe, spriteSize: sprite.bounds.size,
-            baseline: safe.maxY, startingX: safe.midX) else { return }
+            baseline: compact ? sprite.frame.maxY : safe.maxY, startingX: safe.midX) else { return }
         let animation = CAKeyframeAnimation(keyPath: "position")
         animation.values = track.samples.map { NSValue(point: $0.center) }
         animation.keyTimes = track.keyTimes.map { NSNumber(value: $0) }

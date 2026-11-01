@@ -16,8 +16,7 @@ enum NativeNotchTestPlacement {
             compactFrame: layout.compactFrame.offsetBy(dx: dx, dy: dy),
             quotaExpandedFrame: layout.quotaExpandedFrame.offsetBy(dx: dx, dy: dy),
             expandedFrame: layout.expandedFrame.offsetBy(dx: dx, dy: dy),
-            compactLeadingInset: layout.compactLeadingInset,
-            compactTrailingInset: layout.compactTrailingInset
+            compactLeadingInset: layout.compactLeadingInset
         )
     }
 }

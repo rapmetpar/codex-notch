@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [PET-EXPANDED-003]
 supersedes: [063-compact-pet-wing]
-superseded_by: null
+superseded_by: 064-compact-shared-slot
 owner: project-maintainer
 created_at: 2026-11-01
 ---

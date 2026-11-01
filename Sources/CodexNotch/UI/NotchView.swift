@@ -9,7 +9,6 @@ final class NotchViewModel: ObservableObject {
     @Published private(set) var compactWidth: CGFloat
     @Published private(set) var compactHeight: CGFloat
     @Published private(set) var compactLeadingInset: CGFloat = 0
-    @Published private(set) var compactTrailingInset: CGFloat = 0
     @Published private(set) var surfaceSize: CGSize
     @Published private(set) var isResetScheduleExpanded = false
     @Published private(set) var animationsEnabled: Bool
@@ -32,7 +31,6 @@ final class NotchViewModel: ObservableObject {
         cameraSafeAreaInset: CGFloat = 0,
         compactWidth: CGFloat = NotchCompactLayout.minimumWidth,
         compactHeight: CGFloat = NotchCompactLayout.height,
-        compactTrailingInset: CGFloat = 0,
         surfaceSize: CGSize = CGSize(
             width: NotchCompactLayout.minimumWidth,
             height: NotchCompactLayout.height
@@ -49,7 +47,6 @@ final class NotchViewModel: ObservableObject {
         self.cameraSafeAreaInset = cameraSafeAreaInset
         self.compactWidth = compactWidth
         self.compactHeight = compactHeight
-        self.compactTrailingInset = compactTrailingInset
         self.surfaceSize = surfaceSize
         self.animationsEnabled = animationsEnabled
         self.surfaceExpansionLimit = Self.isExpanded(state) ? surfaceSize : nil
@@ -68,7 +65,6 @@ final class NotchViewModel: ObservableObject {
         compactWidth: CGFloat = NotchCompactLayout.minimumWidth,
         compactHeight: CGFloat = NotchCompactLayout.height,
         compactLeadingInset: CGFloat = 0,
-        compactTrailingInset: CGFloat = 0,
         surfaceSize: CGSize = CGSize(
             width: NotchCompactLayout.minimumWidth,
             height: NotchCompactLayout.height
@@ -86,7 +82,6 @@ final class NotchViewModel: ObservableObject {
             || self.compactWidth != compactWidth
             || self.compactHeight != compactHeight
             || self.compactLeadingInset != compactLeadingInset
-            || self.compactTrailingInset != compactTrailingInset
             || self.surfaceSize != surfaceSize
             || self.isResetScheduleExpanded != isResetScheduleExpanded
             || self.isPointerInside != isPointerInside
@@ -104,7 +99,6 @@ final class NotchViewModel: ObservableObject {
             || self.compactWidth != compactWidth
             || self.compactHeight != compactHeight
             || self.compactLeadingInset != compactLeadingInset
-            || self.compactTrailingInset != compactTrailingInset
             || self.isResetScheduleExpanded != isResetScheduleExpanded
 
         // A content-height reduction must start at the previous full size.
@@ -140,7 +134,6 @@ final class NotchViewModel: ObservableObject {
             if self.compactWidth != compactWidth { self.compactWidth = compactWidth }
             if self.compactHeight != compactHeight { self.compactHeight = compactHeight }
             if self.compactLeadingInset != compactLeadingInset { self.compactLeadingInset = compactLeadingInset }
-            if self.compactTrailingInset != compactTrailingInset { self.compactTrailingInset = compactTrailingInset }
             if self.surfaceSize != surfaceSize { self.surfaceSize = surfaceSize }
             if self.isResetScheduleExpanded != isResetScheduleExpanded {
                 self.isResetScheduleExpanded = isResetScheduleExpanded
@@ -282,8 +275,7 @@ struct NotchView: View {
             layoutMode: model.layoutMode,
             shoulderDepth: 6,
             bottomRadius: isExpanded ? 22 : 14,
-            leadingInset: isHidden || isExpanded ? 0 : model.compactLeadingInset,
-            trailingInset: isHidden || isExpanded ? 0 : model.compactTrailingInset
+            leadingInset: isHidden || isExpanded ? 0 : model.compactLeadingInset
         )
     }
 
@@ -429,7 +421,7 @@ struct NotchView: View {
                     .transition(motionEnabled ? NotchPresentationMotion.compactReturnTransition : .identity)
             }
         }
-        .environment(\.compactPetWingEnabled, model.layoutMode == .notch && model.compactTrailingInset > 0)
+        .environment(\.compactPetWingEnabled, model.layoutMode == .notch && companion.hasSelectedPet)
         .environment(\.petCompanionContext, companion.atlas.flatMap { atlas in
             companion.library.selectedPet.map { entry in
                 PetCompanionSceneContext(atlas: atlas, name: entry.name, pose: companion.pose, session: companion.sceneSession)
@@ -551,22 +543,20 @@ struct NotchSurfaceShape: Shape {
     var shoulderDepth: CGFloat
     var bottomRadius: CGFloat
     var leadingInset: CGFloat = 0
-    var trailingInset: CGFloat = 0
 
-    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, AnimatablePair<CGFloat, CGFloat>> {
-        get { AnimatablePair(AnimatablePair(shoulderDepth, bottomRadius), AnimatablePair(leadingInset, trailingInset)) }
+    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat> {
+        get { AnimatablePair(AnimatablePair(shoulderDepth, bottomRadius), leadingInset) }
         set {
             shoulderDepth = newValue.first.first
             bottomRadius = newValue.first.second
-            leadingInset = newValue.second.first
-            trailingInset = newValue.second.second
+            leadingInset = newValue.second
         }
     }
 
     func path(in rect: CGRect) -> Path {
         let inset = min(max(0, leadingInset), rect.width)
         let rect = CGRect(x: rect.minX + inset, y: rect.minY,
-                          width: max(0, rect.width - inset - max(0, trailingInset)), height: rect.height)
+                          width: max(0, rect.width - inset), height: rect.height)
         if layoutMode == .floatingBar {
             return NotchAttachedShape(
                 shoulderDepth: 0,
@@ -696,6 +686,7 @@ private struct CompactNotchView: View {
         }
         .buttonStyle(NotchButtonStyle())
         .accessibilityLabel(accessibilityText)
+        .help(accessibilityText)
     }
 
     @ViewBuilder
@@ -733,7 +724,7 @@ private struct CompactNotchView: View {
             HStack(spacing: 0) {
                 compactLeftIndicator
                     .frame(
-                        width: petWingEnabled ? CompactPetWingLayout.laneWidth : NotchCompactLayout.indicatorLaneWidth,
+                        width: NotchCompactLayout.indicatorLaneWidth,
                         height: compactHeight
                     )
 
@@ -749,30 +740,19 @@ private struct CompactNotchView: View {
                     compactHeight: compactHeight
                 )
             }
-            .padding(.trailing, petWingEnabled ? CompactPetWingLayout.extraWidth : 0)
         }
     }
 
     @ViewBuilder
     private var compactLeftIndicator: some View {
         if usesPetWing, let petContext {
-            HStack(spacing: CompactPetWingLayout.spacing) {
-                if let fiveHour = usage?.fiveHourWindow {
-                    CompactQuotaView(window: fiveHour, activity: icon.quotaActivity,
-                        style: quotaDisplayStyle, layoutMode: .notch,
-                        laneWidth: CompactPetWingLayout.quotaWidth, compactHeight: compactHeight)
-                } else {
-                    Color.clear.frame(width: CompactPetWingLayout.quotaWidth, height: compactHeight)
-                }
-                CompactPetWing(context: petContext, activity: icon.quotaActivity,
-                    compactHeight: compactHeight, isExpanded: isExpanded)
-            }
-            .padding(.horizontal, CompactPetWingLayout.padding)
+            CompactPetWing(context: petContext, activity: icon.quotaActivity,
+                fiveHour: usage?.fiveHourWindow, quotaStyle: quotaDisplayStyle,
+                compactHeight: compactHeight)
         } else {
             legacyLeftIndicator
                 .frame(width: layoutMode == .notch ? NotchCompactLayout.indicatorLaneWidth : NotchFloatingBarLayout.appLaneWidth,
                     height: compactHeight)
-                .frame(width: petWingEnabled ? CompactPetWingLayout.laneWidth : nil, alignment: .trailing)
         }
     }
 
@@ -812,6 +792,7 @@ private struct CompactNotchView: View {
 
     private var accessibilityText: String {
         var parts = [title, subtitle]
+        if usesPetWing { parts.insert(CompactPetSlotSemantics.state(icon.quotaActivity, language: language), at: 0) }
         if let usage, !usage.windows.isEmpty {
             parts.append(NotchText.quotaSubtitle(usage: usage, language: language))
         }
@@ -850,7 +831,7 @@ private struct CompactAppIconView: View {
     }
 }
 
-private struct CompactQuotaView: View {
+struct CompactQuotaView: View {
     @Environment(\.quotaAppearance) private var quotaAppearance
     let window: UsageWindow?
     let activity: QuotaRingActivity

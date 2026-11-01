@@ -174,7 +174,6 @@ final class PetCompanionIntegrationTests: XCTestCase {
         let layout = NotchGeometry.layout(metrics: compactMetrics(height: 32), companionEnabled: true)
         let model = NotchViewModel(state: .completedCompact(session(at: now), usage: nil), now: now,
             layoutMode: .notch, cameraSafeAreaInset: 32, compactWidth: layout.compactFrame.width, compactHeight: 32,
-            compactTrailingInset: layout.compactTrailingInset,
             surfaceSize: layout.compactFrame.size, animationsEnabled: false)
         let hosting = NSHostingView(rootView: NotchView(model: model, companion: companion)
             .defaultAppStorage(defaults).frame(width: layout.compactFrame.width, height: 32))
@@ -186,7 +185,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
     }
 
     @MainActor
-    func testCompactPetQuotaAndStatusStaySeparateAcrossMeasuredHeightsAndOff() throws {
+    func testCompactPetQuotaAndCheckShareOriginalSlotAcrossMeasuredHeightsAndOff() throws {
         _ = NSApplication.shared
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: temp) }
@@ -217,7 +216,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
                     companion.observe(activeSessions: stateName == "running" ? [session] : [], completions: [], isHovered: false, now: now)
                     let model = NotchViewModel(state: state, now: now, layoutMode: .notch,
                         cameraSafeAreaInset: height, compactWidth: layout.compactFrame.width, compactHeight: height,
-                        compactTrailingInset: layout.compactTrailingInset, surfaceSize: layout.compactFrame.size,
+                        surfaceSize: layout.compactFrame.size,
                         animationsEnabled: motion)
                     let hosting = NSHostingView(rootView: NotchView(model: model, companion: companion)
                         .defaultAppStorage(defaults).environment(\.displayScale, 2)
@@ -233,33 +232,31 @@ final class PetCompanionIntegrationTests: XCTestCase {
                     XCTAssertGreaterThanOrEqual(pet.minY, 0)
                     XCTAssertLessThanOrEqual(pet.maxY, height)
                     XCTAssertEqual(pet.midY, height / 2, accuracy: 0.01)
-                    XCTAssertEqual(pet.midX, 65, accuracy: 0.01, "Pet stays at the former app-mark center")
+                    XCTAssertEqual(pet.midX, 23, accuracy: 0.01, "Pet stays at the former app-mark center")
                     XCTAssertNil(descendants(StatusMarkEchoLayerView.self, in: hosting).first,
                         "The pet replaces the original status artwork rather than being drawn over it")
-                    let statuses = descendants(CompactPetStatusView.self, in: hosting)
-                    XCTAssertEqual(statuses.count, stateName == "idle" ? 0 : 1)
-                    for status in statuses {
-                        let rect = status.convert(status.bounds, to: hosting)
-                        XCTAssertEqual(rect.width, 12, accuracy: 0.01)
-                        XCTAssertEqual(rect.midY, height / 2, accuracy: 0.01)
-                        XCTAssertLessThanOrEqual(rect.maxX + 4, pet.minX)
-                        XCTAssertFalse(status.status.layerAnimationIsRunning)
-                        let checks = status.status.layer?.sublayers?.compactMap { $0 as? CAShapeLayer } ?? []
-                        XCTAssertEqual(checks.last?.isHidden, stateName == "running")
+                    let slot = try XCTUnwrap(descendants(CompactPetSlotView.self, in: hosting).first)
+                    XCTAssertEqual(slot.pet.frame, slot.quota.frame)
+                    XCTAssertEqual(slot.pet.frame, slot.completion.frame)
+                    XCTAssertEqual(slot.convert(slot.bounds, to: hosting).midX, 23, accuracy: 0.01)
+                    XCTAssertEqual(slot.cycle.contents.contains(.fiveHour), fiveHour)
+                    XCTAssertEqual(slot.cycle.contents.contains(.completed), stateName == "completed")
+                    XCTAssertTrue(descendants(ConversationStatusLayerView.self, in: hosting).isEmpty,
+                        "The compact pet slot cannot mount a loading spinner")
+                    XCTAssertFalse(slot.completion.isHidden == false && stateName != "completed")
+                    if !motion || NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                        XCTAssertEqual(slot.visibleContents, [fiveHour ? .fiveHour : (stateName == "completed" ? .completed : .pet)])
+                        XCTAssertNil(slot.boundaryTimer)
                     }
-                    if motion && stateName == "running" && style == .clockwiseRing {
-                        let gradients = descendants(QuotaGradientLayerView.self, in: hosting)
-                        XCTAssertEqual(gradients.count, fiveHour ? 4 : 2)
-                        for gradient in gradients {
-                            let rect = gradient.convert(gradient.bounds, to: hosting)
-                            if rect.midX < cameraLeft {
-                                XCTAssertEqual(rect.midX, 19, accuracy: 0.01)
-                                XCTAssertLessThanOrEqual(rect.maxX + 4, 34, "Five-hour quota ends before the status slot")
-                            } else {
-                                XCTAssertGreaterThanOrEqual(rect.minX, cameraRight)
-                                XCTAssertEqual(rect.midX, layout.compactFrame.width - 42 - 23, accuracy: 0.01,
-                                    "Weekly quota retains its exact original screen position")
-                            }
+                    let gradients = descendants(QuotaGradientLayerView.self, in: hosting)
+                    for gradient in gradients {
+                        let rect = gradient.convert(gradient.bounds, to: hosting)
+                        if rect.midX < cameraLeft {
+                            XCTAssertEqual(rect.midX, 23, accuracy: 0.01)
+                            XCTAssertLessThanOrEqual(rect.maxX, cameraLeft)
+                        } else {
+                            XCTAssertGreaterThanOrEqual(rect.minX, cameraRight)
+                            XCTAssertEqual(rect.midX, layout.compactFrame.width - 23, accuracy: 0.01)
                         }
                     }
                     try exportRender(hosting, name: "compact-pet-h\(Int(height))-\(stateName)-5h\(fiveHour)-\(style.rawValue)-motion\(motion)")
@@ -269,7 +266,6 @@ final class PetCompanionIntegrationTests: XCTestCase {
         awaitOperation(companion) { companion.select(nil) }
         let restored = NotchGeometry.layout(metrics: compactMetrics(height: 32), leftIndicatorEnabled: false,
             companionEnabled: companion.hasSelectedPet)
-        XCTAssertEqual(restored.compactTrailingInset, 0)
         XCTAssertGreaterThan(restored.compactLeadingInset, 0)
     }
 
@@ -290,13 +286,12 @@ final class PetCompanionIntegrationTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 20_000)
         let session = session(at: now)
         companion.observe(activeSessions: [session], completions: [], isHovered: false, now: now)
-        let screen = try XCTUnwrap(NSScreen.main)
-        let syntheticLayout = NotchGeometry.layout(metrics: compactMetrics(height: 32), companionEnabled: true)
-        let layout = NativeNotchTestPlacement.centered(syntheticLayout, in: screen.visibleFrame)
-        XCTAssertTrue(screen.visibleFrame.contains(layout.visibleCompactFrame))
+        let screen = try XCTUnwrap(NSScreen.main ?? NSScreen.screens.first)
+        let layout = NativeNotchTestPlacement.centered(
+            NotchGeometry.layout(metrics: compactMetrics(height: 32), companionEnabled: true), in: screen.visibleFrame)
         let state = NotchPresentationState.workingCompact(primary: session, count: 1, usage: nil)
         let model = NotchViewModel(state: state, now: now, layoutMode: .notch, cameraSafeAreaInset: 32,
-            compactWidth: layout.compactFrame.width, compactHeight: 32, compactTrailingInset: layout.compactTrailingInset,
+            compactWidth: layout.compactFrame.width, compactHeight: 32,
             surfaceSize: layout.compactFrame.size, animationsEnabled: true)
         let controller = NotchWindowController()
         controller.setRootView(NotchView(model: model, companion: companion).defaultAppStorage(defaults))
@@ -312,8 +307,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
             if panel.occlusionState.contains(.visible) { break }
             try await Task.sleep(for: .milliseconds(50))
         }
-        XCTAssertTrue(panel.occlusionState.contains(.visible),
-            "Native playback requires an onscreen window: panel=\(panel.frame), screen=\(screen.visibleFrame), occlusion=\(panel.occlusionState.rawValue)")
+        XCTAssertTrue(panel.occlusionState.contains(.visible), "Panel \(panel.frame), visible desktop \(screen.visibleFrame), occlusion \(panel.occlusionState.rawValue)")
         XCTAssertTrue(screen.visibleFrame.contains(panel.frame))
         let hosting = try XCTUnwrap(panel.contentView?.subviews.first)
         hosting.layoutSubtreeIfNeeded()
@@ -332,7 +326,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
             XCTAssertEqual(refreshed.beginTime, frames.beginTime)
         }
         model.update(state: state, now: now, layoutMode: .notch, cameraSafeAreaInset: 32,
-            compactWidth: layout.compactFrame.width, compactHeight: 32, compactTrailingInset: layout.compactTrailingInset,
+            compactWidth: layout.compactFrame.width, compactHeight: 32,
             surfaceSize: layout.compactFrame.size, animationsEnabled: false)
         hosting.layoutSubtreeIfNeeded()
         XCTAssertFalse(stage.sprite.animationIsRequested)
@@ -344,7 +338,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
     }
 
     @MainActor
-    func testPhysicalHoverHasNoLargeStageAndOffKeepsWeeklyAnchoredDuringLayoutHandoff() throws {
+    func testPhysicalHoverKeepsOneHeaderPetAndOffKeepsWeeklyAnchoredDuringLayoutHandoff() throws {
         _ = NSApplication.shared
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: temp) }
@@ -365,20 +359,18 @@ final class PetCompanionIntegrationTests: XCTestCase {
         let layout = NotchGeometry.layout(metrics: compactMetrics(height: 32), companionEnabled: true)
         let expanded = NotchPresentationState.expanded(.init(sessions: [session], conversations: [], headerConversation: nil, usage: usage))
         let model = NotchViewModel(state: expanded, now: now, layoutMode: .notch, cameraSafeAreaInset: 32,
-            compactWidth: layout.compactFrame.width, compactHeight: 32, compactTrailingInset: 42,
+            compactWidth: layout.compactFrame.width, compactHeight: 32,
             surfaceSize: CGSize(width: 420, height: 440), animationsEnabled: true)
         let hosting = NSHostingView(rootView: NotchView(model: model, companion: companion)
             .defaultAppStorage(defaults).environment(\.displayScale, 2).frame(width: 420, height: 440))
         hosting.frame = CGRect(x: 0, y: 0, width: 420, height: 440)
         hosting.layoutSubtreeIfNeeded()
         let stages = descendants(PetCompanionStageView.self, in: hosting)
-        // PET-EXPANDED-003 supersedes the old hover-transfer stage.
-        for stage in stages {
-            XCTAssertLessThanOrEqual(stage.bounds.height, 32, "Hover must not mount a large companion scene")
-            XCTAssertLessThanOrEqual(stage.convert(stage.bounds, to: hosting).maxY, 32,
-                "Any compact header companion stays outside the expanded body")
-        }
-        XCTAssertEqual(descendants(CompactPetStatusView.self, in: hosting).count, 1)
+        XCTAssertEqual(stages.count, 1, "The shared compact header owns the only pet after expanded-stage removal")
+        let stage = try XCTUnwrap(stages.first)
+        XCTAssertLessThanOrEqual(stage.bounds.height, 28)
+        XCTAssertLessThanOrEqual(stage.convert(stage.bounds, to: hosting).maxY, 32)
+        XCTAssertEqual(descendants(CompactPetSlotView.self, in: hosting).count, 1)
         try exportRender(hosting, name: "compact-pet-expanded-transfer")
         // Selection publishes before the existing preference observer updates canvas geometry.
         awaitOperation(companion) { companion.select(nil) }
@@ -415,19 +407,21 @@ final class PetCompanionIntegrationTests: XCTestCase {
         let layout = NotchGeometry.layout(metrics: compactMetrics(height: 32), companionEnabled: true)
         for (index, entry) in companion.library.entries.enumerated() {
             awaitOperation(companion) { companion.select(entry.id) }
-            let model = NotchViewModel(state: .completedCompact(session, usage: usage), now: now, layoutMode: .notch,
-                cameraSafeAreaInset: 32, compactWidth: layout.compactFrame.width, compactHeight: 32,
-                compactTrailingInset: 42, surfaceSize: layout.compactFrame.size, animationsEnabled: false)
-            let hosting = NSHostingView(rootView: NotchView(model: model, companion: companion)
-                .defaultAppStorage(defaults).environment(\.displayScale, 2)
-                .frame(width: layout.compactFrame.width, height: 32))
-            hosting.frame = CGRect(origin: .zero, size: layout.compactFrame.size)
-            hosting.layoutSubtreeIfNeeded()
-            let stage = try XCTUnwrap(descendants(PetCompanionStageView.self, in: hosting).first)
-            XCTAssertNotNil(stage.sprite.spriteLayer.contents)
-            XCTAssertEqual(descendants(CompactPetStatusView.self, in: hosting).count, 1)
-            XCTAssertLessThan(stage.sprite.convert(stage.sprite.bounds, to: hosting).maxX, 646 - layout.compactFrame.minX)
-            try exportRender(hosting, name: "compact-original-\(index)-v\(entry.spriteVersion)-completed")
+            for motion in [true, false] {
+                let model = NotchViewModel(state: .completedCompact(session, usage: usage), now: now, layoutMode: .notch,
+                    cameraSafeAreaInset: 32, compactWidth: layout.compactFrame.width, compactHeight: 32,
+                    surfaceSize: layout.compactFrame.size, animationsEnabled: motion)
+                let hosting = NSHostingView(rootView: NotchView(model: model, companion: companion)
+                    .defaultAppStorage(defaults).environment(\.displayScale, 2)
+                    .frame(width: layout.compactFrame.width, height: 32))
+                hosting.frame = CGRect(origin: .zero, size: layout.compactFrame.size)
+                hosting.layoutSubtreeIfNeeded()
+                let stage = try XCTUnwrap(descendants(PetCompanionStageView.self, in: hosting).first)
+                XCTAssertNotNil(stage.sprite.spriteLayer.contents)
+                XCTAssertEqual(descendants(CompactPetSlotView.self, in: hosting).count, 1)
+                XCTAssertLessThan(stage.sprite.convert(stage.sprite.bounds, to: hosting).maxX, 646 - layout.compactFrame.minX)
+                try exportRender(hosting, name: "compact-original-\(index)-v\(entry.spriteVersion)-completed-motion\(motion)")
+            }
         }
     }
 
@@ -480,7 +474,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
                     if expanded {
                         XCTAssertLessThanOrEqual(stages.count, 1, "No duplicate companion scenes")
                     } else {
-                        XCTAssertEqual(stages.count, layout == .floatingBar ? 1 : 0,
+                        XCTAssertEqual(stages.count, 1,
                             "\(layout) \(label) must have exactly the intended safe scene")
                     }
                     for stage in stages {
@@ -497,7 +491,7 @@ final class PetCompanionIntegrationTests: XCTestCase {
                     }
                     if label == "running" || expanded {
                         let gradients = descendants(QuotaGradientLayerView.self, in: hosting)
-                        XCTAssertEqual(gradients.count, motion ? 4 : 0,
+                        XCTAssertEqual(gradients.count, motion ? (layout == .notch ? 2 : 4) : 0,
                             "Both five-hour and weekly rings retain their lanes with a companion")
                         let laneOffset: CGFloat = layout == .notch ? width / 2 - 23 : width / 2 - 8 - 15
                         for gradient in gradients {
