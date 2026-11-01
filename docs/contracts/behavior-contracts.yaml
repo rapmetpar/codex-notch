@@ -327,7 +327,7 @@ contracts:
 
   - id: SETTINGS-MOTION-021
     title: The app animation switch is independent of system Reduce Motion
-    status: active
+    status: superseded
     statement: >-
       Preserve SETTINGS-PREFERENCES-020 and every inherited contract except the
       requirement to gate app animations on system Reduce Motion. Only the
@@ -358,7 +358,7 @@ contracts:
       - docs/decisions/051-independent-animation-switch.md
       - "manual: read both settings panes, toggle the app animation switch and check preview/live motion; system accessibility settings must remain untouched"
     supersedes: [SETTINGS-PREFERENCES-020]
-    superseded_by: null
+    superseded_by: PET-SPRITE-001
     last_verified_commit: null
 
   - id: SETTINGS-PREFERENCES-020
@@ -3221,6 +3221,7 @@ contracts:
     supersedes: [CONVERSATION-STATUS-003, ACTIVITY-STATE-008]
     superseded_by: null
     last_verified_commit: null
+
   - id: PET-LIBRARY-001
     title: Explicit local pet imports remain portable private and atomic
     status: active
@@ -3256,5 +3257,47 @@ contracts:
       - docs/decisions/062-local-pet-library.md
       - "manual: after scene integration import a directory in Settings, restart after moving the source, test rejection feedback and verify rendering/motion/camera clearance on real hardware"
     supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+  - id: PET-SPRITE-001
+    title: Generic native sprites retain authored timing and bounded visible-only playback
+    status: active
+    statement: >-
+      Inherit SETTINGS-MOTION-021 unchanged for all existing app motion, except
+      generic pet playback additionally honors system Reduce Motion. Accept
+      explicit local image URLs or CGImages and validated bounded cell/clip
+      metadata, without catalog, auth, preferences or private artwork in source.
+      Crop full cells at top-left pixel coordinates once; preserve transparency,
+      aspect ratio, orientation and every authored frame hold. Published rows
+      zero through eight use exact standard timing for v2 and explicitly
+      metadata-confirmed legacy v1; never animate unused padding or look poses.
+      Use at most one discrete native contents animation per renderer with a
+      maximum 30 Hz compositor request and zero application frame timers or
+      per-frame SwiftUI state updates. Stop on caller invisibility, hidden
+      ancestry, zero size, window occlusion, detachment, app motion off or Reduce
+      Motion. Keep recognizable authored static pixels with motion off. Retain
+      scene-owned event identity across configure, order, position and view
+      remount; finite events resume elapsed phase without restarting, and consumed
+      history tokens never replay. Bound event memory without replay-enabling
+      eviction. Pure walk/jump sampling retains explicit floor/contact and
+      constrains full cells to a safe scene rect; it never moves a window.
+      Preserve island geometry, quotas, task truth, old status cues, settings,
+      defaults, privacy, history and packaging behavior.
+    rationale: The user requested reusable animated pet playback with real motion and safe lifecycle boundaries.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [pet-sprite-playback, validated-atlas, pet-motion-sampling, pet-motion-gating]
+      exclude: [pet-catalog, account-access, settings-ui, task-policy, island-integration, window-geometry, releases]
+    examples:
+      positive: A finite wave plays exact cells once for a real event, pauses when hidden, resumes without restart and cannot replay after history reopen; a jump returns to its original floor inside its scene.
+      negative: Reconfiguration restarts a celebration, a hidden layer continues scheduling, neighboring cells bleed into a crop, old status animations begin following system Reduce Motion, or movement changes NSPanel geometry.
+    guards:
+      - Tests/CodexNotchTests/PetSpriteTests.swift
+      - Tests/CodexNotchTests/NotchRuntimePreferencesTests.swift
+      - docs/decisions/062-native-pet-sprite-renderer.md
+      - "manual: integrate the companion stage, inspect moving/idle/finite/static states on physical-notch and floating hardware, verify camera clearance and motion switches; sample actual CPU/GPU separately"
+    supersedes: [SETTINGS-MOTION-021]
     superseded_by: null
     last_verified_commit: null
