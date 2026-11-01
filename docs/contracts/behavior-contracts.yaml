@@ -3259,6 +3259,7 @@ contracts:
     supersedes: []
     superseded_by: null
     last_verified_commit: null
+
   - id: PET-SPRITE-001
     title: Generic native sprites retain authored timing and bounded visible-only playback
     status: active
@@ -3299,5 +3300,53 @@ contracts:
       - docs/decisions/062-native-pet-sprite-renderer.md
       - "manual: integrate the companion stage, inspect moving/idle/finite/static states on physical-notch and floating hardware, verify camera clearance and motion switches; sample actual CPU/GPU separately"
     supersedes: [SETTINGS-MOTION-021]
+    superseded_by: null
+    last_verified_commit: null
+  - id: PET-COMPANION-001
+    title: Optional local companions have their own bounded island stage
+    status: active
+    statement: >-
+      Inherit PET-SPRITE-001 and its SETTINGS-MOTION-021 exception; the companion
+      respects BOTH the persisted app switch and system Reduce Motion. Do not
+      change either setting. Companions are Off by default. A validated local
+      library offers every imported ID by name, explicit Off, atomic app-local
+      persistence and EN/RU/ZH Settings. No personal art, collection inventory,
+      signed URLs, credentials or native application bundles enter source.
+      Expanded physical and floating islands allocate a separate 104pt stage
+      plus 8pt spacing below the existing camera/header clearance. Physical
+      compact wings never contain a pet; their quota/status lanes are unchanged.
+      Floating centers add an optional companion style while retaining all old
+      modes and using signature fallback when Off. Off removes extra height.
+      Keep fixed transparent-canvas preparation, downward-only expansion and
+      collapse reclamation. Move only native child layers, never panel frames
+      per frame. Existing one-second runtime observations drive policy; native
+      sprite timing and bounded 30Hz layer motion drive artwork. Running wins;
+      a newly observed actual completion produces one tokenized finite jump.
+      Initial or later-discovered historical completions do not celebrate.
+      Hover greetings require an entry and 30-second cooldown; idle occasionally
+      walks using a shared baseline. Hidden/occluded/detached layers stop.
+      Motion off retains a meaningful static pose without deferred celebration.
+      Neither visibility, focus, hover nor pet selection acknowledges a chat.
+      Preserve native read, history 0-20, category/project grouping seams,
+      weekly/five-hour values, exact reset times and all old status cues.
+    rationale: The user requested living imported companions rather than a replacement status icon.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [pet-settings, local-selection, companion-policy, bounded-companion-stage, floating-center-mode]
+      exclude: [artwork-generation, credentials, native-pet-mutations, project-grouping, read-receipts, quota-semantics, releases]
+    examples:
+      positive: Select an imported companion, see its own expanded stage and optional floating center, observe work and one fresh completion jump, then turn Off and recover the original layout.
+      negative: A pet overlaps the camera/quota, initial history jumps, hover marks a chat Viewed, motion ignores Reduce Motion, or a hidden layer keeps consuming animation work.
+    guards:
+      - Tests/CodexNotchTests/PetCompanionPolicyTests.swift
+      - Tests/CodexNotchTests/PetCompanionIntegrationTests.swift
+      - Tests/CodexNotchTests/FloatingCenterTests.swift
+      - Tests/CodexNotchTests/NotchHeightViewTests.swift
+      - Tests/CodexNotchTests/NotchGeometryTests.swift
+      - docs/decisions/062-pet-companion-stage.md
+      - "manual: select every imported pet and Off; inspect physical camera and quota clearance, downward hover/collapse hit regions, fresh completion/hover cooldown, floating center and all old modes, all languages, system/app motion combinations, restart and actual smoothness"
+    supersedes: []
     superseded_by: null
     last_verified_commit: null

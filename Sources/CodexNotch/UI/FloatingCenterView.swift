@@ -29,6 +29,8 @@ struct FloatingCenterContent: View {
     @Environment(\.notchMotionEnabled) private var motionEnabled
     @Environment(\.notchAppLanguage) private var language
 
+    @Environment(\.petCompanionContext) private var petContext
+
     private var signature: String { FloatingCenterText.displayText(customText) }
     private var color: Color {
         switch activity {
@@ -41,6 +43,11 @@ struct FloatingCenterContent: View {
     var body: some View {
         Group {
             switch style {
+            case .pet:
+                if let petContext {
+                    if !isExpanded { PetCompanionScene(context: petContext, compact: true) }
+                    else { Color.clear }
+                } else { signatureContent }
             case .signature:
                 signatureLabel
             case .orbit:

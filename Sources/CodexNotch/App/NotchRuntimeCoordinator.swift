@@ -244,6 +244,8 @@ final class NotchRuntimeCoordinator {
         guard started else { return }
         guard snapshot != lastSessionSnapshot else {
             viewModel.updateClock(now: now)
+            PetCompanionController.shared.observe(activeSessions: activeSessions, completions: recentCompletions,
+                isHovered: isHovered, now: now)
             refreshTitlesIfNeeded(now: now)
             return
         }
@@ -553,6 +555,8 @@ final class NotchRuntimeCoordinator {
     private func render(now: Date? = nil) {
         let renderDate = now ?? nowProvider()
         let preferences = runtimePreferences
+        PetCompanionController.shared.observe(activeSessions: activeSessions, completions: recentCompletions,
+            isHovered: isHovered, now: renderDate)
         guard let screen = NotchScreenMetrics.preferredScreen() else {
             resetHoverState()
             windowController.hideNotchPanel()
@@ -631,14 +635,14 @@ final class NotchRuntimeCoordinator {
         let layout = NotchGeometry.layout(
             metrics: metrics,
             leftIndicatorEnabled: preferences.leftIndicatorEnabled,
-            quotaExpandedSize: quotaExpandedContentSize(
+            quotaExpandedSize: PetCompanionLayout.addingStage(to: quotaExpandedContentSize(
                 for: displayState,
                 isResetScheduleExpanded: isResetScheduleExpanded
-            ),
-            expandedSize: expandedContentSize(
+            ), enabled: PetCompanionController.shared.hasSelectedPet),
+            expandedSize: PetCompanionLayout.addingStage(to: expandedContentSize(
                 for: displayState,
                 isResetScheduleExpanded: isResetScheduleExpanded
-            )
+            ), enabled: PetCompanionController.shared.hasSelectedPet)
         )
         let targetFrame = layout.frame(for: displayState)
         // The controller allocates the final canvas before the SwiftUI state

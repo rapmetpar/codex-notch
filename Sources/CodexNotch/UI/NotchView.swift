@@ -196,6 +196,7 @@ final class NotchViewModel: ObservableObject {
 }
 
 struct NotchView: View {
+    @ObservedObject private var companion: PetCompanionController
     @ObservedObject private var model: NotchViewModel
     @AppStorage(QuotaDisplayStyle.storageKey)
     private var quotaDisplayStyleRaw = QuotaDisplayStyle.defaultStyle.rawValue
@@ -294,8 +295,9 @@ struct NotchView: View {
         )
     }
 
-    init(model: NotchViewModel) {
+    init(model: NotchViewModel, companion: PetCompanionController = .shared) {
         _model = ObservedObject(wrappedValue: model)
+        _companion = ObservedObject(wrappedValue: companion)
     }
 
     private var compactContent: some View {
@@ -415,6 +417,11 @@ struct NotchView: View {
                     .transition(motionEnabled ? NotchPresentationMotion.compactReturnTransition : .identity)
             }
         }
+        .environment(\.petCompanionContext, companion.atlas.flatMap { atlas in
+            companion.library.selectedPet.map { entry in
+                PetCompanionSceneContext(atlas: atlas, name: entry.name, pose: companion.pose, session: companion.sceneSession)
+            }
+        })
         // The panel is already at its final size before this state changes.
         // Animate this one visible surface from the compact island downward;
         // clear canvas around it never becomes part of the notch itself.
@@ -1468,6 +1475,7 @@ struct QuotaRing: View {
 }
 
 private struct ExpandedNotchView: View {
+    @Environment(\.petCompanionContext) private var petContext
     let content: ExpandedContent
     let now: Date
     let layoutMode: NotchLayoutMode
@@ -1506,6 +1514,11 @@ private struct ExpandedNotchView: View {
 
     private var detailContent: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if let petContext {
+                PetCompanionScene(context: petContext)
+                    .frame(height: PetCompanionLayout.stageHeight)
+                Spacer(minLength: PetCompanionLayout.stageSpacing)
+            }
             QuotaWindowsProgressView(
                 usage: content.usage,
                 now: now,

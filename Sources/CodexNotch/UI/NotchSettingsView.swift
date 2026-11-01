@@ -2,6 +2,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct NotchSettingsView: View {
+    @ObservedObject private var companion = PetCompanionController.shared
+    @State private var petPreviewSession = PetCompanionSceneSession()
     @AppStorage(QuotaAppearance.enabledKey) private var customQuotaColorEnabled = false
     @AppStorage(QuotaAppearance.colorKey) private var customQuotaColorHex = QuotaAppearance.defaultHex
     @AppStorage(CustomStatusIcon.storageKey) private var customIconData = Data()
@@ -72,7 +74,7 @@ struct NotchSettingsView: View {
     @State private var layoutMode: NotchLayoutMode?
     @State private var previewState = FloatingPreviewState.running
 
-    private enum SettingsTab { case general, appearance, floating }
+    private enum SettingsTab { case general, appearance, floating, pets }
     private var floatingStyle: FloatingCenterStyle { .fromStoredValue(floatingCenterStyleRaw) }
     private var floatingContext: FloatingSettingsContext {
         FloatingSettingsContext(layoutMode: layoutMode, displayEnabled: notchDisplayEnabled)
@@ -86,6 +88,9 @@ struct NotchSettingsView: View {
             appearanceSettings
                 .tabItem { Label(appLanguage.localized(chinese: "外观", english: "Appearance", russian: "Внешний вид"), systemImage: "paintpalette") }
                 .tag(SettingsTab.appearance)
+            PetCompanionSettingsView(companion: companion, language: appLanguage)
+                .tabItem { Label(appLanguage.localized(chinese: "宠物", english: "Companions", russian: "Питомцы"), systemImage: "pawprint") }
+                .tag(SettingsTab.pets)
             floatingSettings
                 .tabItem { Label(appLanguage.localized(chinese: "浮动横条", english: "Floating Bar", russian: "Плавающая панель"), systemImage: "display") }
                 .tag(SettingsTab.floating)
@@ -298,6 +303,12 @@ struct NotchSettingsView: View {
                         style: floatingStyle, customText: floatingCenterText, state: previewState,
                         language: appLanguage, animationsEnabled: animationsEnabled
                     )
+                    .environment(\.petCompanionContext, companion.atlas.flatMap { atlas in
+                        companion.library.selectedPet.map { entry in
+                            PetCompanionSceneContext(atlas: atlas, name: entry.name,
+                                pose: previewState == .running ? .work : .idle, session: petPreviewSession)
+                        }
+                    })
                 }
                 Picker(appLanguage.localized(chinese: "预览状态", english: "Preview state", russian: "Состояние в примере"), selection: $previewState) {
                     ForEach(FloatingPreviewState.allCases) { state in

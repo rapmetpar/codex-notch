@@ -5,6 +5,7 @@ enum FloatingCenterStyle: String, CaseIterable, Identifiable, Sendable {
     case orbit
     case elapsed
     case flow
+    case pet
 
     static let storageKey = "floatingCenterStyle"
     static let defaultStyle: Self = .signature
@@ -19,14 +20,17 @@ enum FloatingCenterStyle: String, CaseIterable, Identifiable, Sendable {
         case .signature: return language.localized(chinese: "个人签名", english: "Signature", russian: "Подпись")
         case .orbit: return language.localized(chinese: "轨道签名", english: "Orbit", russian: "Орбита")
         case .elapsed: return language.localized(chinese: "运行计时", english: "Elapsed time", russian: "Таймер")
+        case .pet: return language.localized(chinese: "宠物", english: "Companion", russian: "Питомец")
         case .flow: return language.localized(chinese: "细流光", english: "Light flow", russian: "Световой поток")
         }
     }
 
-    var usesCustomText: Bool { self != .flow }
+    var usesCustomText: Bool { self != .flow && self != .pet }
 
     func explanation(for language: AppLanguage) -> String {
         switch self {
+        case .pet:
+            return language.localized(chinese: "在横条中央显示所选宠物；展开后在独立空间中活动。", english: "Shows the selected companion in the center. Expand for its own stage.", russian: "Показывает выбранного питомца в центре. При раскрытии у него своя сцена.")
         case .signature:
             return language.localized(chinese: "显示自定义文字，带有柔和的流光效果。", english: "Displays custom text with a subtle shimmer.", russian: "Показывает ваш текст с мягким переливом.")
         case .orbit:
@@ -76,7 +80,7 @@ enum FloatingCenterMotionPolicy {
         switch style {
         case .signature: return true
         case .orbit, .flow: return activity == .running
-        case .elapsed: return false
+        case .elapsed, .pet: return false
         }
     }
 }

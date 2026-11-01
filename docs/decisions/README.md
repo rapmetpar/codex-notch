@@ -52,3 +52,4 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [061: Conversation category order](061-conversation-category-order.md)
 
 - [062: Portable local pet library](062-local-pet-library.md)
+- [062: Optional pet companion stage](062-pet-companion-stage.md)
