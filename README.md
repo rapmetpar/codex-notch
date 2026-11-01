@@ -28,7 +28,7 @@ Your browser, IDE, or any other app can be frontmost—your quota remains visibl
 - Optional launch at login and an Off choice for the left display area to reduce menu-bar overlap.
 - Settings grouped into General, Appearance, and Floating Bar, with clearer descriptions.
 - Preview floating-bar styles and task states without an external display.
-- The animation switch works independently of system Reduce Motion; disabling animations reduces resource use while quota and task updates continue.
+- The animation switch controls quota and status effects independently of system Reduce Motion; disabling animations reduces resource use while quota and task updates continue.
 - Fixed redundant Settings activation that could interrupt dropdown menus.
 
 ## New in 0.2.1
@@ -104,11 +104,15 @@ Swift, Swift Package Manager, and Xcode are not required.
 
 CodexNotch reads the default `~/.codex` directory. If Codex uses another directory, set `CODEX_HOME` before launching the app.
 
+## Usage
+
+Hover over the notch or floating bar to open the expanded card. Recent conversations are grouped by project. Drag a project heading to change its priority, or use its up/down buttons. The order applies immediately and is saved locally; the configured Running/New/Viewed category order applies within each project. The 0–20 conversation limit counts chats, not project headings.
+
 ## Make it yours
 
-Hover over the physical notch and use **Settings** at the lower-right of the expanded card. You can also open Settings from the notch context menu or app menu.
+Open **Settings** at the lower-right of the expanded card, from the notch context menu, or from the app menu.
 
-In **Appearance**, enable **Custom color** to choose the quota and glow color, or restore the standard warning palette. Select **Custom image** under **Left side** to import a PNG/JPEG (up to 8 MB), including a transparent pet image. A small local copy survives moving the source file. Five-hour quota still takes priority over the icon; custom pet artwork is static.
+In **Appearance**, enable **Custom color** to choose the quota and glow color, or restore the standard warning palette. Select **Custom image** under **Left side** to import a static PNG/JPEG icon (up to 8 MB). A small local copy survives moving the source file. Five-hour quota still takes priority over this icon.
 
 - Switch between the clockwise quota ring and wave ball
 - Choose a floating-bar center style and set a signature of up to 12 characters
@@ -118,9 +122,19 @@ In **Appearance**, enable **Custom color** to choose the quota and glow color, o
 - Apply changes immediately and save them locally
 - Start automatically at login when enabled in General
 - Hide the left display area while keeping quota details in the expanded card
-- Control animations with the app's own switch, independently of system Reduce Motion
+- Control animations with the app's **Animations** switch
 
 Displays without a notch, including mirrored displays, use a floating bar centered at the top of the screen.
+
+### Animated companions
+
+In **Companions**, choose **Import companion library…**, select a local library folder, then choose any imported companion. Companions are **Off** by default; choosing Off restores the original left-side icon setting. The library and selection are saved locally, so the original import folder can be moved or deleted.
+
+On a physical notch, the selected companion is animated in the compact left wing without hovering. The pet, any available five-hour quota and a completed check share the original left-icon position, fading between readable holds. There is no separate loading spinner and the island keeps its original width; weekly quota stays in place. Expanded cards show quota and recent chats without a large pet scene. For compact floating bars, select **Companion** as the center style in **Floating Bar**. The other center styles remain available; physical compact notches keep their camera area clear.
+
+The companion works while tasks run, jumps once for a newly observed completion, occasionally strolls at rest, and greets on hover with a cooldown. Opening old history does not replay completion celebrations. Companion motion requires **Animations** to be on and system **Reduce Motion** to be off; either setting stops its motion. In the compact left slot, a real five-hour quota takes static priority, then a completed check, then the pet; task state and quota remain available in the tooltip and details. Existing quota and status animations retain their independent app-switch behavior.
+
+Compatible libraries contain a `manifest.json` and local PNG/WebP sprite atlases with standard clip metadata: legacy **v1 (8×9)** or **v2 (8×11)**, both using **192×208-pixel cells**. Imports are validated before replacing the current library. Personal companion artwork and account-specific collections are not included in this repository.
 
 <details>
 <summary><strong>Visual and interaction details</strong></summary>
@@ -171,7 +185,7 @@ SIGN_IDENTITY=none ./scripts/build_app.sh
 
 ## Current boundaries
 
-CodexNotch is currently in its 0.x release series. It does not terminate Codex tasks, estimate cost, sync to the cloud, send remote notifications, download or install updates without user action, animate a pet, or support Mac App Store distribution. ChatGPT Classic is not a monitored target.
+CodexNotch is currently in its 0.x release series. It does not terminate Codex tasks, estimate cost, sync to the cloud, send remote notifications, download or install updates without user action, or support Mac App Store distribution. ChatGPT Classic is not a monitored target.
 
 ## License
 

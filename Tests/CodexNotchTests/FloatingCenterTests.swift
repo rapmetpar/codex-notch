@@ -17,7 +17,7 @@ final class FloatingCenterTests: XCTestCase {
         let initial = NotchRuntimePreferences.read(from: defaults)
         XCTAssertEqual(FloatingCenterStyle.fromStoredValue(nil), .signature)
         XCTAssertEqual(FloatingCenterStyle.fromStoredValue("unknown"), .signature)
-        XCTAssertEqual(Set(FloatingCenterStyle.allCases), [.signature, .orbit, .elapsed, .flow])
+        XCTAssertEqual(Set(FloatingCenterStyle.allCases), [.signature, .orbit, .elapsed, .flow, .pet])
         for style in FloatingCenterStyle.allCases {
             defaults.set(style.rawValue, forKey: FloatingCenterStyle.storageKey)
             defaults.set("专注当下", forKey: FloatingCenterText.storageKey)
@@ -51,7 +51,7 @@ final class FloatingCenterTests: XCTestCase {
     func testSignatureContinuesAtRestWhileOtherMotionKeepsItsRunningGate() {
         for style in FloatingCenterStyle.allCases {
             // FLOATING-CENTER-054 permits only signature shimmer at rest.
-            XCTAssertEqual(FloatingCenterMotionPolicy.shouldAnimate(style: style, activity: .running, motionEnabled: true, isExpanded: false), style != .elapsed)
+            XCTAssertEqual(FloatingCenterMotionPolicy.shouldAnimate(style: style, activity: .running, motionEnabled: true, isExpanded: false), style != .elapsed && style != .pet)
             for activity in [QuotaRingActivity.idle, .completed] {
                 XCTAssertEqual(FloatingCenterMotionPolicy.shouldAnimate(style: style, activity: activity, motionEnabled: true, isExpanded: false), style == .signature)
             }

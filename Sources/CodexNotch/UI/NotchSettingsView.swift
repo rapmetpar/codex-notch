@@ -2,6 +2,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct NotchSettingsView: View {
+    @ObservedObject private var companion = PetCompanionController.shared
+    @State private var petPreviewSession = PetCompanionSceneSession()
     @AppStorage(QuotaAppearance.enabledKey) private var customQuotaColorEnabled = false
     @AppStorage(QuotaAppearance.colorKey) private var customQuotaColorHex = QuotaAppearance.defaultHex
     @AppStorage(CustomStatusIcon.storageKey) private var customIconData = Data()
@@ -72,7 +74,7 @@ struct NotchSettingsView: View {
     @State private var layoutMode: NotchLayoutMode?
     @State private var previewState = FloatingPreviewState.running
 
-    private enum SettingsTab { case general, appearance, floating }
+    private enum SettingsTab { case general, appearance, floating, pets }
     private var floatingStyle: FloatingCenterStyle { .fromStoredValue(floatingCenterStyleRaw) }
     private var floatingContext: FloatingSettingsContext {
         FloatingSettingsContext(layoutMode: layoutMode, displayEnabled: notchDisplayEnabled)
@@ -86,6 +88,9 @@ struct NotchSettingsView: View {
             appearanceSettings
                 .tabItem { Label(appLanguage.localized(chinese: "外观", english: "Appearance", russian: "Внешний вид"), systemImage: "paintpalette") }
                 .tag(SettingsTab.appearance)
+            PetCompanionSettingsView(companion: companion, language: appLanguage)
+                .tabItem { Label(appLanguage.localized(chinese: "宠物", english: "Companions", russian: "Питомцы"), systemImage: "pawprint") }
+                .tag(SettingsTab.pets)
             floatingSettings
                 .tabItem { Label(appLanguage.localized(chinese: "浮动横条", english: "Floating Bar", russian: "Плавающая панель"), systemImage: "display") }
                 .tag(SettingsTab.floating)
@@ -237,9 +242,9 @@ struct NotchSettingsView: View {
                 Text(appLanguage.localized(chinese: "顶部显示", english: "Top display", russian: "Панель вверху экрана"))
             } footer: {
                 Text(appLanguage.localized(
-                    chinese: "刘海左侧优先显示 5 小时额度。选择“关闭”可减少菜单栏遮挡，额度仍可展开查看。",
-                    english: "Five-hour quota takes priority beside the notch. Select Off to reduce overlap with the menu bar. Quota remains available in the expanded card.",
-                    russian: "Рядом с вырезом в первую очередь показан лимит на 5 часов. Выберите «Выкл.», чтобы освободить строку меню. Лимиты останутся в раскрытой карточке."
+                    chinese: "未启用宠物时，左侧优先显示 5 小时额度；选择“关闭”可隐藏该区域，额度仍可展开查看。已选宠物在刘海左侧使用独立区域。",
+                    english: "Without a companion, five-hour quota takes priority on the left; Off hides that lane while keeping expanded quota details. A selected companion uses its own physical-notch wing.",
+                    russian: "Без питомца слева приоритет у лимита на 5 часов; «Выкл.» скрывает эту область, сохраняя лимиты в карточке. Выбранный питомец использует своё левое крыло у выреза."
                 ))
             }
 
@@ -298,6 +303,12 @@ struct NotchSettingsView: View {
                         style: floatingStyle, customText: floatingCenterText, state: previewState,
                         language: appLanguage, animationsEnabled: animationsEnabled
                     )
+                    .environment(\.petCompanionContext, companion.atlas.flatMap { atlas in
+                        companion.library.selectedPet.map { entry in
+                            PetCompanionSceneContext(atlas: atlas, name: entry.name,
+                                pose: previewState == .running ? .work : .idle, session: petPreviewSession)
+                        }
+                    })
                 }
                 Picker(appLanguage.localized(chinese: "预览状态", english: "Preview state", russian: "Состояние в примере"), selection: $previewState) {
                     ForEach(FloatingPreviewState.allCases) { state in

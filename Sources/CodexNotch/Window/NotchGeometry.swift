@@ -64,7 +64,7 @@ struct NotchLayout: Equatable {
 
     var visibleCompactFrame: NSRect {
         NSRect(x: compactFrame.minX + compactLeadingInset, y: compactFrame.minY,
-               width: compactFrame.width - compactLeadingInset, height: compactFrame.height)
+               width: max(0, compactFrame.width - compactLeadingInset), height: compactFrame.height)
     }
 }
 
@@ -175,14 +175,31 @@ enum NotchExpandedLayout {
         )
     }
 
+    static let projectHeaderHeight: CGFloat = 32
+    static let maximumConversationViewportHeight: CGFloat = 200
+
+    static func conversationListHeight(conversationCount: Int, projectCount: Int) -> CGFloat {
+        min(maximumConversationViewportHeight,
+            CGFloat(max(0, conversationCount)) * conversationRowHeight
+                + CGFloat(max(0, projectCount)) * projectHeaderHeight)
+    }
+
+    static func projectListNeedsScroll(conversationCount: Int, projectCount: Int) -> Bool {
+        CGFloat(conversationCount) * conversationRowHeight + CGFloat(projectCount) * projectHeaderHeight
+            > maximumConversationViewportHeight
+    }
+
     static func taskContentHeight(
         conversationCount: Int,
+        projectCount: Int = 0,
         isResetScheduleExpanded: Bool = false,
         resetCreditCount: Int = 0,
         hasFiveHourWindow: Bool = false
     ) -> CGFloat {
         let count = min(maximumVisibleConversations, max(1, conversationCount))
-        return twoConversationContentHeight
+        let projectHeight = conversationListHeight(conversationCount: conversationCount, projectCount: projectCount)
+            - CGFloat(min(maximumVisibleConversations, max(0, conversationCount))) * conversationRowHeight
+        return twoConversationContentHeight + projectHeight
             + CGFloat(count - 2)
             * (conversationRowHeight + conversationSeparatorHeight)
             + (hasFiveHourWindow ? fiveHourQuotaContentHeight : 0)
@@ -194,6 +211,7 @@ enum NotchExpandedLayout {
 
     static func taskContentSize(
         conversationCount: Int,
+        projectCount: Int = 0,
         isResetScheduleExpanded: Bool = false,
         resetCreditCount: Int = 0,
         hasFiveHourWindow: Bool = false
@@ -202,6 +220,7 @@ enum NotchExpandedLayout {
             width: width,
             height: taskContentHeight(
                 conversationCount: conversationCount,
+                projectCount: projectCount,
                 isResetScheduleExpanded: isResetScheduleExpanded,
                 resetCreditCount: resetCreditCount,
                 hasFiveHourWindow: hasFiveHourWindow
@@ -226,6 +245,7 @@ enum NotchGeometry {
     static func layout(
         metrics: NotchScreenMetrics,
         leftIndicatorEnabled: Bool = true,
+        companionEnabled: Bool = false,
         compactSize: NSSize = NSSize(
             width: NotchCompactLayout.minimumWidth,
             height: NotchCompactLayout.height
@@ -309,7 +329,7 @@ enum NotchGeometry {
                 visibleFrame: metrics.visibleFrame,
                 topInset: 0
             ),
-            compactLeadingInset: leftIndicatorEnabled ? 0 : max(0, left.maxX - compactFrame.minX)
+            compactLeadingInset: leftIndicatorEnabled || companionEnabled ? 0 : max(0, left.maxX - compactFrame.minX)
         )
     }
 

@@ -75,3 +75,20 @@ ZIP, DMG and checksums using the existing release steps, then commit appcast.xml
 only after public archive verification. A package run does not publish anything.
 The Secret is scoped to the packaging step, streamed through stdin, and never
 included in uploaded artifacts. Missing or invalid keys fail the run.
+
+
+## Preserve local choices when replacing the app
+
+Quit all running CodexNotch instances, replace only `CodexNotch.app`, then open
+that exact installed path. The released bundle ID stays `com.david.codexnotch`.
+Ordinary replacement does not require removing preferences or Application
+Support. Uninstall cleaners that delete those files also delete chosen settings,
+custom status artwork and imported pet libraries; avoid that cleanup for an
+upgrade. Keep app-owned files outside the app bundle and retain the old bundle
+as a rollback copy. Launch at login remains the actual macOS registration.
+
+`./scripts/verify.sh` checks bundle identity and runs an isolated preference
+replacement/relocation guard with synthetic domains. It does not install the
+built app or change your settings. After a real update, confirm Settings and
+live display choices, custom artwork, pet selection/library and project order.
+The fixture proves process persistence, not Sparkle's actual installation flow.

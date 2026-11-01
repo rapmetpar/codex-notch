@@ -67,7 +67,10 @@ struct NotchRuntimePreferences: Equatable, Sendable {
     let animationsEnabled: Bool
     let notchDisplayEnabled: Bool
     var leftIndicatorEnabled: Bool = true
+    var petLibraryRevision: Int = 0
     var conversationCategoryOrder: ConversationCategoryOrder = .defaultOrder
+
+    var conversationProjectOrder = ConversationProjectOrder()
 
     static func read(from userDefaults: UserDefaults) -> NotchRuntimePreferences {
         let recentConversationLimit = (userDefaults.object(
@@ -84,9 +87,11 @@ struct NotchRuntimePreferences: Equatable, Sendable {
             leftIndicatorEnabled: StatusIconStyle.fromStoredValue(
                 userDefaults.string(forKey: StatusIconStyle.storageKey)
             ).showsLeftIndicator,
+            petLibraryRevision: userDefaults.integer(forKey: PetCompanionController.revisionKey),
             conversationCategoryOrder: ConversationCategoryOrder.fromStoredValue(
                 userDefaults.string(forKey: ConversationCategoryOrder.storageKey)
-            )
+            ),
+            conversationProjectOrder: .read(from: userDefaults)
         )
     }
 }

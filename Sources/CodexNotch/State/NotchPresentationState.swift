@@ -22,6 +22,7 @@ struct ConversationSummary: Equatable, Identifiable, Sendable {
     let lastActivityAt: Date
     let activity: ConversationActivity
     let isViewed: Bool
+    let project: ConversationProject
 
     var id: String { threadID }
 
@@ -29,13 +30,14 @@ struct ConversationSummary: Equatable, Identifiable, Sendable {
         activity.isRunning ? .running : (isViewed ? .viewed : .unread)
     }
 
-    init(session: SessionActivity, activity: ConversationActivity, isViewed: Bool = false) {
+    init(session: SessionActivity, activity: ConversationActivity, isViewed: Bool = false, project: ConversationProject? = nil) {
         self.threadID = session.threadID
         self.title = session.title
         self.cwd = session.cwd
         self.lastActivityAt = session.lastActivityAt
         self.activity = activity
         self.isViewed = isViewed
+        self.project = project ?? .fallback(cwd: session.cwd)
     }
 }
 
@@ -44,6 +46,19 @@ struct ExpandedContent: Equatable, Sendable {
     let conversations: [ConversationSummary]
     let headerConversation: ConversationSummary?
     let usage: UsageSnapshot?
+    var allProjectIDs: [String] = []
+
+    var projectSections: [ConversationProjectSection] {
+        let ids = conversations.reduce(into: [String]()) { result, row in
+            if !result.contains(row.project.id) { result.append(row.project.id) }
+        }
+        let projects = ids.compactMap { id in conversations.first { $0.project.id == id }?.project }
+        return projects.map { project in
+            ConversationProjectSection(project: project,
+                conversations: conversations.filter { $0.project.id == project.id },
+                distinguishesSameName: projects.filter { $0.name == project.name }.count > 1)
+        }
+    }
 
     func limitingRecentConversations(
         to limit: RecentConversationLimit
@@ -52,7 +67,8 @@ struct ExpandedContent: Equatable, Sendable {
             sessions: sessions,
             conversations: Array(conversations.prefix(limit.rawValue)),
             headerConversation: headerConversation,
-            usage: usage
+            usage: usage,
+            allProjectIDs: allProjectIDs
         )
     }
 }
@@ -84,4 +100,6 @@ struct NotchPresentationInput: Equatable {
     var readReceipts: [String: ConversationReadReceipt] = [:]
     var nativeReadReceipts: [String: NativeConversationReadReceipt] = [:]
     var conversationCategoryOrder: ConversationCategoryOrder = .defaultOrder
+    var threadProjects: [String: NativeThreadProject] = [:]
+    var conversationProjectOrder = ConversationProjectOrder()
 }

@@ -3,7 +3,7 @@ import SwiftUI
 @main
 struct CodexNotchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @AppStorage(AppLanguage.storageKey)
+    @AppStorage(AppLanguage.storageKey, store: AppPreferences.store)
     private var appLanguageRaw = AppLanguage.defaultLanguage.rawValue
 
     private var appLanguage: AppLanguage {
@@ -13,6 +13,7 @@ struct CodexNotchApp: App {
     var body: some Scene {
         Settings {
             NotchSettingsView()
+                .defaultAppStorage(AppPreferences.store)
         }
         .commands {
             CommandGroup(replacing: .appSettings) {

@@ -10,5 +10,6 @@ cd "$ROOT_DIR"
 swift test
 RUN_TESTS=0 "$ROOT_DIR/scripts/build_app.sh" "$DIST_DIR"
 "$ROOT_DIR/scripts/verify_app.sh" "$DIST_DIR/CodexNotch.app"
+python3 "$ROOT_DIR/scripts/verify_preferences.py"
 
 echo "Full verification passed: $DIST_DIR/CodexNotch.app"

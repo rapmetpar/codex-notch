@@ -17,6 +17,8 @@ final class NotchViewModel: ObservableObject {
     private var surfaceAnimationIdentifier = UUID()
     private var isSurfaceAnimationInFlight = false
 
+    var onProjectOrderChange: ([String]) -> Void = { _ in }
+
     var onOpenThread: (String) -> Void
     var onActivateChatGPT: () -> Void
     var onHoverChanged: (Bool) -> Void
@@ -196,6 +198,7 @@ final class NotchViewModel: ObservableObject {
 }
 
 struct NotchView: View {
+    @ObservedObject private var companion: PetCompanionController
     @ObservedObject private var model: NotchViewModel
     @AppStorage(QuotaDisplayStyle.storageKey)
     private var quotaDisplayStyleRaw = QuotaDisplayStyle.defaultStyle.rawValue
@@ -294,8 +297,9 @@ struct NotchView: View {
         )
     }
 
-    init(model: NotchViewModel) {
+    init(model: NotchViewModel, companion: PetCompanionController = .shared) {
         _model = ObservedObject(wrappedValue: model)
+        _companion = ObservedObject(wrappedValue: companion)
     }
 
     private var compactContent: some View {
@@ -385,6 +389,8 @@ struct NotchView: View {
             isResetScheduleExpanded: model.isResetScheduleExpanded,
             onActivateChatGPT: model.onActivateChatGPT,
             onOpenThread: model.onOpenThread,
+            onDropProjects: model.dropProjects,
+            onMoveProject: model.moveProject,
             onResetScheduleExpandedChanged: model.onResetScheduleExpandedChanged,
             notchDisplayEnabled: notchDisplayEnabled,
             onNotchDisplayEnabledChanged: { notchDisplayEnabled = $0 }
@@ -415,6 +421,12 @@ struct NotchView: View {
                     .transition(motionEnabled ? NotchPresentationMotion.compactReturnTransition : .identity)
             }
         }
+        .environment(\.compactPetWingEnabled, model.layoutMode == .notch && companion.hasSelectedPet)
+        .environment(\.petCompanionContext, companion.atlas.flatMap { atlas in
+            companion.library.selectedPet.map { entry in
+                PetCompanionSceneContext(atlas: atlas, name: entry.name, pose: companion.pose, session: companion.sceneSession)
+            }
+        })
         // The panel is already at its final size before this state changes.
         // Animate this one visible surface from the compact island downward;
         // clear canvas around it never becomes part of the notch itself.
@@ -544,7 +556,7 @@ struct NotchSurfaceShape: Shape {
     func path(in rect: CGRect) -> Path {
         let inset = min(max(0, leadingInset), rect.width)
         let rect = CGRect(x: rect.minX + inset, y: rect.minY,
-                          width: rect.width - inset, height: rect.height)
+                          width: max(0, rect.width - inset), height: rect.height)
         if layoutMode == .floatingBar {
             return NotchAttachedShape(
                 shoulderDepth: 0,
@@ -662,6 +674,10 @@ private struct CompactNotchView: View {
     @Environment(\.notchAppLanguage) private var language
     @Environment(\.notchStatusIconStyle) private var iconStyle
     @Environment(\.quotaAppearance) private var quotaAppearance
+    @Environment(\.petCompanionContext) private var petContext
+    @Environment(\.compactPetWingEnabled) private var petWingEnabled
+
+    private var usesPetWing: Bool { layoutMode == .notch && petWingEnabled && petContext != nil }
 
     var body: some View {
         Button(action: action) {
@@ -670,6 +686,7 @@ private struct CompactNotchView: View {
         }
         .buttonStyle(NotchButtonStyle())
         .accessibilityLabel(accessibilityText)
+        .help(accessibilityText)
     }
 
     @ViewBuilder
@@ -728,6 +745,19 @@ private struct CompactNotchView: View {
 
     @ViewBuilder
     private var compactLeftIndicator: some View {
+        if usesPetWing, let petContext {
+            CompactPetWing(context: petContext, activity: icon.quotaActivity,
+                fiveHour: usage?.fiveHourWindow, quotaStyle: quotaDisplayStyle,
+                compactHeight: compactHeight)
+        } else {
+            legacyLeftIndicator
+                .frame(width: layoutMode == .notch ? NotchCompactLayout.indicatorLaneWidth : NotchFloatingBarLayout.appLaneWidth,
+                    height: compactHeight)
+        }
+    }
+
+    @ViewBuilder
+    private var legacyLeftIndicator: some View {
         switch CompactLeftIndicatorPolicy.content(
             layoutMode: layoutMode,
             hasFiveHourWindow: usage?.fiveHourWindow != nil,
@@ -762,6 +792,7 @@ private struct CompactNotchView: View {
 
     private var accessibilityText: String {
         var parts = [title, subtitle]
+        if usesPetWing { parts.insert(CompactPetSlotSemantics.state(icon.quotaActivity, language: language), at: 0) }
         if let usage, !usage.windows.isEmpty {
             parts.append(NotchText.quotaSubtitle(usage: usage, language: language))
         }
@@ -800,7 +831,7 @@ private struct CompactAppIconView: View {
     }
 }
 
-private struct CompactQuotaView: View {
+struct CompactQuotaView: View {
     @Environment(\.quotaAppearance) private var quotaAppearance
     let window: UsageWindow?
     let activity: QuotaRingActivity
@@ -1479,6 +1510,8 @@ private struct ExpandedNotchView: View {
     let isResetScheduleExpanded: Bool
     let onActivateChatGPT: () -> Void
     let onOpenThread: (String) -> Void
+    let onDropProjects: ([ProjectDragToken], String) -> Bool
+    let onMoveProject: (String, Int) -> Void
     let onResetScheduleExpandedChanged: (Bool) -> Void
     let notchDisplayEnabled: Bool
     let onNotchDisplayEnabledChanged: (Bool) -> Void
@@ -1522,15 +1555,9 @@ private struct ExpandedNotchView: View {
 
                 Spacer(minLength: 8)
 
-                if content.conversations.count > NotchExpandedLayout.maximumVisibleConversations {
-                    ScrollView(.vertical) {
-                        conversationRows
-                    }
-                    .frame(height: CGFloat(NotchExpandedLayout.maximumVisibleConversations)
-                        * NotchExpandedLayout.conversationRowHeight)
-                } else {
-                    conversationRows
-                }
+                ProjectConversationListView(content: content, now: now, language: language,
+                    onOpenThread: onOpenThread, onDropProjects: onDropProjects,
+                    onMoveProject: onMoveProject)
             }
 
             Spacer(minLength: 6)
@@ -1607,19 +1634,6 @@ private struct ExpandedNotchView: View {
         .padding(.top, expandedContentTopInset)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-
-    private var conversationRows: some View {
-        VStack(spacing: 0) {
-            ForEach(content.conversations, id: \.threadID) { conversation in
-                ConversationRowView(
-                    conversation: conversation,
-                    now: now,
-                    language: language,
-                    action: { onOpenThread(conversation.threadID) }
-                )
-            }
-        }
     }
 
     private var displayOnLabel: String {
@@ -2338,5 +2352,15 @@ enum NotchText {
 
     private static func formatDuration(seconds: Int) -> String {
         formatDuration(seconds: TimeInterval(seconds))
+    }
+}
+
+private struct CompactPetWingEnabledKey: EnvironmentKey {
+    static let defaultValue = false
+}
+extension EnvironmentValues {
+    var compactPetWingEnabled: Bool {
+        get { self[CompactPetWingEnabledKey.self] }
+        set { self[CompactPetWingEnabledKey.self] = newValue }
     }
 }

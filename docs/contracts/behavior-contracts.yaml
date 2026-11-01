@@ -327,7 +327,7 @@ contracts:
 
   - id: SETTINGS-MOTION-021
     title: The app animation switch is independent of system Reduce Motion
-    status: active
+    status: superseded
     statement: >-
       Preserve SETTINGS-PREFERENCES-020 and every inherited contract except the
       requirement to gate app animations on system Reduce Motion. Only the
@@ -358,7 +358,7 @@ contracts:
       - docs/decisions/051-independent-animation-switch.md
       - "manual: read both settings panes, toggle the app animation switch and check preview/live motion; system accessibility settings must remain untouched"
     supersedes: [SETTINGS-PREFERENCES-020]
-    superseded_by: null
+    superseded_by: PET-SPRITE-001
     last_verified_commit: null
 
   - id: SETTINGS-PREFERENCES-020
@@ -3178,7 +3178,7 @@ contracts:
     last_verified_commit: null
   - id: CONVERSATION-ORDER-001
     title: Users can persist and immediately apply any order of the three chat categories
-    status: active
+    status: superseded
     statement: >-
       Inherit CONVERSATION-STATUS-003 and ACTIVITY-STATE-008 except their
       chronological/running-first expanded-list ordering. General Settings
@@ -3219,5 +3219,363 @@ contracts:
       - docs/decisions/061-conversation-category-order.md
       - "manual: reorder all three categories in each language with buttons and keyboard; verify immediate list changes, restart, scrolling and final-row navigation on notch/floating hardware; inspect camera clearance, hover/collapse, compact running and motion off/on"
     supersedes: [CONVERSATION-STATUS-003, ACTIVITY-STATE-008]
+    superseded_by: PROJECT-GROUPS-001
+    last_verified_commit: null
+
+  - id: PROJECT-GROUPS-001
+    title: Group island chats by stable projects and reorder project headings locally
+    status: active
+    statement: >-
+      Inherit CONVERSATION-ORDER-001 and its inherited contracts except expanded
+      list category order being outermost and its five-full-row viewport. Projects
+      are outermost; apply all six configured Running/New/Viewed orders inside
+      each project, preserving newest-first and ascending thread-ID ties. Resolve
+      native project_id plus project name with a parameterized read-only query
+      only for already-known thread IDs from CODEX_HOME/state_5.sqlite; do not
+      query messages, authentication, project metadata blobs, native positions,
+      roots or other application bundles. Missing or incompatible metadata falls
+      back to canonical cwd identity, then a localized unassigned group. Identity
+      and persisted/drag values use opaque SHA-256 keys, never raw paths or names.
+      Same-name projects remain distinct, native rename retains identity, deletion
+      or metadata loss never removes chats. Project order is app-owned, versioned,
+      persisted, live and retained across restart. New projects append without
+      shuffling known ranks; invalid or duplicate stored IDs fall back safely.
+      The dedicated exported data type is declared without bundle identity changes;
+      Codable drag data is own-process only. Actual island headings support
+      native drag/drop to the target rank and
+      keyboard-accessible up/down buttons, with stable thread row identity. Group
+      every candidate before the twenty-chat ceiling and configured 0-20 limit;
+      headers never consume chat slots and zero hides all project headings too.
+      Preserve running compact/header priority regardless of project/category
+      preference, completion, native/local read receipts, quota, reset, navigation,
+      motion, discovery bounds and settings. Rows and 32pt project headings share
+      a viewport capped at 200pt; small cards add only the measured header space.
+      Weekly quota, reset and footer stay outside scroll. Preserve fixed canvas,
+      downward top anchor, camera safe areas and post-collapse hit reclamation;
+      never resize the panel frame per animation tick. Native Codex project order
+      is neither changed nor used as the user's CodexNotch priority preference.
+    rationale: The user needs project sections and direct project prioritization within the expanded island.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [project-identity, scoped-read-only-project-metadata, project-order, island-drag-and-accessibility, grouped-list-viewport]
+      exclude: [native-project-writes, messages, auth, compact-state-policy, quotas, pet-scenes, releases]
+    examples:
+      positive: Drag project B onto project A to prioritize B immediately; restart retains B first, category order applies inside B, and the compact island still shows a running task from A.
+      negative: Same names merge distinct projects, sorting after a prefix drops a preferred project, a heading consumes one of twenty chat slots, a path escapes in drag data, or reordering modifies Codex project positions.
+    guards:
+      - Tests/CodexNotchTests/ConversationProjectTests.swift
+      - Tests/CodexNotchTests/CodexThreadProjectReaderTests.swift
+      - Tests/CodexNotchTests/ProjectIslandIntegrationTests.swift
+      - Tests/CodexNotchTests/RecentConversationScrollTests.swift
+      - Tests/CodexNotchTests/ConversationCategoryOrderTests.swift
+      - Tests/CodexNotchTests/NativeConversationReadTests.swift
+      - Tests/CodexNotchTests/NotchGeometryTests.swift
+      - Tests/CodexNotchTests/NotchCollapseMotionTests.swift
+      - docs/decisions/062-project-island-groups.md
+      - "manual: drag headers in both directions on physical-notch and floating hardware, keyboard/VoiceOver buttons, restart, native rename/delete/fallback, scroll to final chat and navigate; inspect quota/footer, camera clearance, downward expansion/collapse hit regions and motion off/on"
+    supersedes: [CONVERSATION-ORDER-001]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: PET-LIBRARY-001
+    title: Explicit local pet imports remain portable private and atomic
+    status: active
+    statement: >-
+      Import a user-selected directory package with schemaVersion 1 into
+      app-owned Application Support/CodexNotch/PetLibrary. Expose stable unique
+      IDs, plain names, owned atlas URLs and explicit standard v1/v2 metadata
+      independently from renderer or UI. Validate safe relative paths without
+      symbolic links, bounded manifest/count/file/total bytes, PNG/WebP MIME,
+      complete single-image decode, exact 1536x1872 or 1536x2288 dimensions,
+      192x208 cells and exact standard nine-clip timings. Reject malformed or
+      unsupported packages without changing prior library or selection. Copy
+      only listed atlas bytes and known manifest fields, no URLs or source
+      paths. Atomically commit a whole generation and persist only an optional
+      selected stable ID; import defaults off, preserves a still-present choice
+      and clears an absent choice. Restart after source deletion still works.
+      Use exported local bytes only, without network/authentication, collection
+      mutation, other-app bundles, private account inventory or personal assets
+      in universal source. Preserve all existing quota/status/settings/geometry
+      behavior; runtime compatibility does not claim artistic authoring QA.
+    rationale: The user requested all compatible exported pets while keeping their personal collection outside public source and independent of the native account service.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [local-pet-catalog, atlas-metadata, directory-import, selection-persistence, import-validation]
+      exclude: [pet-rendering, island-ui, collection-service, network, authentication, geometry, quota, releases]
+    examples:
+      positive: Import v1 and v2, select a stable ID, remove the original directory and restart with the same owned atlas and selection; reimport a renamed entry without losing its choice.
+      negative: A traversal or symlink reads outside the package, bad dimensions replace a working library, duplicate IDs alias pets, source deletion breaks display or imports silently activate a pet.
+    guards:
+      - Tests/CodexNotchTests/PetLibraryStoreTests.swift
+      - docs/decisions/062-local-pet-library.md
+      - "manual: after scene integration import a directory in Settings, restart after moving the source, test rejection feedback and verify rendering/motion/camera clearance on real hardware"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: PET-SPRITE-001
+    title: Generic native sprites retain authored timing and bounded visible-only playback
+    status: active
+    statement: >-
+      Inherit SETTINGS-MOTION-021 unchanged for all existing app motion, except
+      generic pet playback additionally honors system Reduce Motion. Accept
+      explicit local image URLs or CGImages and validated bounded cell/clip
+      metadata, without catalog, auth, preferences or private artwork in source.
+      Crop full cells at top-left pixel coordinates once; preserve transparency,
+      aspect ratio, orientation and every authored frame hold. Published rows
+      zero through eight use exact standard timing for v2 and explicitly
+      metadata-confirmed legacy v1; never animate unused padding or look poses.
+      Use at most one discrete native contents animation per renderer with a
+      maximum 30 Hz compositor request and zero application frame timers or
+      per-frame SwiftUI state updates. Stop on caller invisibility, hidden
+      ancestry, zero size, window occlusion, detachment, app motion off or Reduce
+      Motion. Keep recognizable authored static pixels with motion off. Retain
+      scene-owned event identity across configure, order, position and view
+      remount; finite events resume elapsed phase without restarting, and consumed
+      history tokens never replay. Bound event memory without replay-enabling
+      eviction. Pure walk/jump sampling retains explicit floor/contact and
+      constrains full cells to a safe scene rect; it never moves a window.
+      Preserve island geometry, quotas, task truth, old status cues, settings,
+      defaults, privacy, history and packaging behavior.
+    rationale: The user requested reusable animated pet playback with real motion and safe lifecycle boundaries.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [pet-sprite-playback, validated-atlas, pet-motion-sampling, pet-motion-gating]
+      exclude: [pet-catalog, account-access, settings-ui, task-policy, island-integration, window-geometry, releases]
+    examples:
+      positive: A finite wave plays exact cells once for a real event, pauses when hidden, resumes without restart and cannot replay after history reopen; a jump returns to its original floor inside its scene.
+      negative: Reconfiguration restarts a celebration, a hidden layer continues scheduling, neighboring cells bleed into a crop, old status animations begin following system Reduce Motion, or movement changes NSPanel geometry.
+    guards:
+      - Tests/CodexNotchTests/PetSpriteTests.swift
+      - Tests/CodexNotchTests/NotchRuntimePreferencesTests.swift
+      - docs/decisions/062-native-pet-sprite-renderer.md
+      - "manual: integrate the companion stage, inspect moving/idle/finite/static states on physical-notch and floating hardware, verify camera clearance and motion switches; sample actual CPU/GPU separately"
+    supersedes: [SETTINGS-MOTION-021]
+    superseded_by: null
+    last_verified_commit: null
+  - id: PET-COMPANION-001
+    title: Optional local companions have their own bounded island stage
+    status: superseded
+    statement: >-
+      Inherit PET-SPRITE-001 and its SETTINGS-MOTION-021 exception; the companion
+      respects BOTH the persisted app switch and system Reduce Motion. Do not
+      change either setting. Companions are Off by default. A validated local
+      library offers every imported ID by name, explicit Off, atomic app-local
+      persistence and EN/RU/ZH Settings. No personal art, collection inventory,
+      signed URLs, credentials or native application bundles enter source.
+      Expanded physical and floating islands allocate a separate 104pt stage
+      plus 8pt spacing below the existing camera/header clearance. Physical
+      compact wings never contain a pet; their quota/status lanes are unchanged.
+      Floating centers add an optional companion style while retaining all old
+      modes and using signature fallback when Off. Off removes extra height.
+      Keep fixed transparent-canvas preparation, downward-only expansion and
+      collapse reclamation. Move only native child layers, never panel frames
+      per frame. Existing one-second runtime observations drive policy; native
+      sprite timing and bounded 30Hz layer motion drive artwork. Running wins;
+      a newly observed actual completion produces one tokenized finite jump.
+      Initial or later-discovered historical completions do not celebrate.
+      Hover greetings require an entry and 30-second cooldown; idle occasionally
+      walks using a shared baseline. Hidden/occluded/detached layers stop.
+      Motion off retains a meaningful static pose without deferred celebration.
+      Neither visibility, focus, hover nor pet selection acknowledges a chat.
+      Preserve native read, history 0-20, category/project grouping seams,
+      weekly/five-hour values, exact reset times and all old status cues.
+    rationale: The user requested living imported companions rather than a replacement status icon.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [pet-settings, local-selection, companion-policy, bounded-companion-stage, floating-center-mode]
+      exclude: [artwork-generation, credentials, native-pet-mutations, project-grouping, read-receipts, quota-semantics, releases]
+    examples:
+      positive: Select an imported companion, see its own expanded stage and optional floating center, observe work and one fresh completion jump, then turn Off and recover the original layout.
+      negative: A pet overlaps the camera/quota, initial history jumps, hover marks a chat Viewed, motion ignores Reduce Motion, or a hidden layer keeps consuming animation work.
+    guards:
+      - Tests/CodexNotchTests/PetCompanionPolicyTests.swift
+      - Tests/CodexNotchTests/PetCompanionIntegrationTests.swift
+      - Tests/CodexNotchTests/FloatingCenterTests.swift
+      - Tests/CodexNotchTests/NotchHeightViewTests.swift
+      - Tests/CodexNotchTests/NotchGeometryTests.swift
+      - docs/decisions/062-pet-companion-stage.md
+      - "manual: select every imported pet and Off; inspect physical camera and quota clearance, downward hover/collapse hit regions, fresh completion/hover cooldown, floating center and all old modes, all languages, system/app motion combinations, restart and actual smoothness"
+    supersedes: []
+    superseded_by: PET-COMPACT-002
+    last_verified_commit: null
+
+  - id: SETTINGS-PERSISTENCE-001
+    title: App-owned choices keep the released identity across replacement and launch paths
+    status: active
+    statement: >-
+      Preserve every existing setting key, default, valid value and live update
+      flow. Use com.david.codexnotch as the stable app-owned preference domain
+      for Settings, command language, hosted island, runtime and fallback menu,
+      both in packaged apps and unbundled development launches. The same-ID
+      bundled launch uses its standard domain; an unbundled launch explicitly
+      opens that domain. Retain zero chat count, false switches, category order,
+      floating text and custom image pixels across restart, bundle replacement
+      and relocation. Do not import test or foreign domains, overwrite existing
+      choices, register defaults as persistent values or resurrect explicit
+      resets. Missing/corrupt settings retain their existing fallback behavior.
+      Keep pet libraries and other app-owned files outside the replaceable
+      bundle. Login-item state remains system-owned, never a second preference.
+      Verification never writes real preferences, login items, Codex state or
+      authentication. Reject accidental packaged identity drift. A successful
+      synthetic process guard does not prove the user's actual installer or UI.
+    rationale: A reinstall report prompted a guard that disproved same-ID replacement loss but reproduced separate implicit domains for unbundled launches.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [preference-identity, preference-persistence, packaged-identity-guard, replacement-fixture]
+      exclude: [settings-redesign, auth, codex-data, login-registration, pet-rendering, project-grouping, releases]
+    examples:
+      positive: A prior packaged version writes chosen language and artwork; a replacement at another path and an unbundled launch retain them, while an explicit reset remains reset.
+      negative: A worktree name changes the store, replacing an app deletes preferences, foreign test values are imported, a zero count becomes two or a reset revives old artwork.
+    guards:
+      - Tests/CodexNotchTests/AppPreferencesTests.swift
+      - scripts/verify_preferences.py
+      - scripts/verify_app.sh
+      - docs/decisions/062-stable-app-preferences.md
+      - "manual: close all CodexNotch instances, replace the app without deleting support/preferences, launch the exact installed path and verify chosen settings, artwork and new feature stores; confirm real Settings/live UI behavior"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: PET-COMPACT-002
+    title: Selected companions live in the physical compact left wing without hover
+    status: superseded
+    statement: >-
+      Inherit PET-COMPANION-001 and its contracts except the ban on compact
+      physical pets and unchanged left-lane artwork/priority. A selected local
+      companion replaces the status artwork without requiring hover. Reserve
+      distinct full-size five-hour quota, 12pt truthful running/completed cue,
+      and 30pt companion slots; do not overlay them. The pet remains at the old
+      app-mark center, the weekly quota stays at its old screen position, and
+      measured camera height/top anchor are unchanged. Add 42pt only to the
+      visible left wing. Keep a symmetric internal canvas at the camera anchor,
+      crop its unused 42pt right portion from both shell and settled NSPanel,
+      and preserve one-time fixed-canvas preparation and stale-collapse guards.
+      Allocate this layout only if measured left/right safe areas contain it,
+      height is at least 24pt and the final expanded canvas can contain it.
+      Otherwise retain the original compact layout and explicit expanded-stage
+      fallback; never guess camera clearance or silently shrink quota artwork.
+      Selected companion overrides the old Left side Off only for this physical
+      wing so the pet, state cue and returned five-hour quota coexist. Companion
+      Off restores the exact original icon choice, quota priority and cropping.
+      Preserve all stored keys and app-owned data, native read/history/project
+      grouping and task navigation. Idle has no false completed cue; running
+      remains blue, completed retains a green check even with five-hour data.
+      The compact pet uses authored native frames with both app/system motion
+      gates and visible/occluded/detached lifecycle. Hover transfers it to the
+      existing expanded scene instead of mounting two animated copies. No new
+      pet window, per-frame SwiftUI or NSPanel mutation, artwork generation,
+      credential access or personal assets in source. Physical camera clearance,
+      tiny-character legibility, menu interaction and smoothness require real
+      user hardware acceptance; geometry and rendered fixtures are not proof.
+    rationale: The user clarified that the selected living companion must replace the compact left icon rather than appear only on hover.
+    source: user-correction
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [compact-pet-wing, safe-area-allocation, independent-quota-and-status-slots, right-canvas-reclamation, companion-settings-copy]
+      exclude: [pet-artwork, catalog-import, preference-migration, read-state, project-grouping, task-detection, quota-values, publishing]
+    examples:
+      positive: Without hovering, the selected pet works beside a separate blue cue and five-hour ring; completion keeps a green check, weekly does not move, and turning the pet Off restores the prior icon/crop.
+      negative: The pet only appears on hover, quota replaces it, a completion check is hidden behind it, art crosses the camera, Off resets preferences, or unused canvas intercepts menu clicks after collapse.
+    guards:
+      - Tests/CodexNotchTests/CompactPetGeometryTests.swift
+      - Tests/CodexNotchTests/PetCompanionIntegrationTests.swift
+      - Tests/CodexNotchTests/PetCompanionPolicyTests.swift
+      - Tests/CodexNotchTests/NotchHeightViewTests.swift
+      - Tests/CodexNotchTests/HiddenLeftWingTests.swift
+      - docs/decisions/063-compact-pet-wing.md
+      - "manual: inspect selected companion with and without five-hour quota, running/completed/idle, motion switches, actual camera clearance and character size, pointer/click, downward hover/collapse and menu hit regions; select Off and confirm original appearance and restart persistence"
+    supersedes: [PET-COMPANION-001]
+    superseded_by: PET-EXPANDED-003
+    last_verified_commit: null
+
+  - id: PET-EXPANDED-003
+    title: Expanded islands contain quota and conversations without a companion stage
+    status: superseded
+    statement: >-
+      Inherit PET-COMPACT-002 and PET-COMPANION-001 except their expanded stage,
+      hover transfer and expanded-stage fallback. A selected companion never
+      mounts a large scene in either physical or floating expanded cards.
+      Quota-only and conversation layouts reserve no 104pt stage or 8pt gap;
+      their expanded canvas sizes, quota/reset position, project viewport and
+      Settings footer are identical with a selected companion and Off. Keep
+      compact selection, floating Companion style, local library, preferences,
+      project order, task truth, weekly/five-hour values and existing motion
+      policies. Prepare a fixed final canvas once, expand downward from the
+      existing top anchor and reclaim transparent hit regions after collapse.
+      No personal art enters source. Compact same-slot presentation is owned
+      by a separate correction and is not redesigned by this successor.
+    rationale: The user explicitly removed the large expanded pet scene shown in their screenshot.
+    source: user-correction
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [expanded-stage-removal, expanded-content-height, companion-settings-copy]
+      exclude: [compact-left-presentation, spinner, atlas, preferences, project-order, quota-values, publishing]
+    examples:
+      positive: Hover with a selected pet or Off shows quota directly below the header and the same bounded project list and Settings footer; collapse restores the existing compact pet.
+      negative: A large pet appears on hover, a 112pt empty hole remains, quota/list/footer are displaced, or removing the stage disables the compact floating Companion style.
+    guards:
+      - Tests/CodexNotchTests/PetCompanionIntegrationTests.swift
+      - Tests/CodexNotchTests/PetCompanionPolicyTests.swift
+      - Tests/CodexNotchTests/ProjectIslandIntegrationTests.swift
+      - Tests/CodexNotchTests/NotchGeometryTests.swift
+      - Tests/CodexNotchTests/NotchCollapseMotionTests.swift
+      - docs/decisions/064-no-expanded-pet-stage.md
+      - "manual: selected pet and Off in physical/floating quota-only and grouped cards; inspect quota/reset/footer, no stage or empty gap, downward hover/collapse and reclaimed hit regions; real compact appearance and smoothness require hardware confirmation"
+    supersedes: [PET-COMPACT-002]
+    superseded_by: PET-COMPACT-003
+    last_verified_commit: null
+
+  - id: PET-COMPACT-003
+    title: Pet quota and completion share the original compact left slot
+    status: active
+    statement: >-
+      Inherit PET-EXPANDED-003 and PET-COMPACT-002 except its 42pt enlargement, trailing canvas crop,
+      separate quota/status slots, blue running cue and expanded-stage transfer.
+      Restore the pre-pet compact width, camera anchor and hit regions. Center
+      the selected pet, actual five-hour quota and truthful completed check in
+      the same bounded left slot, crossfading with at least four seconds of
+      fully readable quota and pet holds. Never invent absent five-hour data or
+      a completion. Running uses authored pet work and accessible task state,
+      without a blue loading spinner or an extra status slot. Weekly stays in
+      its original right wing. Clock rerenders and value updates do not reset
+      the cadence. Use native opacity fades and at most one low-frequency
+      phase-boundary timer; stop timers and pet motion when hidden, occluded or
+      detached. No per-frame SwiftUI updates, panel resizing or new window.
+      Both app motion off and Reduce Motion select a static quota-first,
+      then completion, then pet fallback; the enclosing button always names
+      actual task state and all available quota values and retains click/hover
+      navigation so expanded details remain accessible. Off restores the old
+      icon preference and crop. Preserve stored settings, private library,
+      history/project order, task truth and quota semantics. Expanded details retain no large companion stage or additional height.
+    rationale: The user's screenshots rejected the separate blue spinner and enlarged island and requested fading indicators at the former left-icon position.
+    source: user-correction
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [compact-shared-slot, native-crossfade, original-compact-geometry, compact-accessibility]
+      exclude: [expanded-detail-layout, pet-artwork, catalog-import, preference-migration, project-grouping, quota-values, release]
+    examples:
+      positive: A running pet fades to a real five-hour value for four seconds then returns in the same rect; completion adds a green check phase and weekly stays fixed.
+      negative: A separate blue spinner remains, a selected pet adds width, clock refresh restarts the pet hold, absent data shows a number, a hidden slot keeps a timer or reduced motion pulses.
+    guards:
+      - Tests/CodexNotchTests/CompactPetGeometryTests.swift
+      - Tests/CodexNotchTests/CompactPetSlotTests.swift
+      - Tests/CodexNotchTests/PetCompanionIntegrationTests.swift
+      - docs/decisions/064-compact-shared-slot.md
+      - "manual: physical camera/wings, tiny pet and quota legibility, actual fade smoothness, running/completed/idle and absent quota, app/system motion switches, click/hover/collapse hit regions"
+    supersedes: [PET-EXPANDED-003]
     superseded_by: null
     last_verified_commit: null
