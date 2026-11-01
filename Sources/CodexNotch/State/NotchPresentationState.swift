@@ -82,4 +82,5 @@ struct NotchPresentationInput: Equatable {
     let usage: UsageSnapshot?
     let isHovered: Bool
     var readReceipts: [String: ConversationReadReceipt] = [:]
+    var nativeReadReceipts: [String: NativeConversationReadReceipt] = [:]
 }

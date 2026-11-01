@@ -1,7 +1,7 @@
 contracts:
   - id: CONVERSATION-STATUS-002
     title: Running, new and locally viewed answers have distinct rows
-    status: active
+    status: superseded
     statement: >-
       Preserve CONVERSATION-STATUS-001 except completed-row appearance and the
       placement of status copy. Retain the blue open-ring running animation and
@@ -38,7 +38,7 @@ contracts:
       - docs/decisions/060-conversation-attention.md
       - "manual: inspect all three row states and languages, actual thread navigation, restart, a new answer, VoiceOver, motion off/on, scrolling and unchanged hover/camera clearance on physical-notch and floating hardware"
     supersedes: [CONVERSATION-STATUS-001]
-    superseded_by: null
+    superseded_by: CONVERSATION-STATUS-003
     last_verified_commit: null
 
   - id: CONVERSATION-STATUS-001
@@ -3126,5 +3126,53 @@ contracts:
       - docs/decisions/059-continuous-hover-spring.md
       - "manual: inspect installed opening, closing, brief hover and rapid reentry on a physical notch; confirm camera clearance, stable icons, text, final hit area and the app animation switch"
     supersedes: [NOTCH-MOTION-008]
+    superseded_by: null
+    last_verified_commit: null
+  - id: CONVERSATION-STATUS-003
+    title: Native Codex reads acknowledge only the matching published answer
+    status: active
+    statement: >-
+      Preserve CONVERSATION-STATUS-002 except its local-only read source and
+      tooltips. A completed row is Viewed when either its existing local
+      acknowledgement matches both turn and completion instant, or a valid
+      native receipt has first_unread_turn SQL NULL and last_published_turn
+      exactly equal to this completed turn ID. Revision must be a nonempty
+      bounded text identifier; it is opaque, not a timestamp or ordered cursor.
+      Missing rows are unknown, never proof of reading. Non-NULL unread markers
+      including empty strings, missing publication keys, old turns, invalid data,
+      unavailable/corrupt/locked databases and missing schemas fall back to local
+      acknowledgement only. Native unread does not revoke a successful local
+      opening acknowledgement while the native client catches up. New completed
+      turns are New unless independently acknowledged; active tasks always win.
+      Read only thread_id, first_unread_turn, revision and last_published_turn
+      for monitored completed threads from CODEX_HOME/state_5.sqlite. Use fresh
+      read-only connections on a utility queue, with a bounded lock wait and
+      five-second live refresh independent of rollout/title/focus changes. Observe
+      WAL commits and atomic replacement; reject superseded/stopped deliveries.
+      Native receipts stay in memory, are never converted to persistent local
+      receipts, and are cleared when unavailable. No Codex writes, global-state
+      JSON fallback, message/auth reads, bundle inspection or new permissions.
+      Preserve current history order and count limits, compact state, geometry,
+      quota, navigation, all motion cues and local receipt persistence. Viewed
+      means a read mark or accepted opening, never confirmed answer consumption.
+    rationale: Reading an answer in the native client should clear its New state without a second click in CodexNotch, while an old read must not hide a new answer.
+    source: user-request-and-verified-local-receipt-schema
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [native-read-metadata, recent-conversation-attention, live-refresh, accessibility-hints]
+      exclude: [category-sorting, codex-writes, message-content, authentication, app-bundles, permissions, quota, geometry, packaging, releases]
+    examples:
+      positive: Mark turn A read in Codex and its island row becomes Viewed without restart; turn B remains New until its own native mark or local opening, and running always stays Running.
+      negative: NULL without a matching publication key clears a new answer, an open window is treated as a receipt, a disappeared database leaves a cached Viewed state, or native metadata is written to persistent local preferences.
+    guards:
+      - Tests/CodexNotchTests/NativeConversationReadTests.swift
+      - Tests/CodexNotchTests/ConversationAttentionTests.swift
+      - Tests/CodexNotchTests/ConversationStatusTests.swift
+      - Tests/CodexNotchTests/CodexThreadNavigatorTests.swift
+      - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
+      - docs/decisions/061-native-conversation-read-sync.md
+      - "manual: read a completed answer in native Codex, leave focus/rollouts unchanged and observe Viewed within the recovery cadence; complete a new turn, confirm New and active priority, inspect physical-notch/floating states, all languages, VoiceOver and motion"
+    supersedes: [CONVERSATION-STATUS-002]
     superseded_by: null
     last_verified_commit: null

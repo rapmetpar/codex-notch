@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [CONVERSATION-STATUS-002, ACTIVITY-STATE-007, LOCALIZATION-001, SETTINGS-MOTION-021, PRIVACY-BOUNDARY-006]
 supersedes: [059-conversation-status-animation]
-superseded_by: null
+superseded_by: 061-native-conversation-read-sync
 owner: project-maintainer
 created_at: 2026-11-01
 ---

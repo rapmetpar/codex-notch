@@ -49,6 +49,8 @@ enum NotchPresentationReducer {
                     activity: .completed(completedAt: completion.completedAt),
                     isViewed: input.readReceipts[completion.session.threadID]
                         == ConversationReadReceipt(completion)
+                        || input.nativeReadReceipts[completion.session.threadID]?.turnID
+                            == completion.session.turnID
                 )
             )
         }

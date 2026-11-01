@@ -34,6 +34,7 @@ final class NotchRuntimeCoordinator {
     private let nowProvider: () -> Date
     private let userDefaults: UserDefaults
     private let conversationReadStore: ConversationReadStore
+    private let nativeReadMonitor: NativeConversationReadMonitor
     private let viewModel: NotchViewModel
     private let titleReadQueue = DispatchQueue(
         label: "com.david.codexnotch.thread-title-read",
@@ -72,6 +73,7 @@ final class NotchRuntimeCoordinator {
         authReader: CodexAuthReader = CodexAuthReader(),
         sessionStore: ActiveSessionStore = ActiveSessionStore(),
         threadTitleReader: ThreadTitleReading? = nil,
+        nativeReadReader: NativeConversationReadReading? = nil,
         urlSession: URLSession = .shared,
         usageEndpoint: URL = CodexUsageClient.defaultEndpoint,
         nowProvider: @escaping () -> Date = { .now },
@@ -94,6 +96,9 @@ final class NotchRuntimeCoordinator {
             homeDirectory: authReader.homeDirectory
         )
         self.threadTitleReader = threadTitleReader ?? CodexThreadTitleReader(codexHomeURL: codexHome)
+        self.nativeReadMonitor = NativeConversationReadMonitor(
+            reader: nativeReadReader ?? CodexConversationReadReader(codexHomeURL: codexHome)
+        )
         self.rolloutMonitor = RolloutActivityMonitor(
             rootURL: codexHome.appendingPathComponent("sessions", isDirectory: true),
             store: sessionStore
@@ -143,6 +148,11 @@ final class NotchRuntimeCoordinator {
             self.pollSessions()
         }
         rolloutMonitor.start()
+        nativeReadMonitor.onChange = { [weak self] in
+            guard let self, self.started else { return }
+            self.render()
+        }
+        nativeReadMonitor.start()
 
         sessionTimer = Timer.scheduledTimer(
             withTimeInterval: Self.sessionPollInterval,
@@ -185,6 +195,7 @@ final class NotchRuntimeCoordinator {
 
         frontmostMonitor.stop()
         rolloutMonitor.stop()
+        nativeReadMonitor.stop()
         viewModel.update(
             state: .hidden,
             now: nowProvider(),
@@ -203,6 +214,7 @@ final class NotchRuntimeCoordinator {
         stopObservingPreferenceChanges()
         frontmostMonitor.stop()
         rolloutMonitor.stop()
+        nativeReadMonitor.stop()
     }
 
     private func handleTimerTick() {
@@ -250,6 +262,7 @@ final class NotchRuntimeCoordinator {
                 completedAt: completion.completedAt
             )
         }
+        nativeReadMonitor.updateThreadIDs(recentCompletions.map(\.session.threadID))
         refreshTitlesIfNeeded(now: now)
         render(now: now)
     }
@@ -581,7 +594,8 @@ final class NotchRuntimeCoordinator {
             recentCompletions: recentCompletions,
             usage: usage,
             isHovered: isHovered,
-            readReceipts: conversationReadStore.receipts
+            readReceipts: conversationReadStore.receipts,
+            nativeReadReceipts: nativeReadMonitor.receipts
         )
 
         let state = NotchPresentationReducer.reduce(input)
@@ -595,7 +609,8 @@ final class NotchRuntimeCoordinator {
                     recentCompletions: input.recentCompletions,
                     usage: input.usage,
                     isHovered: true,
-                    readReceipts: input.readReceipts
+                    readReceipts: input.readReceipts,
+                    nativeReadReceipts: input.nativeReadReceipts
                 )
             )
         } else {

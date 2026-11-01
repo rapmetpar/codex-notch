@@ -69,9 +69,9 @@ enum ConversationAttention: CaseIterable, Equatable, Sendable {
         case .running:
             return language.localized(chinese: "打开正在运行的对话", english: "Open the running conversation", russian: "Открыть чат в работе")
         case .unread:
-            return language.localized(chinese: "完成后尚未从 CodexNotch 打开", english: "Not opened from CodexNotch since completion", russian: "После завершения ещё не открывали из CodexNotch")
+            return language.localized(chinese: "此回复没有 Codex 已读标记，也未从 CodexNotch 打开", english: "No read mark in Codex or opening from CodexNotch for this answer", russian: "Для этого ответа нет отметки чтения в Codex или открытия из CodexNotch")
         case .viewed:
-            return language.localized(chinese: "完成后已从 CodexNotch 打开", english: "Opened from CodexNotch after completion", russian: "Открывали из CodexNotch после завершения")
+            return language.localized(chinese: "此回复已在 Codex 标为已读，或从 CodexNotch 打开", english: "This answer is marked read in Codex or was opened from CodexNotch", russian: "Этот ответ отмечен прочитанным в Codex или открыт из CodexNotch")
         }
     }
 }

@@ -46,3 +46,5 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [060: Conversation attention states](060-conversation-attention.md)
 
 - [059: Continuous hover spring](059-continuous-hover-spring.md)
+
+- [061: Native conversation read synchronization](061-native-conversation-read-sync.md)
