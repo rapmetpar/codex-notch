@@ -1,4 +1,40 @@
 contracts:
+  - id: LOCALIZATION-001
+    title: Russian is an explicit persisted interface language
+    status: active
+    statement: >-
+      Extend the inherited SETTINGS-PREFERENCES-017 language choice with
+      Russian as ru with the native title Русский alongside the existing
+      en and zh-Hans choices. Keep English as the default and unknown-value
+      fallback, the appLanguage storage key and all existing preference values.
+      Switching languages updates app-owned settings, notch and floating copy,
+      menu-bar fallback, accessibility labels, quota text and time units through
+      the existing live preference flow without changing tasks, quota values,
+      reset instants, window geometry or motion. Every localized call requires
+      all three translations. Russian recent-chat counts use the correct forms
+      for zero through five. Keep exact timestamps, countdown seconds and service
+      supplied reset-credit titles. System and Sparkle dialogs and underlying
+      localized error descriptions retain their own localization behavior.
+    rationale: The user requested localization of CodexNotch in a Russian-language session.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [interface-copy, language-preference, accessibility-copy, time-unit-copy]
+      exclude: [quota-values, task-state, geometry, motion, authentication, releases, third-party-dialogs]
+    examples:
+      positive: Select Русский, see Russian settings and quota labels immediately, restart with ru retained, and switch back to English or Chinese without resetting other preferences.
+      negative: Russian selects Chinese copy, changing language resets recent-chat count, unknown stored values stop falling back to English, or a translation loses reset seconds.
+    guards:
+      - Tests/CodexNotchTests/AppLanguageTests.swift
+      - Tests/CodexNotchTests/NotchTextTests.swift
+      - Tests/CodexNotchTests/NotchRuntimePreferencesTests.swift
+      - docs/decisions/058-russian-localization.md
+      - "manual: select Russian and inspect all settings tabs, compact/expanded states, no-quota text, fallback menu and VoiceOver labels; confirm no clipping on a physical notch and in floating mode, restart and switch back to each original language"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
   - id: NOTCH-HEIGHT-001
     title: Physical notch wings follow the measured camera height
     status: active

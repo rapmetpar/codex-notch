@@ -358,7 +358,7 @@ final class NotchWindowController: NSWindowController {
         switch state {
         case .hidden:
             let title = includesShowNotchAction
-                ? appLanguage.localized(chinese: "CodexNotch 已隐藏", english: "CodexNotch hidden")
+                ? appLanguage.localized(chinese: "CodexNotch 已隐藏", english: "CodexNotch hidden", russian: "CodexNotch скрыт")
                 : "CodexNotch"
             menu.addItem(disabledItem(title: title))
 
@@ -366,7 +366,7 @@ final class NotchWindowController: NSWindowController {
             menu.addItem(disabledItem(title: "Codex · \(NotchText.quotaSubtitle(usage: usage, language: appLanguage))"))
             menu.addItem(NSMenuItem.separator())
             menu.addItem(actionItem(
-                title: appLanguage.localized(chinese: "打开 ChatGPT", english: "Open ChatGPT"),
+                title: appLanguage.localized(chinese: "打开 ChatGPT", english: "Open ChatGPT", russian: "Открыть ChatGPT"),
                 representedObject: "__activate__"
             ))
 
@@ -374,9 +374,10 @@ final class NotchWindowController: NSWindowController {
             let title = count > 1
                 ? appLanguage.localized(
                     chinese: "Codex 正在运行 · \(count) 个任务",
-                    english: "Codex running · \(count) tasks"
+                    english: "Codex running · \(count) tasks",
+                    russian: "Codex работает · задач: \(count)"
                 )
-                : appLanguage.localized(chinese: "Codex 正在运行", english: "Codex running")
+                : appLanguage.localized(chinese: "Codex 正在运行", english: "Codex running", russian: "Codex работает")
             menu.addItem(disabledItem(title: title))
             menu.addItem(disabledItem(
                 title: NotchText.sessionSubtitle(primary, now: .now, language: appLanguage)
@@ -388,13 +389,13 @@ final class NotchWindowController: NSWindowController {
             }
             menu.addItem(NSMenuItem.separator())
             menu.addItem(actionItem(
-                title: appLanguage.localized(chinese: "打开当前任务", english: "Open current task"),
+                title: appLanguage.localized(chinese: "打开当前任务", english: "Open current task", russian: "Открыть текущую задачу"),
                 representedObject: primary.threadID
             ))
 
         case let .completedCompact(session, usage):
             menu.addItem(disabledItem(
-                title: appLanguage.localized(chinese: "Codex 已完成", english: "Codex completed")
+                title: appLanguage.localized(chinese: "Codex 已完成", english: "Codex completed", russian: "Codex завершил работу")
             ))
             if let usage, !usage.windows.isEmpty {
                 menu.addItem(disabledItem(
@@ -404,7 +405,8 @@ final class NotchWindowController: NSWindowController {
             menu.addItem(actionItem(
                 title: appLanguage.localized(
                     chinese: "打开 \(NotchText.projectName(cwd: session.cwd, language: appLanguage))",
-                    english: "Open \(NotchText.projectName(cwd: session.cwd, language: appLanguage))"
+                    english: "Open \(NotchText.projectName(cwd: session.cwd, language: appLanguage))",
+                    russian: "Открыть \(NotchText.projectName(cwd: session.cwd, language: appLanguage))"
                 ),
                 representedObject: session.threadID
             ))
@@ -414,15 +416,17 @@ final class NotchWindowController: NSWindowController {
             if !content.conversations.isEmpty {
                 headerTitle = appLanguage.localized(
                     chinese: "Codex 最近对话",
-                    english: "Codex recent conversations"
+                    english: "Codex recent conversations",
+                    russian: "Недавние чаты Codex"
                 )
             } else if !content.sessions.isEmpty || content.headerConversation != nil {
                 headerTitle = appLanguage.localized(
                     chinese: "Codex 活动",
-                    english: "Codex activity"
+                    english: "Codex activity",
+                    russian: "Активность Codex"
                 )
             } else {
-                headerTitle = appLanguage.localized(chinese: "Codex 额度", english: "Codex quota")
+                headerTitle = appLanguage.localized(chinese: "Codex 额度", english: "Codex quota", russian: "Лимиты Codex")
             }
             menu.addItem(disabledItem(title: headerTitle))
             if let usage = content.usage,
@@ -430,7 +434,8 @@ final class NotchWindowController: NSWindowController {
                 menu.addItem(NSMenuItem.separator())
                 menu.addItem(disabledItem(title: appLanguage.localized(
                     chinese: "使用限额重置",
-                    english: "Usage reset"
+                    english: "Usage reset",
+                    russian: "Сброс лимита"
                 )))
                 for credit in usage.resetCredits {
                     menu.addItem(disabledItem(
@@ -450,14 +455,16 @@ final class NotchWindowController: NSWindowController {
             } else if !content.sessions.isEmpty {
                 menu.addItem(disabledItem(title: appLanguage.localized(
                     chinese: "Codex 正在运行",
-                    english: "Codex running"
+                    english: "Codex running",
+                    russian: "Codex работает"
                 )))
                 menu.addItem(NSMenuItem.separator())
                 for session in content.sessions {
                     menu.addItem(actionItem(
                         title: appLanguage.localized(
                             chinese: "打开 \(NotchText.projectName(cwd: session.cwd, language: appLanguage))",
-                            english: "Open \(NotchText.projectName(cwd: session.cwd, language: appLanguage))"
+                            english: "Open \(NotchText.projectName(cwd: session.cwd, language: appLanguage))",
+                            russian: "Открыть \(NotchText.projectName(cwd: session.cwd, language: appLanguage))"
                         ),
                         representedObject: session.threadID
                     ))
@@ -465,13 +472,15 @@ final class NotchWindowController: NSWindowController {
             } else if let conversation = content.headerConversation {
                 menu.addItem(disabledItem(title: appLanguage.localized(
                     chinese: "Codex 已完成",
-                    english: "Codex completed"
+                    english: "Codex completed",
+                    russian: "Codex завершил работу"
                 )))
                 menu.addItem(NSMenuItem.separator())
                 menu.addItem(actionItem(
                     title: appLanguage.localized(
                         chinese: "打开 \(NotchText.projectName(cwd: conversation.cwd, language: appLanguage))",
-                        english: "Open \(NotchText.projectName(cwd: conversation.cwd, language: appLanguage))"
+                        english: "Open \(NotchText.projectName(cwd: conversation.cwd, language: appLanguage))",
+                        russian: "Открыть \(NotchText.projectName(cwd: conversation.cwd, language: appLanguage))"
                     ),
                     representedObject: conversation.threadID
                 ))
@@ -485,12 +494,13 @@ final class NotchWindowController: NSWindowController {
                 } else {
                     menu.addItem(disabledItem(title: appLanguage.localized(
                         chinese: "额度暂不可用",
-                        english: "Quota unavailable"
+                        english: "Quota unavailable",
+                        russian: "Лимит недоступен"
                     )))
                 }
                 menu.addItem(NSMenuItem.separator())
                 menu.addItem(actionItem(
-                    title: appLanguage.localized(chinese: "打开 ChatGPT", english: "Open ChatGPT"),
+                    title: appLanguage.localized(chinese: "打开 ChatGPT", english: "Open ChatGPT", russian: "Открыть ChatGPT"),
                     representedObject: "__activate__"
                 ))
             }
@@ -500,7 +510,8 @@ final class NotchWindowController: NSWindowController {
             menu.addItem(actionItem(
                 title: appLanguage.localized(
                     chinese: "显示刘海 (⌥⌘N)",
-                    english: "Show notch (⌥⌘N)"
+                    english: "Show notch (⌥⌘N)",
+                    russian: "Показать панель (⌥⌘N)"
                 ),
                 representedObject: "__show_notch__"
             ))

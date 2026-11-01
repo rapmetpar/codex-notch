@@ -110,7 +110,7 @@ Hover over the physical notch and use **Settings** at the lower-right of the exp
 
 - Switch between the clockwise quota ring and wave ball
 - Choose a floating-bar center style and set a signature of up to 12 characters
-- Choose Chinese or English for the app interface (English by default)
+- Choose Chinese, English, or Russian for the app interface (English by default)
 - Show 0–5 recent conversations in the expanded card
 - Check for stable updates and download, install, and relaunch inside the app (from 0.2.1)
 - Apply changes immediately and save them locally
