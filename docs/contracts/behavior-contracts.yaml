@@ -1,4 +1,37 @@
 contracts:
+  - id: CONVERSATION-STATUS-001
+    title: Each recent chat has a distinct running spinner and completion check
+    status: active
+    statement: >-
+      Recent conversation rows show a blue rotating open ring while their own
+      activity is running and a green closed ring with a check when completed.
+      Only a visible running-to-completed transition draws the check once;
+      opening existing history or reattaching a row must not replay completion.
+      Identify rows by thread ID so reordering cannot transfer motion to another
+      chat. Use the existing app motion switch and visible attached layer gates;
+      with motion off, both static shapes remain distinct and status still updates.
+      Stop layer animations when hidden or detached. Preserve ACTIVITY-STATE-007,
+      SETTINGS-MOTION-021, row navigation, titles, metadata, compact status cues,
+      quota semantics, settings, and fixed-canvas window geometry.
+    rationale: The user requested icon animation to distinguish working and completed chats.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [recent-conversation-status-icons, row-identity, visible-motion]
+      exclude: [activity-detection, compact-icons, quotas, settings, window-geometry, releases]
+    examples:
+      positive: Two running chats spin independently; completing one draws its check once while the other keeps spinning, and a new turn restores its spinner.
+      negative: Reordering gives a different chat the completion effect, reopening history replays completion, or disabling motion hides the status distinction.
+    guards:
+      - Tests/CodexNotchTests/ConversationStatusTests.swift
+      - Tests/CodexNotchTests/RecentConversationHistoryTests.swift
+      - docs/decisions/059-conversation-status-animation.md
+      - "manual: expand two running chats, complete one and start another turn; inspect check reveal, row reordering, reopen history, app motion off/on and unchanged physical-notch hover geometry"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
   - id: LOCALIZATION-001
     title: Russian is an explicit persisted interface language
     status: active

@@ -1730,21 +1730,6 @@ private struct ConversationRowView: View {
     }
 }
 
-private struct ConversationStatusView: View {
-    let activity: ConversationActivity
-
-    var body: some View {
-        switch activity {
-        case .running:
-            RunningStatusDot()
-        case .completed:
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(NotchPalette.success)
-        }
-    }
-}
-
 private struct RunningStatusDot: View {
     @Environment(\.notchMotionEnabled) private var motionEnabled
     @State private var isPulsing = false
