@@ -3,11 +3,13 @@ import SwiftUI
 struct StatusIconTheme: Equatable {
     let accent: QuotaColorScale.RGB
     private let quotaLevel: WeeklyQuotaLevel
+    private let hasCustomColor: Bool
 
-    init(usage: UsageSnapshot?) {
+    init(usage: UsageSnapshot?, appearance: QuotaAppearance = QuotaAppearance()) {
+        hasCustomColor = appearance.customColor != nil
         quotaLevel = WeeklyQuotaLevel(weeklyWindow: usage?.weeklyWindow)
         if let weekly = usage?.weeklyWindow {
-            accent = QuotaColorScale.components(for: weekly.remainingPercent)
+            accent = appearance.components(for: weekly.remainingPercent)
         } else {
             accent = QuotaColorScale.RGB(red: 0.6, green: 0.6, blue: 0.6)
         }
@@ -20,7 +22,7 @@ struct StatusIconTheme: Equatable {
     var runningEcho: QuotaColorScale.RGB {
         // A red quota is useful information; a recurring red pulse can read
         // as an alarm. Keep critical-quota activity neutral.
-        quotaLevel == .critical
+        quotaLevel == .critical && !hasCustomColor
             ? QuotaColorScale.RGB(red: 0.78, green: 0.78, blue: 0.78)
             : accent
     }

@@ -1,6 +1,12 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct NotchSettingsView: View {
+    @AppStorage(QuotaAppearance.enabledKey) private var customQuotaColorEnabled = false
+    @AppStorage(QuotaAppearance.colorKey) private var customQuotaColorHex = QuotaAppearance.defaultHex
+    @AppStorage(CustomStatusIcon.storageKey) private var customIconData = Data()
+    @State private var choosingIcon = false
+    @State private var iconImportError: String?
     @AppStorage(QuotaDisplayStyle.storageKey)
     private var quotaDisplayStyleRaw = QuotaDisplayStyle.defaultStyle.rawValue
     @AppStorage(StatusIconStyle.storageKey)
@@ -75,6 +81,32 @@ struct NotchSettingsView: View {
                 .tabItem { Label(appLanguage.localized(chinese: "浮动横条", english: "Floating Bar", russian: "Плавающая панель"), systemImage: "display") }
                 .tag(SettingsTab.floating)
         }
+        .environment(\.customStatusIconData, customIconData)
+        .fileImporter(isPresented: $choosingIcon, allowedContentTypes: [.png, .jpeg]) { result in
+            switch result {
+            case .success(let url):
+                let accessing = url.startAccessingSecurityScopedResource()
+                defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                do {
+                    let png = try CustomStatusIcon.importFile(url)
+                    customIconData = png
+                    statusIconStyleRaw = StatusIconStyle.custom.rawValue
+                } catch {
+                    iconImportError = appLanguage.localized(
+                        chinese: "请选择不超过 8 MB 的有效 PNG 或 JPEG 图片。",
+                        english: "Choose a valid PNG or JPEG image up to 8 MB.",
+                        russian: "Выберите корректную картинку PNG или JPEG размером до 8 МБ."
+                    )
+                }
+            case .failure:
+                iconImportError = appLanguage.localized(chinese: "无法打开图片。", english: "Unable to open the image.", russian: "Не удалось открыть картинку.")
+            }
+        }
+        .alert(appLanguage.localized(chinese: "无法导入图片", english: "Image import failed", russian: "Не удалось загрузить картинку"), isPresented: Binding(
+            get: { iconImportError != nil }, set: { if !$0 { iconImportError = nil } }
+        )) {
+            Button("OK", role: .cancel) { iconImportError = nil }
+        } message: { Text(iconImportError ?? "") }
         .padding(16)
         .frame(width: 560, height: 580)
         .onAppear {
@@ -176,6 +208,21 @@ struct NotchSettingsView: View {
                     }
                 }
                 .pickerStyle(.radioGroup)
+                if statusIconStyleBinding.wrappedValue == .custom {
+                    HStack {
+                        Button(appLanguage.localized(chinese: "选择图片…", english: "Choose image…", russian: "Выбрать картинку…")) {
+                            choosingIcon = true
+                        }
+                        if !customIconData.isEmpty {
+                            Button(appLanguage.localized(chinese: "移除", english: "Remove", russian: "Удалить")) {
+                                statusIconStyleRaw = StatusIconStyle.defaultStyle.rawValue
+                                customIconData = Data()
+                            }
+                        }
+                    }
+                    Text(appLanguage.localized(chinese: "PNG 或 JPEG，最大 8 MB。图片保存在本机。", english: "PNG or JPEG, up to 8 MB. The image is saved locally.", russian: "PNG или JPEG до 8 МБ. Картинка хранится на этом Mac."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             } header: {
                 Text(appLanguage.localized(chinese: "顶部显示", english: "Top display", russian: "Панель вверху экрана"))
             } footer: {
@@ -183,6 +230,28 @@ struct NotchSettingsView: View {
                     chinese: "刘海左侧优先显示 5 小时额度。选择“关闭”可减少菜单栏遮挡，额度仍可展开查看。",
                     english: "Five-hour quota takes priority beside the notch. Select Off to reduce overlap with the menu bar. Quota remains available in the expanded card.",
                     russian: "Рядом с вырезом в первую очередь показан лимит на 5 часов. Выберите «Выкл.», чтобы освободить строку меню. Лимиты останутся в раскрытой карточке."
+                ))
+            }
+
+            Section {
+                Toggle(appLanguage.localized(chinese: "自定义颜色", english: "Custom color", russian: "Свой цвет"), isOn: $customQuotaColorEnabled)
+                if customQuotaColorEnabled {
+                    ColorPicker(appLanguage.localized(chinese: "额度与光效", english: "Quota and glow", russian: "Лимиты и подсветка"), selection: Binding(
+                        get: { (QuotaAppearance.parse(customQuotaColorHex) ?? QuotaAppearance.defaultColor).color },
+                        set: { if let hex = QuotaAppearance.hex(for: NSColor($0)) { customQuotaColorHex = hex } }
+                    ), supportsOpacity: false)
+                    Button(appLanguage.localized(chinese: "恢复默认颜色", english: "Restore default colors", russian: "Вернуть стандартные цвета")) {
+                        customQuotaColorEnabled = false
+                        customQuotaColorHex = QuotaAppearance.defaultHex
+                    }
+                }
+            } header: {
+                Text(appLanguage.localized(chinese: "颜色", english: "Color", russian: "Цвет"))
+            } footer: {
+                Text(appLanguage.localized(
+                    chinese: "自定义颜色将替代绿色、黄色和红色额度提示。完成勾号保持绿色。",
+                    english: "A custom color replaces the green, yellow and red quota colors. The completion check stays green.",
+                    russian: "Свой цвет заменит зелёный, жёлтый и красный цвета лимита. Галочка завершения останется зелёной."
                 ))
             }
 

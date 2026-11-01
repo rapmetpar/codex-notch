@@ -218,7 +218,7 @@ contracts:
 
   - id: QUOTA-ALIGNMENT-056
     title: Quota layers stay concentric in offset and resized hosts
-    status: active
+    status: superseded
     statement: >-
       Preserve SETTINGS-MOTION-021 and all inherited quota values, colors,
       trim direction, dimensions, positions, glint timing, halo timing and
@@ -259,7 +259,7 @@ contracts:
       - docs/decisions/057-native-glint-mask.md
       - "manual: inspect the actual running notch at multiple glint phases and after hover expansion/collapse; confirm the inner glint and outer halo share the quota center"
     supersedes: []
-    superseded_by: null
+    superseded_by: SETTINGS-APPEARANCE-024
     last_verified_commit: null
 
   - id: CI-VERIFICATION-001
@@ -3038,5 +3038,48 @@ contracts:
       - docs/decisions/059-scrollable-recent-chats.md
       - "manual: select twenty, scroll and open the last chat on a physical notch and floating bar; verify downward expansion, collapse hit regions, quotas, reset details, Settings, live limits and restart persistence"
     supersedes: [ACTIVITY-STATE-007]
+    superseded_by: null
+    last_verified_commit: null
+  - id: SETTINGS-APPEARANCE-024
+    title: Local custom color and image apply live without changing quota or task state
+    status: active
+    statement: >-
+      Preserve QUOTA-ALIGNMENT-056 and SETTINGS-MOTION-021 including all geometry,
+      animation phases, visibility gates, static cues, readable values and existing
+      defaults, except the opt-in color override. Custom color applies to available
+      quota rings, wave fills, expanded progress rows, running halos, inner glints
+      and status echoes. Default mode retains warning colors and critical neutral
+      echoes; missing quota remains neutral and completion checks remain green.
+      Settings explains that custom color replaces warning hues and offers reset.
+      Add custom to statusIconStyle without changing existing stored values or
+      Codex fallback. Import user-selected PNG/JPEG up to 8 MiB into a bounded
+      128px PNG, stripping source metadata. Persist only pixels locally; retain
+      original foreground color, transparency and aspect ratio inside existing
+      frames. Update echo masks without restarting motion. Missing or corrupt
+      pixels use the embedded fallback. Invalid imports and cancellation preserve
+      previous artwork; removal clears pixels and selects Codex. Persist all new
+      preferences across restarts and apply live in notch and floating layouts.
+      Retain five-hour quota priority, Off geometry, all languages, authentication
+      privacy, task navigation, Dock icon, runtime data and display routing.
+    rationale: The user requested a new branch with custom quota/glow color and a personal pet image as status artwork.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [settings, quota-color, status-artwork, local-image-import]
+      exclude: [quota-values, task-state, window-geometry, animated-pet-integration, authentication, releases]
+    examples:
+      positive: Choose purple and a transparent pet PNG, see the selected color live, restart after moving the source file, then restore the original palette without changing task or quota data.
+      negative: A custom icon reads another app bundle, failed import deletes the previous picture, changing color resets the pulse, missing quota looks available, or restore loses the original warning palette.
+    guards:
+      - Tests/CodexNotchTests/AppearanceCustomizationTests.swift
+      - Tests/CodexNotchTests/StatusIconStyleTests.swift
+      - Tests/CodexNotchTests/StatusIconThemeTests.swift
+      - Tests/CodexNotchTests/QuotaRingAlignmentTests.swift
+      - Tests/CodexNotchTests/QuotaRunningHaloMotionTests.swift
+      - Tests/CodexNotchTests/CompactLeftIndicatorPolicyTests.swift
+      - docs/decisions/059-custom-colors-and-status-image.md
+      - "manual: import/cancel/replace/remove images, change color and reset, restart; inspect all three settings languages, compact/expanded, running/completed/no-quota and motion-off states on physical-notch and floating screens"
+    supersedes: [QUOTA-ALIGNMENT-056]
     superseded_by: null
     last_verified_commit: null

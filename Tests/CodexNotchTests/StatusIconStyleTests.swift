@@ -45,7 +45,7 @@ final class StatusIconStyleTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let before = NotchRuntimePreferences.read(from: defaults)
-        XCTAssertEqual(StatusIconStyle.allCases, [.codex, .chatGPT, .off])
+        XCTAssertEqual(StatusIconStyle.allCases, [.codex, .chatGPT, .custom, .off])
         defaults.set(StatusIconStyle.off.rawValue, forKey: StatusIconStyle.storageKey)
         let reopened = try XCTUnwrap(UserDefaults(suiteName: name))
         XCTAssertEqual(StatusIconStyle.fromStoredValue(reopened.string(forKey: StatusIconStyle.storageKey)), .off)

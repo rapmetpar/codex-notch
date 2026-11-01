@@ -177,6 +177,9 @@ struct NotchView: View {
     @ObservedObject private var model: NotchViewModel
     @AppStorage(QuotaDisplayStyle.storageKey)
     private var quotaDisplayStyleRaw = QuotaDisplayStyle.defaultStyle.rawValue
+    @AppStorage(QuotaAppearance.enabledKey) private var customQuotaColorEnabled = false
+    @AppStorage(QuotaAppearance.colorKey) private var customQuotaColorHex = QuotaAppearance.defaultHex
+    @AppStorage(CustomStatusIcon.storageKey) private var customIconData = Data()
     @AppStorage(StatusIconStyle.storageKey)
     private var statusIconStyleRaw = StatusIconStyle.defaultStyle.rawValue
     @AppStorage(AppLanguage.storageKey)
@@ -445,6 +448,8 @@ struct NotchView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .environment(\.notchAppLanguage, appLanguage)
+        .environment(\.quotaAppearance, QuotaAppearance(enabled: customQuotaColorEnabled, hex: customQuotaColorHex))
+        .environment(\.customStatusIconData, customIconData)
         .environment(\.notchStatusIconStyle, StatusIconStyle.fromStoredValue(statusIconStyleRaw))
         .environment(\.notchMotionEnabled, motionEnabled)
         .transaction { transaction in
@@ -634,6 +639,7 @@ private struct CompactNotchView: View {
     let action: () -> Void
     @Environment(\.notchAppLanguage) private var language
     @Environment(\.notchStatusIconStyle) private var iconStyle
+    @Environment(\.quotaAppearance) private var quotaAppearance
 
     var body: some View {
         Button(action: action) {
@@ -728,7 +734,7 @@ private struct CompactNotchView: View {
     }
 
     private var compactAppIcon: some View {
-        CompactAppIconView(status: icon, theme: StatusIconTheme(usage: usage),
+        CompactAppIconView(status: icon, theme: StatusIconTheme(usage: usage, appearance: quotaAppearance),
                            layoutMode: layoutMode, compactHeight: compactHeight)
     }
 
@@ -773,6 +779,7 @@ private struct CompactAppIconView: View {
 }
 
 private struct CompactQuotaView: View {
+    @Environment(\.quotaAppearance) private var quotaAppearance
     let window: UsageWindow?
     let activity: QuotaRingActivity
     let style: QuotaDisplayStyle
@@ -792,7 +799,7 @@ private struct CompactQuotaView: View {
             ) {
                 // This is intentionally centered on the visible quota circle,
                 // never on the physical camera cutout in the middle.
-                QuotaRunningHaloView(isAnimating: true)
+                QuotaRunningHaloView(isAnimating: true, color: quotaAppearance.customColor)
                     .frame(
                         width: QuotaRunningHaloMotion.visualDiameter,
                         height: QuotaRunningHaloMotion.visualDiameter
@@ -880,12 +887,13 @@ private struct RunningStatusIcon: View {
     let iconStyle: StatusIconStyle
     let size: CGFloat
     let theme: StatusIconTheme
+    @Environment(\.customStatusIconData) private var customIconData
     @Environment(\.notchMotionEnabled) private var motionEnabled
 
     var body: some View {
         ZStack {
             if motionEnabled, iconStyle.templateImage != nil {
-                StatusMarkEchoLayer(isAnimating: true, iconStyle: iconStyle, color: theme.runningEcho)
+                StatusMarkEchoLayer(isAnimating: true, iconStyle: iconStyle, color: theme.runningEcho, customIconData: customIconData)
                     .frame(width: size, height: size)
                     .allowsHitTesting(false)
             } else {
@@ -1148,6 +1156,7 @@ private struct QuotaValueText: View {
 }
 
 private struct QuotaWaveBall: View {
+    @Environment(\.quotaAppearance) private var quotaAppearance
     let window: UsageWindow?
     let activity: QuotaRingActivity
     let diameter: CGFloat
@@ -1167,11 +1176,11 @@ private struct QuotaWaveBall: View {
 
     private var progressColor: Color {
         guard window != nil else { return NotchPalette.secondaryText }
-        return QuotaColorScale.color(for: remainingPercent)
+        return quotaAppearance.color(for: remainingPercent)
     }
 
     private var progressColorComponents: QuotaColorScale.RGB {
-        QuotaColorScale.components(for: remainingPercent)
+        quotaAppearance.components(for: remainingPercent)
     }
 
     var body: some View {
@@ -1264,6 +1273,7 @@ private struct QuotaWaveBall: View {
 }
 
 struct QuotaRing: View {
+    @Environment(\.quotaAppearance) private var quotaAppearance
     let style: QuotaDisplayStyle
     let window: UsageWindow?
     let activity: QuotaRingActivity
@@ -1284,11 +1294,11 @@ struct QuotaRing: View {
 
     private var progressColor: Color {
         guard window != nil else { return NotchPalette.secondaryText }
-        return QuotaColorScale.color(for: remainingPercent)
+        return quotaAppearance.color(for: remainingPercent)
     }
 
     private var progressColorComponents: QuotaColorScale.RGB {
-        QuotaColorScale.components(for: remainingPercent)
+        quotaAppearance.components(for: remainingPercent)
     }
 
     private var progressTrim: (from: CGFloat, to: CGFloat) {
@@ -1316,7 +1326,7 @@ struct QuotaRing: View {
                     motionEnabled: motionEnabled
                 ) {
                     QuotaGradientLayer(
-                        color: QuotaInnerGlowMotion.color,
+                        color: quotaAppearance.customColor ?? QuotaInnerGlowMotion.color,
                         isAnimating: true,
                         style: .innerGlow,
                         circularMask: QuotaGradientCircularMask(
@@ -1745,6 +1755,7 @@ private struct QuotaWindowsProgressView: View {
 }
 
 private struct QuotaWindowProgressRow: View {
+    @Environment(\.quotaAppearance) private var quotaAppearance
     let kind: UsageWindowKind
     let window: UsageWindow?
     let now: Date
@@ -1752,7 +1763,7 @@ private struct QuotaWindowProgressRow: View {
 
     private var progressColor: Color {
         guard window != nil else { return NotchPalette.secondaryText }
-        return QuotaColorScale.color(for: window?.remainingPercent ?? 0)
+        return quotaAppearance.color(for: window?.remainingPercent ?? 0)
     }
 
     var body: some View {

@@ -39,6 +39,7 @@ Record decisions here only when they affect active behavior contracts, could be 
 | [057-native-glint-mask](057-native-glint-mask.md) | active | `QUOTA-ALIGNMENT-056`, `SETTINGS-MOTION-021` | Keep the rotating inner glint and circular clipping in one native layer coordinate space |
 
 | [059-scrollable-recent-chats](059-scrollable-recent-chats.md) | active | `ACTIVITY-STATE-008` | Make twenty recent chats reachable in a five-row scrolling viewport |
+| [059-custom-colors-and-status-image](059-custom-colors-and-status-image.md) | active | `SETTINGS-APPEARANCE-024` | Persist an optional quota/glow color and a user-selected local status image |
 
 New decisions must include `status`, `contract_ids`, rejected alternatives, and consequences. When a decision changes, retain the old document and point to the new one with `superseded_by`.
 

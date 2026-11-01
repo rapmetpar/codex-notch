@@ -108,6 +108,8 @@ CodexNotch reads the default `~/.codex` directory. If Codex uses another directo
 
 Hover over the physical notch and use **Settings** at the lower-right of the expanded card. You can also open Settings from the notch context menu or app menu.
 
+In **Appearance**, enable **Custom color** to choose the quota and glow color, or restore the standard warning palette. Select **Custom image** under **Left side** to import a PNG/JPEG (up to 8 MB), including a transparent pet image. A small local copy survives moving the source file. Five-hour quota still takes priority over the icon; custom pet artwork is static.
+
 - Switch between the clockwise quota ring and wave ball
 - Choose a floating-bar center style and set a signature of up to 12 characters
 - Choose Chinese, English, or Russian for the app interface (English by default)

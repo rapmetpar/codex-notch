@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [QUOTA-SEMANTICS-055]
 supersedes: []
-superseded_by: null
+superseded_by: 059-custom-colors-and-status-image
 owner: project-maintainer
 created_at: 2026-09-06
 last_verified_commit: null
