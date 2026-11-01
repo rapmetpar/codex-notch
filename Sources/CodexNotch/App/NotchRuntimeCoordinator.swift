@@ -595,7 +595,8 @@ final class NotchRuntimeCoordinator {
             usage: usage,
             isHovered: isHovered,
             readReceipts: conversationReadStore.receipts,
-            nativeReadReceipts: nativeReadMonitor.receipts
+            nativeReadReceipts: nativeReadMonitor.receipts,
+            conversationCategoryOrder: preferences.conversationCategoryOrder
         )
 
         let state = NotchPresentationReducer.reduce(input)
@@ -610,7 +611,8 @@ final class NotchRuntimeCoordinator {
                     usage: input.usage,
                     isHovered: true,
                     readReceipts: input.readReceipts,
-                    nativeReadReceipts: input.nativeReadReceipts
+                    nativeReadReceipts: input.nativeReadReceipts,
+                    conversationCategoryOrder: input.conversationCategoryOrder
                 )
             )
         } else {

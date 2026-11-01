@@ -13,6 +13,8 @@ struct NotchSettingsView: View {
     private var statusIconStyleRaw = StatusIconStyle.defaultStyle.rawValue
     @AppStorage(RecentConversationLimit.storageKey)
     private var recentConversationLimitRaw = RecentConversationLimit.defaultLimit.rawValue
+    @AppStorage(ConversationCategoryOrder.storageKey)
+    private var conversationCategoryOrderRaw = ConversationCategoryOrder.defaultOrder.rawValue
     @AppStorage(AppLanguage.storageKey)
     private var appLanguageRaw = AppLanguage.defaultLanguage.rawValue
     @AppStorage(AppAnimationPreference.storageKey)
@@ -54,6 +56,13 @@ struct NotchSettingsView: View {
         Binding(
             get: { recentConversationLimit },
             set: { recentConversationLimitRaw = $0.rawValue }
+        )
+    }
+
+    private var conversationCategoryOrderBinding: Binding<ConversationCategoryOrder> {
+        Binding(
+            get: { ConversationCategoryOrder.fromStoredValue(conversationCategoryOrderRaw) },
+            set: { conversationCategoryOrderRaw = $0.rawValue }
         )
     }
 
@@ -135,6 +144,7 @@ struct NotchSettingsView: View {
                         Text(limit.title(for: appLanguage)).tag(limit)
                     }
                 }
+                ConversationCategoryOrderControl(order: conversationCategoryOrderBinding, language: appLanguage)
             } header: {
                 Text(appLanguage.localized(chinese: "日常使用", english: "Everyday use", russian: "Общие настройки"))
             } footer: {

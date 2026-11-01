@@ -68,7 +68,7 @@ final class ConversationAttentionTests: XCTestCase {
         XCTAssertEqual(result.limitingRecentConversations(to: .none).conversations.count, 0)
     }
 
-    func testReadReceiptsDoNotChangeCompactCompletionOrHistoryOrder() throws {
+    func testReadReceiptsKeepCompactCompletionAndGroupUnreadBeforeViewed() throws {
         let finished = completion()
         var input = NotchPresentationInput(now: now, isChatGPTFrontmost: false,
                                           activeSessions: [], recentCompletions: [finished], usage: nil, isHovered: false)
@@ -81,8 +81,9 @@ final class ConversationAttentionTests: XCTestCase {
             usage: nil, isHovered: true, readReceipts: input.readReceipts
         ))
         guard case let .expanded(content) = result else { return XCTFail("Expected expanded") }
-        XCTAssertEqual(content.conversations.map(\.threadID), ["thread", "older"])
-        XCTAssertEqual(content.conversations.map(\.attention), [.viewed, .unread])
+        // CONVERSATION-ORDER-001 supersedes the chronological-only list order.
+        XCTAssertEqual(content.conversations.map(\.threadID), ["older", "thread"])
+        XCTAssertEqual(content.conversations.map(\.attention), [.unread, .viewed])
     }
 
     func testCorruptDataFallsBackSafelyAndStoredDataContainsOnlyReceiptMetadata() throws {
