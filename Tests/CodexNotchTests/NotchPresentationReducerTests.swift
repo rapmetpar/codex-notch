@@ -55,7 +55,8 @@ final class NotchPresentationReducerTests: XCTestCase {
                 activeSessions: [],
                 recentCompletions: [completion],
                 usage: nil,
-                isHovered: false
+                isHovered: false,
+                compactCompletionSignals: [completion.session.threadID: ConversationReadReceipt(completion)]
             )
         )
 
@@ -78,7 +79,8 @@ final class NotchPresentationReducerTests: XCTestCase {
                 activeSessions: [],
                 recentCompletions: [completion],
                 usage: usage,
-                isHovered: false
+                isHovered: false,
+                compactCompletionSignals: [completion.session.threadID: ConversationReadReceipt(completion)]
             )
         )
         let hiddenState = NotchPresentationReducer.reduce(
@@ -88,7 +90,8 @@ final class NotchPresentationReducerTests: XCTestCase {
                 activeSessions: [],
                 recentCompletions: [completion],
                 usage: usage,
-                isHovered: false
+                isHovered: false,
+                compactCompletionSignals: [completion.session.threadID: ConversationReadReceipt(completion)]
             )
         )
 

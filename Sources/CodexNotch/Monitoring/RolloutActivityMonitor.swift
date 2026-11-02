@@ -5,6 +5,7 @@ final class RolloutActivityMonitor {
 
     // Delivered on the main queue after the ordered store update has committed.
     var onChange: (() -> Void)?
+    var onNewCompletions: (([CompletedSession]) -> Void)?
 
     private let rootURL: URL
     private let store: ActiveSessionStore
@@ -20,6 +21,9 @@ final class RolloutActivityMonitor {
     private var pendingURLs: Set<URL> = []
     private var needsFullScan = false
     private var running = false
+    private var startedAt: Date?
+    private let delivery = CompletionDeliveryGate()
+    private var activeGeneration: UInt64 = 0
     private var publicationTask: Task<Void, Never>?
     private var fingerprints: [URL: FileFingerprint] = [:]
 
@@ -44,7 +48,13 @@ final class RolloutActivityMonitor {
     }
 
     func start() {
-        scanQueue.async { [weak self] in self?.running = true }
+        let startedAt = Date()
+        let generation = delivery.advance()
+        scanQueue.async { [weak self] in
+            self?.running = true
+            self?.startedAt = startedAt
+            self?.activeGeneration = generation
+        }
         scheduleScan(urls: nil, after: 0)
         changeSource.start()
     }
@@ -60,9 +70,11 @@ final class RolloutActivityMonitor {
     }
 
     func stop() {
+        _ = delivery.advance()
         changeSource.stop()
         scanQueue.async { [weak self] in
             self?.running = false
+            self?.startedAt = nil
             self?.pendingScan?.cancel()
             self?.pendingScan = nil
             self?.pendingURLs.removeAll()
@@ -185,6 +197,9 @@ final class RolloutActivityMonitor {
                 inode: (attributes[.systemFileNumber] as? NSNumber)?.uint64Value ?? 0
             )
             guard fingerprint != fingerprints[url] else { return }
+            // Capture before resetting a truncated or atomically replaced file:
+            // replayed lifecycle events are history, not another completion.
+            let previousReduction = ActiveSessionReducer.reduce(eventsByFile[url, default: []])
             var cursor = cursors[url] ?? FileCursor()
             if fingerprint.size < cursor.offset
                 || (fingerprints[url].map { $0.inode != fingerprint.inode } ?? false) {
@@ -200,6 +215,8 @@ final class RolloutActivityMonitor {
             }
 
             let reduction = ActiveSessionReducer.reduce(eventsByFile[url, default: []])
+            let discovered = Self.newSuccessfulCompletions(previous: previousReduction, current: reduction,
+                events: eventsByFile[url, default: []], startedAt: startedAt)
             completionDatesByFile[url] = Dictionary(
                 reduction.completed.map { ($0.threadID, $0.lastActivityAt) },
                 uniquingKeysWith: max
@@ -207,15 +224,34 @@ final class RolloutActivityMonitor {
             let previous = publicationTask
             let store = store
             let notify = onChange
+            let notifyCompletions = onNewCompletions
+            let generation = activeGeneration
+            let delivery = delivery
             publicationTask = Task {
                 await previous?.value
                 await store.replace(rolloutID: url.path, reduction: reduction, lastModifiedAt: modifiedAt)
-                DispatchQueue.main.async { notify?() }
+                DispatchQueue.main.async {
+                    guard let fresh = delivery.claim(discovered, generation: generation) else { return }
+                    if !fresh.isEmpty { notifyCompletions?(fresh) }
+                    notify?()
+                }
             }
         } catch {
             // A rollout may be rotated or partially written while Codex is appending.
             // A later filesystem event or recovery scan retries it.
         }
+    }
+
+    static func newSuccessfulCompletions(
+        previous: ActiveSessionReduction, current: ActiveSessionReduction,
+        events: [RolloutEvent], startedAt: Date?
+    ) -> [CompletedSession] {
+        guard let startedAt else { return [] }
+        let observedAt = Date()
+        return current.successful.filter { item in
+            item.lastActivityAt >= startedAt && item.lastActivityAt <= observedAt
+                && !previous.successful.contains(item)
+        }.map { CompletedSession(session: $0, completedAt: $0.lastActivityAt) }
     }
 
     private func remove(url: URL) {
@@ -230,6 +266,33 @@ final class RolloutActivityMonitor {
             await previous?.value
             await store.remove(rolloutID: url.path)
             DispatchQueue.main.async { notify?() }
+        }
+    }
+}
+
+/// Reject stale callbacks and replayed completions without persisting private metadata.
+final class CompletionDeliveryGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var generation: UInt64 = 0
+    private var published = Set<PetCompletionKey>()
+    private var order: [PetCompletionKey] = []
+    private let maximum = 4096
+
+    func advance() -> UInt64 {
+        lock.lock(); defer { lock.unlock() }
+        generation &+= 1
+        return generation
+    }
+
+    func claim(_ completions: [CompletedSession], generation: UInt64) -> [CompletedSession]? {
+        lock.lock(); defer { lock.unlock() }
+        guard self.generation == generation else { return nil }
+        return completions.filter { completion in
+            let key = PetCompletionKey(completion)
+            guard published.insert(key).inserted else { return false }
+            order.append(key)
+            if order.count > maximum { published.remove(order.removeFirst()) }
+            return true
         }
     }
 }

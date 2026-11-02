@@ -75,6 +75,13 @@ struct SessionActivity: Equatable, Identifiable, Sendable {
 struct ActiveSessionReduction: Equatable, Sendable {
     let active: [SessionActivity]
     let completed: [SessionActivity]
+    let successful: [SessionActivity]
+
+    init(active: [SessionActivity], completed: [SessionActivity], successful: [SessionActivity] = []) {
+        self.active = active
+        self.completed = completed
+        self.successful = successful
+    }
 }
 
 enum ActiveSessionReducer {
@@ -84,6 +91,7 @@ enum ActiveSessionReducer {
         var originator: String?
         var active: [String: SessionActivity] = [:]
         var completed: [SessionActivity] = []
+        var successful: [SessionActivity] = []
         var isSubagentRollout = false
 
         for (index, event) in events.enumerated() {
@@ -123,19 +131,30 @@ enum ActiveSessionReducer {
                     lastActivityAt: timestamp
                 )
 
-            case let .taskCompleted(turnID), let .turnAborted(turnID):
+            case let .taskCompleted(turnID):
                 guard !isSubagentRollout else { continue }
                 guard let key = matchingKey(for: turnID, active: active),
                       let item = active.removeValue(forKey: key) else {
                     continue
                 }
+                let completion = item.updating(lastActivityAt: event.timestamp ?? item.lastActivityAt)
+                completed.append(completion)
+                // Signals require an actual completion timestamp; the history fallback
+                // for malformed timestamps cannot prove when the task completed.
+                if event.timestamp != nil { successful.append(completion) }
+
+            case let .turnAborted(turnID):
+                guard !isSubagentRollout else { continue }
+                guard let key = matchingKey(for: turnID, active: active),
+                      let item = active.removeValue(forKey: key) else { continue }
                 completed.append(item.updating(lastActivityAt: event.timestamp ?? item.lastActivityAt))
             }
         }
 
         return ActiveSessionReduction(
             active: active.values.sorted { $0.lastActivityAt > $1.lastActivityAt },
-            completed: completed
+            completed: completed,
+            successful: successful
         )
     }
 

@@ -14,12 +14,12 @@ enum NotchPresentationReducer {
                 usage: input.usage
             )
         }
-        if let completion = input.recentCompletions.first {
-            // The compact island still shows quota on the right, while its
-            // left app mark remains a completion acknowledgement until the
-            // next active task supersedes it. Recent-completion history is
-            // already retained by ActiveSessionStore, so do not discard this
-            // visible state after a couple of seconds.
+        if let completion = input.recentCompletions.first(where: {
+            !isViewed($0, input: input) && (
+                input.compactCompletionSignals[$0.session.threadID] == ConversationReadReceipt($0)
+                    || (input.nativeReadReceipts[$0.session.threadID]?.turnID == $0.session.turnID
+                        && input.nativeReadReceipts[$0.session.threadID]?.isRead == false))
+        }) {
             return .completedCompact(completion.session, usage: input.usage)
         }
 
@@ -60,10 +60,7 @@ enum NotchPresentationReducer {
                 ConversationSummary(
                     session: completion.session,
                     activity: .completed(completedAt: completion.completedAt),
-                    isViewed: input.readReceipts[completion.session.threadID]
-                        == ConversationReadReceipt(completion)
-                        || input.nativeReadReceipts[completion.session.threadID]?.turnID
-                            == completion.session.turnID,
+                    isViewed: isViewed(completion, input: input),
                     project: project(for: completion.session)
                 )
             )
@@ -81,5 +78,11 @@ enum NotchPresentationReducer {
             usage: input.usage,
             allProjectIDs: input.conversationProjectOrder.availableIDs(in: conversations)
         )
+    }
+
+    private static func isViewed(_ completion: CompletedSession, input: NotchPresentationInput) -> Bool {
+        input.readReceipts[completion.session.threadID] == ConversationReadReceipt(completion)
+            || (input.nativeReadReceipts[completion.session.threadID]?.turnID == completion.session.turnID
+                && input.nativeReadReceipts[completion.session.threadID]?.isRead == true)
     }
 }
