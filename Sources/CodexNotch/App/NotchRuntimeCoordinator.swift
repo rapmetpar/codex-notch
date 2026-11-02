@@ -38,6 +38,7 @@ final class NotchRuntimeCoordinator {
     private let nowProvider: () -> Date
     private let userDefaults: UserDefaults
     private let conversationReadStore: ConversationReadStore
+    private let compactCompletionStore: CompactCompletionStore
     private let nativeReadMonitor: NativeConversationReadMonitor
     private let viewModel: NotchViewModel
     private let titleReadQueue = DispatchQueue(
@@ -94,6 +95,7 @@ final class NotchRuntimeCoordinator {
         self.nowProvider = nowProvider
         self.userDefaults = userDefaults
         self.conversationReadStore = ConversationReadStore(defaults: userDefaults)
+        self.compactCompletionStore = CompactCompletionStore(defaults: userDefaults)
         self.projectOrderStore = ConversationProjectOrderStore(defaults: userDefaults)
         self.viewModel = NotchViewModel()
 
@@ -157,6 +159,10 @@ final class NotchRuntimeCoordinator {
         rolloutMonitor.onChange = { [weak self] in
             guard let self, self.started else { return }
             self.pollSessions()
+        }
+        rolloutMonitor.onNewCompletions = { [weak self] completions in
+            guard let self, self.started else { return }
+            self.compactCompletionStore.record(completions)
         }
         rolloutMonitor.start()
         nativeReadMonitor.onChange = { [weak self] in
@@ -615,6 +621,7 @@ final class NotchRuntimeCoordinator {
             )
         }
 
+        compactCompletionStore.removeViewed(local: conversationReadStore.receipts, native: nativeReadMonitor.receipts)
         let input = NotchPresentationInput(
             now: renderDate,
             isChatGPTFrontmost: isChatGPTFrontmost,
@@ -624,6 +631,7 @@ final class NotchRuntimeCoordinator {
             isHovered: isHovered,
             readReceipts: conversationReadStore.receipts,
             nativeReadReceipts: nativeReadMonitor.receipts,
+            compactCompletionSignals: compactCompletionStore.signals,
             conversationCategoryOrder: preferences.conversationCategoryOrder,
             threadProjects: threadProjects,
             conversationProjectOrder: preferences.conversationProjectOrder

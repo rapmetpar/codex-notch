@@ -48,7 +48,8 @@ final class NotchHeightViewTests: XCTestCase {
                     compactWidth: 257, compactHeight: height, surfaceSize: size,
                     animationsEnabled: true
                 )
-                let hosting = NSHostingView(rootView: NotchView(model: model)
+                let companion = PetCompanionController(defaults: defaults, loadImmediately: false)
+                let hosting = NSHostingView(rootView: NotchView(model: model, companion: companion)
                     .defaultAppStorage(defaults)
                     // Match a Retina notch even on a headless CI display.
                     .environment(\.displayScale, 2)

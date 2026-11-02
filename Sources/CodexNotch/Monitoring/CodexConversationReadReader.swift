@@ -1,9 +1,15 @@
 import Foundation
 import SQLite3
 
-/// In-memory native acknowledgement of a particular published turn. Never persisted.
+/// In-memory native read or unread evidence for a published turn. Never persisted.
 struct NativeConversationReadReceipt: Equatable, Sendable {
     let turnID: String
+    let isRead: Bool
+
+    init(turnID: String, isRead: Bool = true) {
+        self.turnID = turnID
+        self.isRead = isRead
+    }
 }
 
 protocol NativeConversationReadReading {
@@ -51,20 +57,29 @@ final class CodexConversationReadReader: NativeConversationReadReading {
             }
             var step = sqlite3_step(statement)
             while step == SQLITE_ROW {
-                // NULL alone is insufficient: a missing/legacy publication key
-                // cannot acknowledge a new answer. Empty first_unread_turn is
-                // explicitly manually unread in Codex, not another form of NULL.
-                if sqlite3_column_type(statement, 1) == SQLITE_NULL,
+                // A publication key is required for either read or unread
+                // evidence. An empty marker explicitly means manually unread.
+                if let isRead = Self.readStatus(statement, 1),
                    let id = Self.identifier(statement, 0),
                    Self.identifier(statement, 2) != nil,
                    let turnID = Self.identifier(statement, 3) {
-                    result[id] = NativeConversationReadReceipt(turnID: turnID)
+                    result[id] = NativeConversationReadReceipt(turnID: turnID, isRead: isRead)
                 }
                 step = sqlite3_step(statement)
             }
             guard step == SQLITE_DONE else { return [:] }
         }
         return result
+    }
+
+    private static func readStatus(_ statement: OpaquePointer, _ column: Int32) -> Bool? {
+        if sqlite3_column_type(statement, column) == SQLITE_NULL { return true }
+        guard sqlite3_column_type(statement, column) == SQLITE_TEXT,
+              (0...256).contains(Int(sqlite3_column_bytes(statement, column))),
+              let bytes = sqlite3_column_text(statement, column) else { return nil }
+        let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, column)))
+        guard let value = String(data: data, encoding: .utf8), value.isEmpty || isIdentifier(value) else { return nil }
+        return false
     }
 
     private static func identifier(_ statement: OpaquePointer, _ column: Int32) -> String? {

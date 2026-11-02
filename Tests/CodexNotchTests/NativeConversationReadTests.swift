@@ -77,6 +77,30 @@ final class NativeConversationReadTests: XCTestCase {
         XCTAssertEqual(attention(completion(turn: "turn-2"), native: db.reader.receipts(for: ["thread"])), .unread)
     }
 
+    func testNativeReadEvidenceSeparatesUnreadFromReadForExactTurn() throws {
+        let db = try Database()
+        for marker in ["turn-1", ""] {
+            try db.receipt(unread: marker)
+            let evidence = db.reader.receipts(for: ["thread"])
+            XCTAssertEqual(evidence["thread"]?.turnID, "turn-1")
+            XCTAssertEqual(evidence["thread"]?.isRead, false)
+            XCTAssertEqual(attention(completion(), native: evidence), .unread)
+        }
+        try db.receipt()
+        let evidence = db.reader.receipts(for: ["thread"])
+        XCTAssertEqual(evidence["thread"]?.isRead, true)
+        XCTAssertEqual(attention(completion(), native: evidence), .viewed)
+    }
+
+    func testMalformedUnreadMarkersNeverCreateEvidence() throws {
+        let db = try Database()
+        try db.receipt()
+        for value in ["x'ff'", "'bad marker'", "'" + String(repeating: "x", count: 257) + "'"] {
+            try db.execute("UPDATE thread_read_receipts SET first_unread_turn=\(value)")
+            XCTAssertTrue(db.reader.receipts(for: ["thread"]).isEmpty)
+        }
+    }
+
     func testNativeUnreadIncludingManualEmptyMarkerIsNotAReadReceipt() throws {
         let db = try Database()
         for unread in ["turn-1", ""] {
@@ -278,6 +302,44 @@ final class NativeConversationReadTests: XCTestCase {
     }
 
     @MainActor
+    func testNativeUnreadToReadUpdatesCompactAndClearsPersistedSignal() throws {
+        let db = try Database(wal: true)
+        let finished = completion()
+        try db.receipt(unread: "turn-1")
+        let suite = "NativeCompactIntegration.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = CompactCompletionStore(defaults: defaults)
+        store.record([finished])
+        let monitor = NativeConversationReadMonitor(reader: db.reader, refreshInterval: 0.02)
+        let unreadSeen = expectation(description: "native unread retains the compact cue")
+        let readSeen = expectation(description: "native read clears compact cue and persistence")
+        var phase = 0
+        monitor.onChange = {
+            store.removeViewed(local: [:], native: monitor.receipts)
+            let input = NotchPresentationInput(now: self.now, isChatGPTFrontmost: false,
+                activeSessions: [], recentCompletions: [finished], usage: nil, isHovered: false,
+                nativeReadReceipts: monitor.receipts, compactCompletionSignals: store.signals)
+            if phase == 0 {
+                XCTAssertEqual(NotchPresentationReducer.reduce(input), .completedCompact(finished.session, usage: nil))
+                XCTAssertNotNil(store.signals["thread"])
+                phase = 1
+                unreadSeen.fulfill()
+                try! db.receipt()
+            } else {
+                XCTAssertEqual(NotchPresentationReducer.reduce(input), .quotaCompact(nil))
+                XCTAssertNil(CompactCompletionStore(defaults: defaults).signals["thread"])
+                readSeen.fulfill()
+                monitor.stop()
+            }
+        }
+        monitor.updateThreadIDs(["thread"])
+        monitor.start()
+        defer { monitor.stop(); monitor.onChange = nil }
+        wait(for: [unreadSeen, readSeen], timeout: 3)
+    }
+
+    @MainActor
     func testLiveTimerPublishesNativeReadNewTurnAndLossWithNoRestartOrRolloutChange() throws {
         let db = try Database(wal: true)
         try db.receipt(unread: "turn-1")
@@ -290,6 +352,10 @@ final class NativeConversationReadTests: XCTestCase {
         monitor.onChange = {
             switch phase {
             case 0:
+                if monitor.receipts["thread"]?.isRead == false {
+                    XCTAssertEqual(self.attention(current, native: monitor.receipts), .unread)
+                    return
+                }
                 XCTAssertEqual(self.attention(current, native: monitor.receipts), .viewed)
                 viewed.fulfill()
                 current = self.completion(turn: "turn-2")

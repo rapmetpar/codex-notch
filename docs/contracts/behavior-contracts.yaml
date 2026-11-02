@@ -3224,7 +3224,7 @@ contracts:
 
   - id: PROJECT-GROUPS-001
     title: Group island chats by stable projects and reorder project headings locally
-    status: active
+    status: superseded
     statement: >-
       Inherit CONVERSATION-ORDER-001 and its inherited contracts except expanded
       list category order being outermost and its five-full-row viewport. Projects
@@ -3276,7 +3276,7 @@ contracts:
       - docs/decisions/062-project-island-groups.md
       - "manual: drag headers in both directions on physical-notch and floating hardware, keyboard/VoiceOver buttons, restart, native rename/delete/fallback, scroll to final chat and navigate; inspect quota/footer, camera clearance, downward expansion/collapse hit regions and motion off/on"
     supersedes: [CONVERSATION-ORDER-001]
-    superseded_by: null
+    superseded_by: COMPACT-ATTENTION-001
     last_verified_commit: null
 
   - id: PET-LIBRARY-001
@@ -3577,5 +3577,47 @@ contracts:
       - docs/decisions/064-compact-shared-slot.md
       - "manual: physical camera/wings, tiny pet and quota legibility, actual fade smoothness, running/completed/idle and absent quota, app/system motion switches, click/hover/collapse hit regions"
     supersedes: [PET-EXPANDED-003]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: COMPACT-ATTENTION-001
+    title: Compact completion reflects observed unacknowledged answers
+    status: active
+    statement: >-
+      Inherit PROJECT-GROUPS-001 except the inherited compact completion policy
+      and five-second native-read refresh interval. Refresh native receipts every
+      two seconds using a single timer registered for common and event-tracking
+      run-loop modes; keep the existing bounded utility-queue database access.
+      This is eventual consistency, not a hard latency guarantee. Running retains priority. An unacknowledged successful task completion
+      observed after monitoring begins supplies a compact completion signal. A
+      valid native unread receipt for that exact published turn also supplies
+      a signal, even after restart; missing receipts or mismatched turns remain
+      unknown, and scanning historical completions alone does not. Preserve the signal over
+      restart in bounded app-owned metadata containing only thread ID, turn ID
+      and completion instant. A matching local or native read clears the signal;
+      native unread cannot override a matching local opening acknowledgement.
+      Existing history and row attention remain independent. Batch delivery of
+      start and completion must not lose a live completion. Interrupted turns do
+      not create new compact signals. Preserve category and project order,
+      history limits, navigation, geometry, quota, and motion.
+    rationale: Historical completions caused a green check even after the answer was read or without a current completion.
+    source: user-reported-incident
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [compact-completion, rollout-observation, bounded-signal-persistence, native-read-refresh-cadence]
+      exclude: [history-retention, quota-semantics, geometry, message-content, releases]
+    examples:
+      positive: A live task completes, shows a check across restart, and a matching read removes it while keeping the conversation in history.
+      negative: Initial history scan produces a completion signal, a read answer keeps the check, or a short task loses its completion because both events arrive together.
+    guards:
+      - Tests/CodexNotchTests/CompactCompletionStoreTests.swift
+      - Tests/CodexNotchTests/CompactUnreadCompletionTests.swift
+      - Tests/CodexNotchTests/NativeConversationReadTests.swift
+      - Tests/CodexNotchTests/NativeReadTrackingModeTests.swift
+      - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
+      - docs/decisions/065-compact-observed-completions.md
+      - "manual: finish and read an answer in native Codex, verify row and compact cue update, restart, and inspect physical notch and floating bar, including pointer tracking"
+    supersedes: [PROJECT-GROUPS-001]
     superseded_by: null
     last_verified_commit: null

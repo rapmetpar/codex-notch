@@ -99,6 +99,7 @@ struct NotchPresentationInput: Equatable {
     let isHovered: Bool
     var readReceipts: [String: ConversationReadReceipt] = [:]
     var nativeReadReceipts: [String: NativeConversationReadReceipt] = [:]
+    var compactCompletionSignals: [String: ConversationReadReceipt] = [:]
     var conversationCategoryOrder: ConversationCategoryOrder = .defaultOrder
     var threadProjects: [String: NativeThreadProject] = [:]
     var conversationProjectOrder = ConversationProjectOrder()

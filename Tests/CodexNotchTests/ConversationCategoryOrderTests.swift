@@ -177,8 +177,10 @@ final class ConversationCategoryOrderTests: XCTestCase {
             var input = fixture(order: order, hovered: false)
             input = NotchPresentationInput(now: now, isChatGPTFrontmost: true, activeSessions: [],
                                            recentCompletions: input.recentCompletions, usage: nil, isHovered: false,
-                                           readReceipts: input.readReceipts, conversationCategoryOrder: order)
-            XCTAssertEqual(NotchPresentationReducer.reduce(input), .completedCompact(session("viewed", offset: 10), usage: nil))
+                                           readReceipts: input.readReceipts,
+                                           compactCompletionSignals: ["new": ConversationReadReceipt(input.recentCompletions[1])],
+                                           conversationCategoryOrder: order)
+            XCTAssertEqual(NotchPresentationReducer.reduce(input), .completedCompact(session("new"), usage: nil))
         }
     }
 

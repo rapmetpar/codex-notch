@@ -3,7 +3,7 @@ import Foundation
 /// Main-thread lifecycle; all SQLite work runs on the utility queue. Receipts are
 /// refreshed even while rollouts, titles and window focus remain unchanged.
 final class NativeConversationReadMonitor {
-    static let refreshInterval: TimeInterval = 5
+    static let refreshInterval: TimeInterval = 2
     var onChange: (() -> Void)?
     private(set) var receipts: [String: NativeConversationReadReceipt] = [:]
 
@@ -24,9 +24,12 @@ final class NativeConversationReadMonitor {
     func start() {
         guard !started else { return }
         started = true
-        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             self?.refresh()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        RunLoop.main.add(timer, forMode: .eventTracking)
+        self.timer = timer
         refresh()
     }
 
