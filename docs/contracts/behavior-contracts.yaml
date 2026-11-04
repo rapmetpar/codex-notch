@@ -363,7 +363,7 @@ contracts:
 
   - id: CI-VERIFICATION-001
     title: Verify release source with a supported SDK before publication
-    status: active
+    status: superseded
     statement: >-
       CI must explicitly select Xcode 16.2 on macOS 14, record the checked-out
       source SHA and toolchain, and run the existing full verification entry
@@ -389,6 +389,36 @@ contracts:
       - docs/decisions/053-explicit-ci-toolchain.md
       - "manual: confirm successful CI and its checkout SHA before publication"
     supersedes: []
+    superseded_by: CI-VERIFICATION-002
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-002
+    title: Full release checks run on supported macOS Intel CI and local Apple Silicon
+    status: active
+    statement: >-
+      Inherit CI-VERIFICATION-001 except the retired macOS 14 image. Run the
+      unchanged full verify.sh job named test on macos-15-intel with explicit
+      Xcode 16.2, checkout SHA and toolchain logging, and retain the manual ref
+      input. Before publication require successful CI for the exact release
+      source and local full Apple Silicon verification of the distributed code.
+      Keep ARM packaging separate. Pending, cancelled, failed or missing CI
+      never substitutes for success; preserve the protected main requirements.
+    rationale: ARM CI jobs remained unassigned with no steps while the supported Intel image offers the same OS and explicit toolchain.
+    source: verified-runner-inventory-and-observed-queue
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner, exact-source-verification]
+      exclude: [app-behavior, test-reduction, arm64-package, branch-protection]
+    examples:
+      positive: The Intel job logs the PR source SHA and passes full verification, while the distributed Apple Silicon bundle passes local verification.
+      negative: Removing tests to make CI green, changing the required test context, publishing a pending source, or distributing the Intel CI bundle as the Apple Silicon release.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/decisions/068-ci-intel-runner.md
+      - "manual: confirm exact-source CI success and local ARM package provenance"
+    supersedes: [CI-VERIFICATION-001]
     superseded_by: null
     last_verified_commit: null
 
