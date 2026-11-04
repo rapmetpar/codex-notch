@@ -165,7 +165,7 @@ struct NotchSettingsView: View {
                 Button {
                     updater.checkForUpdates()
                 } label: {
-                    Label(appLanguage.localized(chinese: "检查更新…", english: "Check for Updates…", russian: "Проверить обновления…"), systemImage: "arrow.clockwise")
+                    Label(appLanguage.localized(chinese: "打开更新页面…", english: "Open Updates Page…", russian: "Открыть страницу обновлений…"), systemImage: "arrow.clockwise")
                 }
                 .disabled(!updater.canCheckForUpdates)
                 if let error = updater.startupError {

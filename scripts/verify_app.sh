@@ -29,12 +29,14 @@ FRAMEWORK="$APP_PATH/Contents/Frameworks/Sparkle.framework"
 [[ -x "$FRAMEWORK/Versions/B/Autoupdate" ]] || {
     echo "error: Sparkle installer helper missing" >&2; exit 1;
 }
-[[ "$(plutil -extract SUFeedURL raw -o - "$INFO_PLIST")" == "https://raw.githubusercontent.com/rapmetpar/codex-notch/main/appcast.xml" ]] || {
-    echo "error: unexpected update feed" >&2; exit 1;
+[[ "$(plutil -extract CodexNotchManualUpdatesOnly raw -o - "$INFO_PLIST")" == "true" ]] || {
+    echo "error: manual-only update mode required" >&2; exit 1;
 }
-[[ -n "$(plutil -extract SUPublicEDKey raw -o - "$INFO_PLIST")" ]] || {
-    echo "error: update verification public key missing" >&2; exit 1;
-}
+for KEY in SUFeedURL SUPublicEDKey; do
+    if plutil -extract "$KEY" raw -o - "$INFO_PLIST" >/dev/null 2>&1; then
+        echo "error: $KEY must be absent in manual-only mode" >&2; exit 1
+    fi
+done
 for FLAG in SUEnableAutomaticChecks SUAutomaticallyUpdate SUAllowsAutomaticUpdates SUEnableSystemProfiling; do
     [[ "$(plutil -extract "$FLAG" raw -o - "$INFO_PLIST")" == "false" ]] || {
         echo "error: $FLAG must be false" >&2; exit 1;

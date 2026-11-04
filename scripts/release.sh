@@ -2,6 +2,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# This build deliberately cannot produce signed Sparkle updates. Fail before
+# build or Keychain access, even if a signing key happens to be available.
+[[ "${SIGN_UPDATES:-0}" == "0" ]] || {
+    echo "error: signed updates are disabled for manual-only releases" >&2; exit 1;
+}
 source "$ROOT_DIR/scripts/package_paths.sh"
 VERSION="${VERSION:-$(plutil -extract CFBundleShortVersionString raw -o - "$ROOT_DIR/Resources/Info.plist")}"
 ARCH="$(uname -m)"
@@ -23,7 +28,7 @@ cleanup_dmg_mount() {
 
 trap cleanup_dmg_mount EXIT
 
-RUN_TESTS="${RUN_TESTS:-1}" \
+SIGN_IDENTITY="-" RUN_TESTS="${RUN_TESTS:-1}" \
     "$ROOT_DIR/scripts/build_app.sh" "$DIST_DIR"
 "$ROOT_DIR/scripts/verify_app.sh" "$APP_PATH"
 
@@ -59,6 +64,5 @@ rmdir "$DMG_MOUNT_DIR"
 DMG_MOUNT_DIR=""
 
 (cd "$DIST_DIR" && shasum -a 256 "$(basename "$DMG_PATH")") | tee "$DMG_PATH.sha256"
-"$ROOT_DIR/scripts/sign_update.sh" "$ARCHIVE_PATH" "$DIST_DIR/appcast.xml"
 echo "Release ZIP: $ARCHIVE_PATH"
 echo "Release DMG: $DMG_PATH"

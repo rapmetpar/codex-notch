@@ -3772,7 +3772,7 @@ contracts:
 
   - id: APP-UPDATE-003
     title: Personal fork checks only its own signed release feed
-    status: active
+    status: superseded
     statement: >-
       Inherit APP-UPDATE-002 except the upstream publisher key and feed. The
       fork's public feed and release assets belong only to rapmetpar/codex-notch
@@ -3799,12 +3799,12 @@ contracts:
       - docs/decisions/066-personal-fork-updates.md
       - "manual: migrate from upstream with settings and pets intact; install a subsequent signed fork update and reject a tampered archive"
     supersedes: [APP-UPDATE-002]
-    superseded_by: null
+    superseded_by: APP-UPDATE-004
     last_verified_commit: null
 
   - id: RELEASE-SIGNING-002
     title: Personal fork signs its own release artifacts
-    status: active
+    status: superseded
     statement: >-
       Inherit RELEASE-SIGNING-001 except its publisher key and destination.
       Local signing uses the separate com.rapmetpar.codexnotch.sparkle Keychain
@@ -3829,5 +3829,68 @@ contracts:
       - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
       - docs/decisions/066-personal-fork-updates.md
     supersedes: [RELEASE-SIGNING-001]
+    superseded_by: RELEASE-PACKAGE-003
+    last_verified_commit: null
+
+  - id: APP-UPDATE-004
+    title: Manual updates open the personal release page only
+    status: active
+    statement: >-
+      Replace APP-UPDATE-003's signed updater and feed with manual-only updates.
+      Settings opens the fixed personal release page in the browser and never
+      starts Sparkle, downloads or installs an update. The bundled flag declares
+      manual-only, no feed or update public key is included, all automatic
+      Sparkle and profiling flags remain disabled, and the legacy verification
+      before extraction setting remains enabled. Preserve bundle identity,
+      app-owned preferences and pet libraries. No authentication, private data,
+      Keychain access or unattended update is introduced.
+    rationale: The user explicitly declined update signing and requested manual releases.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [manual-update-action, bundle-configuration, localized-labels]
+      exclude: [automatic-installation, keychain-access, notarization, data-reset]
+    examples:
+      positive: The action opens the personal releases page; no updater session starts.
+      negative: The action contacts the upstream release page or starts an installer.
+    guards:
+      - Tests/CodexNotchTests/AppUpdaterConfigurationTests.swift
+      - scripts/verify_app.sh
+      - docs/decisions/067-manual-updates.md
+      - "manual: open the release page from Settings in each supported language and confirm no update installer opens"
+    supersedes: [APP-UPDATE-003]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: RELEASE-PACKAGE-003
+    title: Manual release packages do not require update signing
+    status: active
+    statement: >-
+      Replace RELEASE-SIGNING-002 with manual ZIP and DMG packages, checksums,
+      bundled app verification and ad-hoc codesigning. No update feed or private
+      key is required or used, and no signing Keychain prompt is made. Retain
+      historical signed archive verification utilities and fixtures, and fail
+      closed before key access if signed packaging is requested. Hosted packaging
+      uses the personal repository and supported runner without secrets and never
+      publishes. Preserve package paths, app identity and app-owned data.
+    rationale: The user explicitly rejected publisher-key access for this release.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [manual-release-packaging, hosted-packaging, checksum, update-key-avoidance]
+      exclude: [notarization, publication, preferences-reset]
+    examples:
+      positive: A verified ZIP and DMG with checksums are created without Keychain interaction.
+      negative: A signed-update request touches the Keychain or an unsigned appcast entry is published.
+    guards:
+      - scripts/release.sh
+      - scripts/verify_app.sh
+      - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
+      - Tests/CodexNotchTests/AppUpdaterConfigurationTests.swift
+      - .github/workflows/package.yml
+      - docs/decisions/067-manual-updates.md
+    supersedes: [RELEASE-SIGNING-002]
     superseded_by: null
     last_verified_commit: null

@@ -1,35 +1,22 @@
+import AppKit
 import Combine
-import Sparkle
 
-/// One updater for the lifetime of the app, started only by a manual check.
+/// Manual-only releases: never start an updater, download, or install an archive.
 @MainActor
 final class AppUpdater: ObservableObject {
     static let shared = AppUpdater()
+    static let releaseURL = URL(string: "https://github.com/rapmetpar/codex-notch/releases/latest")!
 
     @Published private(set) var canCheckForUpdates = true
     @Published private(set) var startupError: String?
+    private let openURL: (URL) -> Bool
 
-    private lazy var controller = SPUStandardUpdaterController(
-        startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil
-    )
-    private var availability: AnyCancellable?
-    private var started = false
+    init(openURL: @escaping (URL) -> Bool = { NSWorkspace.shared.open($0) }) {
+        self.openURL = openURL
+    }
 
     func checkForUpdates() {
         guard canCheckForUpdates else { return }
-        startupError = nil
-        if !started {
-            do {
-                try controller.updater.start()
-                started = true
-                availability = controller.updater.publisher(for: \.canCheckForUpdates)
-                    .receive(on: DispatchQueue.main)
-                    .sink { [weak self] in self?.canCheckForUpdates = $0 }
-            } catch {
-                startupError = error.localizedDescription
-                return
-            }
-        }
-        controller.checkForUpdates(nil)
+        startupError = openURL(Self.releaseURL) ? nil : "Could not open the releases page."
     }
 }

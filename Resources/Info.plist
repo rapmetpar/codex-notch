@@ -39,10 +39,8 @@
 	<true/>
 	<key>NSPrefersDisplaySafeAreaCompatibilityMode</key>
 	<false/>
-	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/rapmetpar/codex-notch/main/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>Zb25wklW2kGsC3BHwtaLKttaX7ewzFr1ODqIMLOn4+w=</string>
+	<key>CodexNotchManualUpdatesOnly</key>
+	<true/>
 	<key>SUEnableAutomaticChecks</key>
 	<false/>
 	<key>SUAutomaticallyUpdate</key>

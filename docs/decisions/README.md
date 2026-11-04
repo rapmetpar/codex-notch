@@ -61,3 +61,5 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [066: Stable completion event identity](066-compact-completion-identity.md)
 - [067: Bounded expanded card spacing](067-expanded-spacing.md)
 - [066: Native thread read state](066-native-thread-read-state.md)
+
+- [067: Manual updates](067-manual-updates.md)

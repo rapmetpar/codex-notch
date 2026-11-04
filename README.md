@@ -34,7 +34,7 @@ Your browser, IDE, or any other app can be frontmost—your quota remains visibl
 ## New in 0.2.1
 
 - Bring an already-open Settings window back to the front.
-- Download, verify, install, and relaunch updates inside the app. Install 0.2.1 manually once when upgrading from an earlier version.
+- At that version, updates could be installed inside the app. Current releases use manual installation.
 
 ## New in 0.2.0
 
@@ -118,7 +118,7 @@ In **Appearance**, enable **Custom color** to choose the quota and glow color, o
 - Choose a floating-bar center style and set a signature of up to 12 characters
 - Choose Chinese, English, or Russian for the app interface (English by default)
 - Show 0–20 recent conversations in the expanded card
-- Check for stable updates and download, install, and relaunch inside the app (from 0.2.1)
+- Open the releases page to download and install updates manually
 - Apply changes immediately and save them locally
 - Start automatically at login when enabled in General
 - Hide the left display area while keeping quota details in the expanded card
@@ -154,14 +154,14 @@ Compatible libraries contain a `manifest.json` and local PNG/WebP sprite atlases
 - Task state is parsed only from rollout JSONL files in `CODEX_HOME/sessions`.
 - Conversation labels use the latest short `thread_name` in `CODEX_HOME/session_index.jsonl`, falling back to `threads.title` in read-only `CODEX_HOME/state_5.sqlite`. Rollout message bodies, `first_user_message`, and `preview` are ignored when resolving titles.
 - CodexNotch never records Authorization headers, complete usage responses, user-message bodies, or conversation-title caches.
-- Manual update checks read a public GitHub appcast and download signed release archives; they send no Codex credentials, quota data, task data, or user content.
+- The update action opens the public GitHub releases page in your browser. CodexNotch does not download or install updates.
 
 The usage endpoint is an internal ChatGPT endpoint and its fields may change. If it fails, CodexNotch keeps the last successful quota while task monitoring continues.
 
 <details>
 <summary><strong>Build from source</strong></summary>
 
-Contributors need Xcode 16 or newer and a macOS version supported by that Xcode release. The built app supports macOS 14 or later. CI uses Xcode 16.2 on macOS 14:
+Contributors need Xcode 16 or newer and a macOS version supported by that Xcode release. The built app supports macOS 14 or later. CI uses Xcode 16.2 on macOS 15:
 
 ```sh
 swift test
@@ -177,7 +177,7 @@ Create distributable ZIP and DMG archives:
 ./scripts/release.sh
 ```
 
-The release script runs tests, builds the release app, validates its code signature, produces ZIP and DMG archives plus SHA-256 files, mounts the DMG to verify its bundled app, and signs the ZIP to generate an update feed using the publisher’s Keychain. See [the publisher update workflow](docs/updating.md). The DMG improves installation flow; it does not replace Developer ID signing or notarization. To skip signing entirely:
+The release script runs tests, builds the ad-hoc-signed release app, validates its code signature, produces ZIP and DMG archives plus SHA-256 files, and mounts the DMG to verify its bundled app. No update signing key is used. See [the publisher update workflow](docs/updating.md). The DMG improves installation flow; it does not replace Developer ID signing or notarization. To skip signing entirely:
 
 ```sh
 SIGN_IDENTITY=none ./scripts/build_app.sh
@@ -187,7 +187,7 @@ SIGN_IDENTITY=none ./scripts/build_app.sh
 
 ## Current boundaries
 
-CodexNotch is currently in its 0.x release series. It does not terminate Codex tasks, estimate cost, sync to the cloud, send remote notifications, download or install updates without user action, or support Mac App Store distribution. ChatGPT Classic is not a monitored target.
+CodexNotch is currently in its 0.x release series. It does not terminate Codex tasks, estimate cost, sync to the cloud, send remote notifications, download or install updates, or support Mac App Store distribution. ChatGPT Classic is not a monitored target.
 
 ## License
 
