@@ -1545,22 +1545,25 @@ private struct ExpandedNotchView: View {
                 isResetScheduleExpanded: isResetScheduleExpanded,
                 onResetScheduleExpandedChanged: onResetScheduleExpandedChanged
             )
+            .layoutMeasurement("quota")
 
             if !content.conversations.isEmpty {
-                Spacer(minLength: 16)
+                Color.clear.frame(height: 16)
 
                 Text(language.localized(chinese: "最近对话", english: "Recent conversations", russian: "Недавние чаты"))
                     .font(.system(size: 11.5, weight: .regular))
                     .foregroundStyle(NotchPalette.secondaryText)
+                    .layoutMeasurement("recent")
 
-                Spacer(minLength: 8)
+                Color.clear.frame(height: 8)
 
                 ProjectConversationListView(content: content, now: now, language: language,
                     onOpenThread: onOpenThread, onDropProjects: onDropProjects,
                     onMoveProject: onMoveProject)
+                    .layoutMeasurement("list")
             }
 
-            Spacer(minLength: 6)
+            Color.clear.frame(height: 6)
 
             HStack(spacing: 8) {
                 Spacer(minLength: 0)
@@ -1627,6 +1630,7 @@ private struct ExpandedNotchView: View {
                     language.localized(chinese: "打开设置", english: "Open settings", russian: "Открыть настройки")
                 )
             }
+            .layoutMeasurement("footer")
         }
         .padding(.horizontal, 14)
         // The panel itself attaches to the physical notch. Only the content
@@ -2364,3 +2368,25 @@ extension EnvironmentValues {
         set { self[CompactPetWingEnabledKey.self] = newValue }
     }
 }
+
+#if DEBUG
+// Non-interactive native anchors used only by hosted layout regression tests.
+struct ExpandedLayoutMeasurement: NSViewRepresentable {
+    let name: String
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        view.identifier = NSUserInterfaceItemIdentifier("expanded-layout-" + name)
+        return view
+    }
+    func updateNSView(_ view: NSView, context: Context) {}
+}
+extension View {
+    func layoutMeasurement(_ name: String) -> some View {
+        background(ExpandedLayoutMeasurement(name: name).allowsHitTesting(false))
+    }
+}
+#else
+extension View {
+    func layoutMeasurement(_ name: String) -> some View { self }
+}
+#endif

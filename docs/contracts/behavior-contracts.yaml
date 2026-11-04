@@ -1,4 +1,36 @@
 contracts:
+  - id: EXPANDED-SPACING-001
+    title: Expanded quota and grouped history have bounded gaps
+    status: active
+    statement: >-
+      Inherit PET-COMPACT-003 and the no-expanded-stage requirement. In expanded
+      physical and floating cards, keep 16pt between the quota/reset block and
+      the recent heading, 8pt between heading and project list, and 6pt before
+      the footer; excess canvas height must not stretch those gaps. Budget the
+      card for its actual quota windows, reset details and bounded project list.
+      Keep quota, reset, list scrolling and footer visible, including no history,
+      1–20 conversations, grouped projects, missing quota and expanded resets.
+      Preserve compact geometry, camera anchoring, fixed-canvas downward expansion,
+      collapse hit reclamation, companion, state and navigation behavior.
+    rationale: The user reported large blank gaps after the reset row and recent heading despite removal of the expanded companion stage.
+    source: user-reported-incident
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [expanded-content-spacing, expanded-height-budget]
+      exclude: [compact-geometry, companion, quota-semantics, activity-state, release]
+    examples:
+      positive: Recent heading and project list follow the reset block at fixed gaps while a long list scrolls above the visible footer.
+      negative: Surplus height stretches gaps, reset details overlap history, or a short card clips the footer.
+    guards:
+      - Tests/CodexNotchTests/ExpandedLayoutSpacingTests.swift
+      - Tests/CodexNotchTests/ProjectIslandIntegrationTests.swift
+      - docs/decisions/067-expanded-spacing.md
+      - "manual: inspect physical and floating expanded cards, real notch clearance, downward expansion and collapse hit reclamation, reset details, scrolling and footer"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
   - id: PACKAGE-SEARCH-002
     title: Local builds stay outside search without retained backups
     status: active
