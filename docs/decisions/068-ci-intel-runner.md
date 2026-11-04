@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [CI-VERIFICATION-002]
 supersedes: [059-supported-ci-runner]
-superseded_by: null
+superseded_by: 069-ci-current-image
 owner: project-maintainer
 created_at: 2026-11-04
 ---

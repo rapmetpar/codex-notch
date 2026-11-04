@@ -394,7 +394,7 @@ contracts:
 
   - id: CI-VERIFICATION-002
     title: Full release checks run on supported macOS Intel CI and local Apple Silicon
-    status: active
+    status: superseded
     statement: >-
       Inherit CI-VERIFICATION-001 except the retired macOS 14 image. Run the
       unchanged full verify.sh job named test on macos-15-intel with explicit
@@ -419,6 +419,38 @@ contracts:
       - docs/decisions/068-ci-intel-runner.md
       - "manual: confirm exact-source CI success and local ARM package provenance"
     supersedes: [CI-VERIFICATION-001]
+    superseded_by: CI-VERIFICATION-003
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-003
+    title: Exact-source full verification uses an explicit supported current SDK
+    status: active
+    statement: >-
+      Inherit CI-VERIFICATION-002 except its unavailable macOS 15 pool and SDK
+      pin. Run the complete unchanged verify.sh job named test on macos-26-intel
+      with explicit Xcode 26.2, source SHA and toolchain logging, and the existing
+      manual ref input. Require successful exact-source CI and local full ARM
+      verification before publication; no pending, cancelled, failed or missing
+      result substitutes for success. Preserve the app's macOS 14 deployment
+      target, all tests, protected main, and separate Apple Silicon packaging.
+      Current-image CI does not establish runtime GUI acceptance on macOS 15
+      or 14. Rebuild the release from its checked source before publication.
+    rationale: Both supported macOS 15 queues remained unassigned after the test snapshot repair; a current supported image offers an explicit installed SDK and the same full checks.
+    source: observed-queue-and-supported-image-inventory
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner, ci-sdk, exact-source-verification]
+      exclude: [app-behavior, test-reduction, deployment-target, branch-protection]
+    examples:
+      positive: The final source passes all existing checks with the explicit current SDK, and its ARM package is rebuilt locally and verified.
+      negative: Claiming older-OS GUI coverage from a current-image pass, suppressing a failing test, changing the required context, or releasing a different source.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/decisions/069-ci-current-image.md
+      - "manual: confirm checkout SHA, full CI result and ARM archive provenance before publication"
+    supersedes: [CI-VERIFICATION-002]
     superseded_by: null
     last_verified_commit: null
 

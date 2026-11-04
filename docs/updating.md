@@ -16,6 +16,10 @@ the release script rejects `SIGN_UPDATES=1` before accessing any key.
    under `dist.noindex`. Both checks are local and do not publish anything.
 3. Require a passing CI run on the exact release source. Confirm its checkout SHA
    and record the run URL. A local pass does not substitute for CI.
+
+CI uses macOS 26 Intel with explicitly selected Xcode 26.2. Local full
+verification and distribution use Apple Silicon. The app still targets macOS
+14; the current CI image does not prove GUI behavior on older macOS versions.
 4. After review and authorization, publish the ZIP, DMG and checksums to the
    matching personal GitHub Release, then verify the downloaded assets. Do not
    publish an unsigned appcast entry. The tracked appcast remains empty.

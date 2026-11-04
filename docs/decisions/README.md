@@ -62,5 +62,6 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [067: Bounded expanded card spacing](067-expanded-spacing.md)
 - [066: Native thread read state](066-native-thread-read-state.md)
 - [068: Supported Intel CI pool](068-ci-intel-runner.md)
+- [069: Explicit current-image CI](069-ci-current-image.md)
 
 - [067: Manual updates](067-manual-updates.md)
