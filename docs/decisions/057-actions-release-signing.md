@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [RELEASE-SIGNING-001, APP-UPDATE-002, CI-VERIFICATION-001]
 supersedes: []
-superseded_by: null
+superseded_by: 066-personal-fork-updates
 owner: project-maintainer
 created_at: 2026-09-14
 last_verified_commit: null

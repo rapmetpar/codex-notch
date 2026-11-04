@@ -14,14 +14,22 @@ final class AppUpdaterConfigurationTests: XCTestCase {
         }
         XCTAssertEqual(plist["SUVerifyUpdateBeforeExtraction"] as? Bool, true)
         let publicKey = try XCTUnwrap(plist["SUPublicEDKey"] as? String)
+        XCTAssertEqual(publicKey, "Zb25wklW2kGsC3BHwtaLKttaX7ewzFr1ODqIMLOn4+w=")
         let bytes = try XCTUnwrap(Data(base64Encoded: publicKey))
         XCTAssertNoThrow(try Curve25519.Signing.PublicKey(rawRepresentation: bytes))
         let feed = try XCTUnwrap(URL(string: try XCTUnwrap(plist["SUFeedURL"] as? String)))
         XCTAssertEqual(feed.scheme, "https")
         XCTAssertEqual(feed.host, "raw.githubusercontent.com")
-        XCTAssertEqual(feed.path, "/fengdwx/codex-notch/main/appcast.xml")
+        XCTAssertEqual(feed.path, "/rapmetpar/codex-notch/main/appcast.xml")
         XCTAssertNil(feed.user)
         XCTAssertNil(feed.query)
+    }
+
+    func testTrackedFeedNeverAdvertisesUpstreamArchives() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let feed = try String(contentsOf: root.appendingPathComponent("appcast.xml"), encoding: .utf8)
+        XCTAssertFalse(feed.contains("github.com/fengdwx/codex-notch/releases/"))
     }
 
     @MainActor

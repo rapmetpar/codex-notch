@@ -221,7 +221,7 @@ contracts:
 
   - id: RELEASE-SIGNING-001
     title: Authorized cloud packaging uses the existing publisher key
-    status: active
+    status: superseded
     statement: >-
       A maintainer can manually package main on GitHub Actions using
       SPARKLE_PRIVATE_KEY without accessing the publisher Mac. Full verification
@@ -248,7 +248,7 @@ contracts:
       - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
       - docs/decisions/057-actions-release-signing.md
     supersedes: []
-    superseded_by: null
+    superseded_by: RELEASE-SIGNING-002
     last_verified_commit: null
 
   - id: SETTINGS-TEXT-023
@@ -549,7 +549,7 @@ contracts:
 
   - id: APP-UPDATE-002
     title: Manually initiated signed updates install inside the app
-    status: active
+    status: superseded
     statement: >-
       Check for Updates must use one retained Sparkle updater to check the public
       stable appcast and offer download, signature verification, installation,
@@ -578,7 +578,7 @@ contracts:
       - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
       - "manual: exercise Sparkle download/install/relaunch from a lower build and reject a tampered archive without replacing it"
     supersedes: [APP-UPDATE-001]
-    superseded_by: null
+    superseded_by: APP-UPDATE-003
     last_verified_commit: null
 
   - id: SETTINGS-WINDOW-019
@@ -3686,5 +3686,67 @@ contracts:
       - docs/decisions/065-compact-observed-completions.md
       - "manual: finish and read an answer in native Codex, verify row and compact cue update, restart, and inspect physical notch and floating bar, including pointer tracking"
     supersedes: [PROJECT-GROUPS-001]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: APP-UPDATE-003
+    title: Personal fork checks only its own signed release feed
+    status: active
+    statement: >-
+      Inherit APP-UPDATE-002 except the upstream publisher key and feed. The
+      fork's public feed and release assets belong only to rapmetpar/codex-notch
+      and use its distinct Ed25519 key. The first migration from the upstream
+      publisher requires manual replacement, preserving bundle identity and
+      app-owned settings and pets. Never advertise an unpublished archive or
+      accept an upstream release URL as the fork's update. Remain manual, verify
+      signatures before extraction, and keep credentials and private data out.
+    rationale: The upstream key and release feed cannot publish the fork's updates.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [feed, key-rotation, release-destination, migration]
+      exclude: [unattended-updates, notarization, settings-reset, publication]
+    examples:
+      positive: After a manual migration, a signed fork release is offered and preserves existing app-owned data.
+      negative: A fork build offers an upstream archive, embeds a private key, or promises an unpublished update.
+    guards:
+      - Tests/CodexNotchTests/AppUpdateCheckerTests.swift
+      - Tests/CodexNotchTests/AppUpdaterConfigurationTests.swift
+      - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
+      - scripts/verify_app.sh
+      - docs/decisions/066-personal-fork-updates.md
+      - "manual: migrate from upstream with settings and pets intact; install a subsequent signed fork update and reject a tampered archive"
+    supersedes: [APP-UPDATE-002]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: RELEASE-SIGNING-002
+    title: Personal fork signs its own release artifacts
+    status: active
+    statement: >-
+      Inherit RELEASE-SIGNING-001 except its publisher key and destination.
+      Local signing uses the separate com.rapmetpar.codexnotch.sparkle Keychain
+      account; a CI secret may only be configured with explicit authorization.
+      Publish verified fork archives before the fork appcast. A missing or wrong
+      key fails closed; packaging never publishes. Keep the existing bundle ID
+      and app-owned data, and never disclose or commit private key material.
+    rationale: A fork needs an independent publisher identity and release assets.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [fork-signing, release-artifacts, key-rotation]
+      exclude: [notarization, preferences-reset, publication]
+    examples:
+      positive: A correctly signed fork ZIP matches the embedded fork public key and fork release URL.
+      negative: An upstream signature or destination passes the personal fork release guard.
+    guards:
+      - scripts/sign_update.sh
+      - scripts/verify_update.swift
+      - scripts/verify_signing_failures.py
+      - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
+      - docs/decisions/066-personal-fork-updates.md
+    supersedes: [RELEASE-SIGNING-001]
     superseded_by: null
     last_verified_commit: null

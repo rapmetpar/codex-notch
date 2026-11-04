@@ -29,7 +29,7 @@ FRAMEWORK="$APP_PATH/Contents/Frameworks/Sparkle.framework"
 [[ -x "$FRAMEWORK/Versions/B/Autoupdate" ]] || {
     echo "error: Sparkle installer helper missing" >&2; exit 1;
 }
-[[ "$(plutil -extract SUFeedURL raw -o - "$INFO_PLIST")" == "https://raw.githubusercontent.com/fengdwx/codex-notch/main/appcast.xml" ]] || {
+[[ "$(plutil -extract SUFeedURL raw -o - "$INFO_PLIST")" == "https://raw.githubusercontent.com/rapmetpar/codex-notch/main/appcast.xml" ]] || {
     echo "error: unexpected update feed" >&2; exit 1;
 }
 [[ -n "$(plutil -extract SUPublicEDKey raw -o - "$INFO_PLIST")" ]] || {

@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [APP-UPDATE-002, SETTINGS-WINDOW-019, PRIVACY-BOUNDARY-005]
 supersedes: [012-manual-release-update-check]
-superseded_by: null
+superseded_by: 066-personal-fork-updates
 owner: project-maintainer
 created_at: 2026-09-13
 last_verified_commit: null

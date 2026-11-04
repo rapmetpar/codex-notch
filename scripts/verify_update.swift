@@ -53,7 +53,7 @@ do {
                 "Archive build does not match current app build")
     try require(feed.values["sparkle:shortVersionString"]?.trimmingCharacters(in: .whitespacesAndNewlines) == version,
                 "Archive version does not match current app version")
-    let expectedURL = "https://github.com/fengdwx/codex-notch/releases/download/v\(version)/" +
+    let expectedURL = "https://github.com/rapmetpar/codex-notch/releases/download/v\(version)/" +
         URL(fileURLWithPath: args[2]).lastPathComponent
     try require(enclosure["url"] == expectedURL, "Unexpected release download URL")
     print("Verified update: v\(version) (\(build)), Ed25519 signature and archive length valid")

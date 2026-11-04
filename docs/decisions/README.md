@@ -56,3 +56,5 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [062: Optional pet companion stage](062-pet-companion-stage.md)
 
 - [063: Compact companion left wing](063-compact-pet-wing.md)
+
+- [066: Personal fork updates](066-personal-fork-updates.md)

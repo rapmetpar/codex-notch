@@ -21,7 +21,7 @@ final class UpdateArchiveVerificationTests: XCTestCase {
         <rss><channel><item>
         <sparkle:version>19</sparkle:version>
         <sparkle:shortVersionString>0.2.1</sparkle:shortVersionString>
-        <enclosure url="https://github.com/fengdwx/codex-notch/releases/download/v0.2.1/fixture.zip"
+        <enclosure url="https://github.com/rapmetpar/codex-notch/releases/download/v0.2.1/fixture.zip"
             sparkle:edSignature="\(signature)" length="\(payload.count)" />
         </item></channel></rss>
         """.write(to: feed, atomically: true, encoding: .utf8)
@@ -61,6 +61,15 @@ final class UpdateArchiveVerificationTests: XCTestCase {
         let wrongPublisher = try verify()
         XCTAssertNotEqual(wrongPublisher.0, 0)
         XCTAssertTrue(wrongPublisher.1.contains("signature invalid"), wrongPublisher.1)
+
+        let personalFeed = try String(contentsOf: feed, encoding: .utf8)
+        try personalFeed.replacingOccurrences(of: "github.com/rapmetpar/", with: "github.com/fengdwx/")
+            .write(to: feed, atomically: true, encoding: .utf8)
+        try writeInfo(publicKey: key.publicKey.rawRepresentation)
+        let upstream = try verify()
+        XCTAssertNotEqual(upstream.0, 0)
+        XCTAssertTrue(upstream.1.contains("Unexpected release download URL"), upstream.1)
+        try personalFeed.write(to: feed, atomically: true, encoding: .utf8)
 
         try writeInfo(publicKey: key.publicKey.rawRepresentation, build: "20")
         let wrongBuild = try verify()

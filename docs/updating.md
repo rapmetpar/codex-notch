@@ -1,9 +1,19 @@
 # Publisher update workflow
 
-CodexNotch uses Sparkle 2.9.6 with an Ed25519 update key. The private key is stored in the GitHub Actions repository Secret
-`SPARKLE_PRIVATE_KEY` and retained in the publisher's login Keychain, under account `com.david.codexnotch.sparkle` and
-service `https://sparkle-project.org`. Only the public key is in `Resources/Info.plist`.
-Users do not generate or download keys.
+The personal `rapmetpar/codex-notch` fork uses Sparkle 2.9.6 and its own
+Ed25519 key. The private key stays in the publisher's login Keychain under
+account `com.rapmetpar.codexnotch.sparkle` and service
+`https://sparkle-project.org`; only the public key is embedded in the app.
+The fork feed and release assets are hosted by that personal repository. The
+initial feed has no entries until the first fork archive is published and
+verified. The prior upstream publisher's key and feed are separate.
+
+Existing upstream installations must migrate once by manually replacing the
+app with a verified fork release; the upstream updater cannot authenticate the
+fork's new signing key. Quit all instances, replace only the app, and keep
+the stable bundle ID and app-owned
+preferences and Application Support files. Confirm settings and imported pets
+after migration. Later fork updates can be checked manually in Settings.
 
 ## Publish a version
 
@@ -28,7 +38,7 @@ checks, and publishing checklists belong outside the public release notes.
 4. When a release is authorized and both checks have passed, upload the generated
    ZIP, DMG and checksums to the matching `v<version>` GitHub Release. Read back
    the public archive URLs.
-5. Copy `dist.noindex/appcast.xml` over the tracked `appcast.xml`, commit it and push it
+5. Copy the generated `dist.noindex/appcast.xml` over the tracked `appcast.xml`, submit it through the required PR and merge it
    to personal `main` only after the archive is publicly available.
 6. Check for Updates from an older updater-enabled installation; verify the
    offered version, download, installation, relaunch, and saved preferences.
@@ -40,42 +50,26 @@ it does not generate deltas or beta channels.
 
 ## Local contributors and key storage
 
-`swift test`, `build_app.sh`, and `verify.sh` do not need the private key. Only
-publisher release signing requires it. Forks need their own key, feed URL, and
-release destination; never share the publisher's key with application users.
-Other computers can trigger the cloud workflow without possessing the private key.
-GitHub Secrets cannot be downloaded for local signing; local release signing
-still requires the existing Keychain. No Apple certificates are provisioned.
+`swift test`, `build_app.sh`, and `verify.sh` do not need the private key.
+Only publisher release signing requires it. Local signing uses the separate
+Keychain account above. Never share the private key with users or commit it.
+A GitHub Actions Secret is not assumed to exist: provisioning one requires
+explicit authorization. No Apple certificates are provisioned.
 
 Apple Developer ID signing/notarization is separate. The app still uses an
 ad-hoc signature; updating does not promise to eliminate Gatekeeper prompts.
-Restore the saved previous app if a local test fails. Withdraw a faulty public
+Rebuild from the appropriate Git revision or obtain a verified rollback release if a test fails. Withdraw a faulty public
 feed entry and publish a higher corrective build for users already updated.
 
-## Package from any computer with GitHub access
+## Hosted packaging
 
-After the version and release notes are committed to main, open Actions →
-Package signed release → Run workflow (main), or run:
-
-```bash
-gh workflow run package.yml --repo fengdwx/codex-notch --ref main
-```
-
-The hosted macOS runner runs full verification, builds the ZIP and DMG, signs
-with SPARKLE_PRIVATE_KEY, verifies against the existing public key, and uploads
-`signed-release-<source SHA>`. Download that artifact from the successful run:
-
-```bash
-gh run download <run-id> --repo fengdwx/codex-notch --dir release-artifacts
-```
-
-Confirm source-commit.txt matches the intended release and CI has passed for that
-SHA. Local full verification is still required before publication. Publish the
-ZIP, DMG and checksums using the existing release steps, then commit appcast.xml
-only after public archive verification. A package run does not publish anything.
-The Secret is scoped to the packaging step, streamed through stdin, and never
-included in uploaded artifacts. Missing or invalid keys fail the run.
-
+The packaging workflow must target `rapmetpar/codex-notch` and a supported
+macOS 15 runner with Xcode 16.2, and use the current output paths. It is manual
+and read-only, and never publishes. Hosted signing requires the fork private
+key in an explicitly authorized Actions Secret. Until that is configured and a
+successful run is verified, use the publisher's local Keychain. Never print or
+export private key material to a file, upload it as an artifact, or assume an
+upstream repository Secret is available to the fork.
 
 ## Preserve local choices when replacing the app
 
@@ -84,8 +78,8 @@ that exact installed path. The released bundle ID stays `com.david.codexnotch`.
 Ordinary replacement does not require removing preferences or Application
 Support. Uninstall cleaners that delete those files also delete chosen settings,
 custom status artwork and imported pet libraries; avoid that cleanup for an
-upgrade. Keep app-owned files outside the app bundle and retain the old bundle
-as a rollback copy. Launch at login remains the actual macOS registration.
+upgrade. Keep app-owned files outside the app bundle. Rebuild from Git or use a
+verified rollback release if needed. Launch at login remains the actual macOS registration.
 
 `./scripts/verify.sh` checks bundle identity and runs an isolated preference
 replacement/relocation guard with synthetic domains. It does not install the
