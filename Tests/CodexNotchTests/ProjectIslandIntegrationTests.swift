@@ -154,9 +154,7 @@ final class ProjectIslandIntegrationTests: XCTestCase {
             XCTAssertEqual(changed, Array(initial.allProjectIDs.reversed()), "Actual accessible heading button must reach production model")
             XCTAssertFalse(panel.canBecomeKey, "Project controls must not steal focus from the active chat")
             if let folder = ProcessInfo.processInfo.environment["NOTCH_PROJECT_PREVIEW_DIR"] {
-                let renderer = ImageRenderer(content: ProjectHeadingDragPreview(title: firstTitle))
-                renderer.scale = 2
-                let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(renderer.cgImage))
+                let bitmap = try hostedViewSnapshot(ProjectHeadingDragPreview(title: firstTitle))
                 try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to:
                     URL(fileURLWithPath: folder).appendingPathComponent("project-drag-\(language.rawValue).png"))
             }

@@ -3202,6 +3202,7 @@ contracts:
       negative: A custom icon reads another app bundle, failed import deletes the previous picture, changing color resets the pulse, missing quota looks available, or restore loses the original warning palette.
     guards:
       - Tests/CodexNotchTests/AppearanceCustomizationTests.swift
+      - Tests/CodexNotchTests/HostedViewSnapshot.swift
       - Tests/CodexNotchTests/StatusIconStyleTests.swift
       - Tests/CodexNotchTests/StatusIconThemeTests.swift
       - Tests/CodexNotchTests/QuotaRingAlignmentTests.swift

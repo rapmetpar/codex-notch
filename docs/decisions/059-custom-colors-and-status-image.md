@@ -78,3 +78,15 @@ The verified app also stayed running during a three-second smoke launch with
 an empty temporary CODEX_HOME, then only that test process was terminated.
 Its runtime log was empty. This did not replace the concurrently running app
 from another feature worktree or verify authenticated quota on real hardware.
+
+## Test capture on hosted macOS runners
+
+The Intel CI runner aborted inside the custom-image test with a Metal loader
+assertion. Its log did not contain a stack trace, so the exact triggering call
+is unconfirmed. The test's SwiftUI `ImageRenderer.cgImage` was a candidate;
+the production ImageIO import does not use it. Snapshot tests now capture the
+same production views through NSHostingView into a 2x bitmap, retaining pixel,
+alpha, color and outline-area assertions and the negative solid-flower guard.
+The same host capture replaces optional preview-only ImageRenderer uses. This
+changes no production image code or UI. A local Apple Silicon run cannot prove
+that the Intel runner's Metal assertion is resolved; the full CI run must do so.

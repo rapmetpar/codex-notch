@@ -9,12 +9,9 @@ final class StatusIconThemeTests: XCTestCase {
     func testCodexMarkKeepsBlackInsideAndAWhiteOutlineAtEveryQuotaLevel() throws {
         for remaining in [80.0, 20, 5] {
             let theme = StatusIconTheme(usage: usage(remaining: remaining))
-            let renderer = ImageRenderer(content:
-                StatusMark(style: .codex, size: 18, theme: theme)
-                    .background(Color.black)
-            )
-            renderer.scale = 2
-            let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(renderer.cgImage))
+            let bitmap = try hostedViewSnapshot(
+                StatusMark(style: .codex, size: 18, theme: theme).background(Color.black),
+                size: NSSize(width: 18, height: 18))
             XCTAssertEqual(bitmap.pixelsWide, 36)
             XCTAssertEqual(bitmap.pixelsHigh, 36)
             for (x, y) in [(18, 14), (18, 18), (20, 18)] {
@@ -62,7 +59,7 @@ final class StatusIconThemeTests: XCTestCase {
         let prompt = try XCTUnwrap(CodexMarkAsset.promptTemplateImage)
         for remaining in [80.0, 20, 5] {
             let theme = StatusIconTheme(usage: usage(remaining: remaining))
-            let renderer = ImageRenderer(content:
+            let bitmap = try hostedViewSnapshot(
                 ZStack {
                     StatusMark(style: .codex, size: 18, tint: theme.flowerOutlineColor, monochrome: true)
                     Image(nsImage: prompt)
@@ -72,10 +69,8 @@ final class StatusIconThemeTests: XCTestCase {
                         .foregroundStyle(Color.white)
                 }
                 .frame(width: 18, height: 18)
-                .background(Color.black)
+                .background(Color.black), size: NSSize(width: 18, height: 18)
             )
-            renderer.scale = 2
-            let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(renderer.cgImage))
             XCTAssertGreaterThan(try whiteArea(of: bitmap), 400,
                                  "A solid white flower must fail the outline area ceiling")
         }

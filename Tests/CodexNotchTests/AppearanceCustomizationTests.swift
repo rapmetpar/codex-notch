@@ -34,10 +34,9 @@ final class AppearanceCustomizationTests: XCTestCase {
         let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
         XCTAssertEqual(image.width, 128)
         XCTAssertEqual(image.height, 64)
-        let renderer = ImageRenderer(content: StatusMark(style: .custom, size: 18)
-            .environment(\.customStatusIconData, normalized))
-        renderer.scale = 2
-        let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(renderer.cgImage))
+        let bitmap = try hostedViewSnapshot(StatusMark(style: .custom, size: 18).environment(\.customStatusIconData, normalized), size: NSSize(width: 18, height: 18))
+        XCTAssertEqual(bitmap.pixelsWide, 36)
+        XCTAssertEqual(bitmap.pixelsHigh, 36)
         let center = try XCTUnwrap(bitmap.colorAt(x: 18, y: 18)?.usingColorSpace(.sRGB))
         XCTAssertGreaterThan(center.redComponent, 0.7)
         XCTAssertLessThan(center.greenComponent, 0.6)
@@ -50,9 +49,12 @@ final class AppearanceCustomizationTests: XCTestCase {
         XCTAssertThrowsError(try CustomStatusIcon.normalizedPNG(from: Data("not an image".utf8)))
         XCTAssertThrowsError(try CustomStatusIcon.normalizedPNG(from: Data(count: CustomStatusIcon.maximumFileBytes + 1)))
         XCTAssertNil(CustomStatusIcon.image(from: Data("bad".utf8)))
-        let renderer = ImageRenderer(content: StatusMark(style: .custom, size: 18)
-            .environment(\.customStatusIconData, Data("bad".utf8)))
-        XCTAssertNotNil(renderer.cgImage, "A missing/corrupt custom icon keeps the embedded fallback")
+        let bitmap = try hostedViewSnapshot(StatusMark(style: .custom, size: 18).environment(\.customStatusIconData, Data("bad".utf8)), size: NSSize(width: 18, height: 18))
+        XCTAssertTrue((0..<bitmap.pixelsHigh).contains { y in
+            (0..<bitmap.pixelsWide).contains { x in
+                (bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.1
+            }
+        }, "A missing/corrupt custom icon keeps the visible embedded fallback")
     }
 
     @MainActor
