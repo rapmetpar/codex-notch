@@ -68,7 +68,7 @@ the tag. Record the checkout SHA and successful run URL. See `docs/updating.md`.
 | full | `./scripts/verify.sh` | L2/L3: tests, release build, app bundle, and signing validation |
 | release | `./scripts/release.sh` | When distributable ZIP and DMG artifacts are required; creates only local artifacts and does not upload them |
 
-`full` does not send notifications, request real task operations, or change remote state by default. Only the local `dist/` packaging directory is updated, and that directory is ignored by Git.
+`full` does not send notifications, request real task operations, or change remote state by default. Only the local `dist.noindex/` packaging directory is updated, and that directory is ignored by Git.
 
 ## Real-Hardware Acceptance
 
@@ -97,6 +97,6 @@ Do not use a static screenshot as proof that an animation is correct; describe t
 | Frequent hotspots | `NotchView`, `NotchRuntimeCoordinator`, `NotchWindowController`, `NotchPresentationReducer`, and quota parsing |
 | Current contracts | `docs/contracts/behavior-contracts.yaml` |
 | L3 | Authentication/token handling, privacy data, usage API permissions, and formal public release |
-| CI verification | GitHub CI runs full verification on macOS 15 with Xcode 16.2; release publication requires a successful run for the exact source. The personal rapmetpar/codex-notch main branch requires an up-to-date PR and successful GitHub Actions test, including for administrators; no review approvals are required. |
+| CI verification | GitHub CI runs full verification on macOS 26 Intel with explicit Xcode 26.2; local ARM verification and exact-source CI are required before publication. This is not older-OS GUI acceptance. The personal rapmetpar/codex-notch main branch requires an up-to-date PR and successful GitHub Actions test, including for administrators; no review approvals are required. |
 | Deployment target | None; a release is a locally distributable archive, not automatic deployment |
 | Template sections not adopted | Online deployment evidence, canaries, and data migrations; this project has no corresponding runtime or data layer |

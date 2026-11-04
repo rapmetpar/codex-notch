@@ -1,4 +1,103 @@
 contracts:
+  - id: EXPANDED-SPACING-001
+    title: Expanded quota and grouped history have bounded gaps
+    status: active
+    statement: >-
+      Inherit PET-COMPACT-003 and the no-expanded-stage requirement. In expanded
+      physical and floating cards, keep 16pt between the quota/reset block and
+      the recent heading, 8pt between heading and project list, and 6pt before
+      the footer; excess canvas height must not stretch those gaps. Budget the
+      card for its actual quota windows, reset details and bounded project list.
+      Keep quota, reset, list scrolling and footer visible, including no history,
+      1–20 conversations, grouped projects, missing quota and expanded resets.
+      Preserve compact geometry, camera anchoring, fixed-canvas downward expansion,
+      collapse hit reclamation, companion, state and navigation behavior.
+    rationale: The user reported large blank gaps after the reset row and recent heading despite removal of the expanded companion stage.
+    source: user-reported-incident
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [expanded-content-spacing, expanded-height-budget]
+      exclude: [compact-geometry, companion, quota-semantics, activity-state, release]
+    examples:
+      positive: Recent heading and project list follow the reset block at fixed gaps while a long list scrolls above the visible footer.
+      negative: Surplus height stretches gaps, reset details overlap history, or a short card clips the footer.
+    guards:
+      - Tests/CodexNotchTests/ExpandedLayoutSpacingTests.swift
+      - Tests/CodexNotchTests/ProjectIslandIntegrationTests.swift
+      - docs/decisions/067-expanded-spacing.md
+      - "manual: inspect physical and floating expanded cards, real notch clearance, downward expansion and collapse hit reclamation, reset details, scrolling and footer"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: PACKAGE-SEARCH-002
+    title: Local builds stay outside search without retained backups
+    status: active
+    statement: >-
+      Preserve PACKAGE-SEARCH-001 output paths, explicit output precedence,
+      installed application, bundle identity, signing, resources, ZIP and DMG
+      delivery, live settings and login items. Replace its rollback-retention
+      requirement: do not create or retain persistent app, preference or pet
+      library backups during development, packaging or installation. Keep the
+      installed app and current build output. Existing backup removal is an
+      explicitly authorized one-time cleanup; packaging scripts do not delete
+      arbitrary existing directories. Clean disposable verification fixtures
+      after use. Obtain old implementations from Git history and rebuilding.
+      Do not alter global indexing or hide the installed app from search.
+    rationale: The user explicitly requested deletion of accumulated backups and no future backup retention.
+    source: user-correction
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [default-package-output, backup-retention-policy, local-installation, build-documentation]
+      exclude: [app-runtime, live-user-data, system-wide-indexing, public-release, git-history]
+    examples:
+      positive: Rebuilding replaces only the current output; the installed app and live settings remain intact and no app or user-data backup is retained.
+      negative: An installation leaves another previous.app, snapshots real preferences or pet artwork, or cleanup deletes the installed app or live user data.
+    guards:
+      - scripts/verify_package_paths.sh
+      - scripts/build_app.sh
+      - scripts/verify_preferences.py
+      - docs/decisions/066-local-build-search-exclusion.md
+      - "manual: confirm the known backup locations are absent and installed/current app hashes unchanged after the authorized cleanup; keep only the installed app in Spotlight"
+    supersedes: [PACKAGE-SEARCH-001]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: PACKAGE-SEARCH-001
+    title: Local builds do not crowd application search
+    status: superseded
+    statement: >-
+      Build, verification and release entry points share dist.noindex as their
+      default output directory so Spotlight excludes local app bundles and
+      rollback copies stored beneath it. Preserve explicit output arguments and
+      DIST_DIR overrides, including argument precedence. Preserve app contents,
+      bundle identity, signing, resource verification, ZIP and DMG delivery,
+      installed application, settings and login items. Do not silently move or
+      delete existing builds in packaging scripts, change system-wide indexing,
+      or suppress search visibility of the installed application. Existing
+      indexed output directories require a separate reversible local migration.
+    rationale: Spotlight listed the installed app and seven local build or rollback bundles as separate CodexNotch applications.
+    source: user-reported-incident
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [default-package-output, build-documentation, package-workflow-artifact-paths]
+      exclude: [app-runtime, installed-bundle, preferences, system-wide-indexing, public-release]
+    examples:
+      positive: A default full verification builds dist.noindex/CodexNotch.app; the installed /Applications copy remains searchable, while local backups remain available outside search.
+      negative: A default build recreates indexed dist/CodexNotch.app, an explicit output is ignored, or a cleanup deletes rollback apps or resets settings.
+    guards:
+      - scripts/verify_package_paths.sh
+      - scripts/verify.sh
+      - scripts/verify_app.sh
+      - docs/decisions/066-local-build-search-exclusion.md
+      - "manual: query Spotlight by com.david.codexnotch after indexing settles; only the installed app should remain; confirm refreshed application-search UI on the user's Mac"
+    supersedes: []
+    superseded_by: PACKAGE-SEARCH-002
+    last_verified_commit: null
+
   - id: CONVERSATION-STATUS-002
     title: Running, new and locally viewed answers have distinct rows
     status: superseded
@@ -154,7 +253,7 @@ contracts:
 
   - id: RELEASE-SIGNING-001
     title: Authorized cloud packaging uses the existing publisher key
-    status: active
+    status: superseded
     statement: >-
       A maintainer can manually package main on GitHub Actions using
       SPARKLE_PRIVATE_KEY without accessing the publisher Mac. Full verification
@@ -181,7 +280,7 @@ contracts:
       - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
       - docs/decisions/057-actions-release-signing.md
     supersedes: []
-    superseded_by: null
+    superseded_by: RELEASE-SIGNING-002
     last_verified_commit: null
 
   - id: SETTINGS-TEXT-023
@@ -264,7 +363,7 @@ contracts:
 
   - id: CI-VERIFICATION-001
     title: Verify release source with a supported SDK before publication
-    status: active
+    status: superseded
     statement: >-
       CI must explicitly select Xcode 16.2 on macOS 14, record the checked-out
       source SHA and toolchain, and run the existing full verification entry
@@ -290,7 +389,69 @@ contracts:
       - docs/decisions/053-explicit-ci-toolchain.md
       - "manual: confirm successful CI and its checkout SHA before publication"
     supersedes: []
-    superseded_by: null
+    superseded_by: CI-VERIFICATION-002
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-002
+    title: Full release checks run on supported macOS Intel CI and local Apple Silicon
+    status: superseded
+    statement: >-
+      Inherit CI-VERIFICATION-001 except the retired macOS 14 image. Run the
+      unchanged full verify.sh job named test on macos-15-intel with explicit
+      Xcode 16.2, checkout SHA and toolchain logging, and retain the manual ref
+      input. Before publication require successful CI for the exact release
+      source and local full Apple Silicon verification of the distributed code.
+      Keep ARM packaging separate. Pending, cancelled, failed or missing CI
+      never substitutes for success; preserve the protected main requirements.
+    rationale: ARM CI jobs remained unassigned with no steps while the supported Intel image offers the same OS and explicit toolchain.
+    source: verified-runner-inventory-and-observed-queue
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner, exact-source-verification]
+      exclude: [app-behavior, test-reduction, arm64-package, branch-protection]
+    examples:
+      positive: The Intel job logs the PR source SHA and passes full verification, while the distributed Apple Silicon bundle passes local verification.
+      negative: Removing tests to make CI green, changing the required test context, publishing a pending source, or distributing the Intel CI bundle as the Apple Silicon release.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/decisions/068-ci-intel-runner.md
+      - "manual: confirm exact-source CI success and local ARM package provenance"
+    supersedes: [CI-VERIFICATION-001]
+    superseded_by: CI-VERIFICATION-003
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-003
+    title: Exact-source full verification uses an explicit supported current SDK
+    status: superseded
+    statement: >-
+      Inherit CI-VERIFICATION-002 except its unavailable macOS 15 pool and SDK
+      pin. Run the complete unchanged verify.sh job named test on macos-26-intel
+      with explicit Xcode 26.2, source SHA and toolchain logging, and the existing
+      manual ref input. Require successful exact-source CI and local full ARM
+      verification before publication; no pending, cancelled, failed or missing
+      result substitutes for success. Preserve the app's macOS 14 deployment
+      target, all tests, protected main, and separate Apple Silicon packaging.
+      Current-image CI does not establish runtime GUI acceptance on macOS 15
+      or 14. Rebuild the release from its checked source before publication.
+    rationale: Both supported macOS 15 queues remained unassigned after the test snapshot repair; a current supported image offers an explicit installed SDK and the same full checks.
+    source: observed-queue-and-supported-image-inventory
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner, ci-sdk, exact-source-verification]
+      exclude: [app-behavior, test-reduction, deployment-target, branch-protection]
+    examples:
+      positive: The final source passes all existing checks with the explicit current SDK, and its ARM package is rebuilt locally and verified.
+      negative: Claiming older-OS GUI coverage from a current-image pass, suppressing a failing test, changing the required context, or releasing a different source.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/decisions/069-ci-current-image.md
+      - "manual: confirm checkout SHA, full CI result and ARM archive provenance before publication"
+    supersedes: [CI-VERIFICATION-002]
+    superseded_by: CI-VERIFICATION-004
     last_verified_commit: null
 
   - id: SETTINGS-WINDOW-022
@@ -482,7 +643,7 @@ contracts:
 
   - id: APP-UPDATE-002
     title: Manually initiated signed updates install inside the app
-    status: active
+    status: superseded
     statement: >-
       Check for Updates must use one retained Sparkle updater to check the public
       stable appcast and offer download, signature verification, installation,
@@ -511,7 +672,7 @@ contracts:
       - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
       - "manual: exercise Sparkle download/install/relaunch from a lower build and reject a tampered archive without replacing it"
     supersedes: [APP-UPDATE-001]
-    superseded_by: null
+    superseded_by: APP-UPDATE-003
     last_verified_commit: null
 
   - id: SETTINGS-WINDOW-019
@@ -2828,7 +2989,7 @@ contracts:
       include: [build, bundle, local-release]
       exclude: [remote-release-upload]
     examples:
-      positive: './scripts/verify.sh builds and verifies dist/CodexNotch.app.'
+      positive: './scripts/verify.sh builds and verifies dist.noindex/CodexNotch.app.'
       negative: Running only `swift test` and claiming that the release is installable, or verifying an old bundle and then replacing its binary with a new one.
     guards:
       - scripts/build_app.sh
@@ -3073,6 +3234,7 @@ contracts:
       negative: A custom icon reads another app bundle, failed import deletes the previous picture, changing color resets the pulse, missing quota looks available, or restore loses the original warning palette.
     guards:
       - Tests/CodexNotchTests/AppearanceCustomizationTests.swift
+      - Tests/CodexNotchTests/HostedViewSnapshot.swift
       - Tests/CodexNotchTests/StatusIconStyleTests.swift
       - Tests/CodexNotchTests/StatusIconThemeTests.swift
       - Tests/CodexNotchTests/QuotaRingAlignmentTests.swift
@@ -3582,7 +3744,7 @@ contracts:
 
   - id: COMPACT-ATTENTION-001
     title: Compact completion reflects observed unacknowledged answers
-    status: active
+    status: superseded
     statement: >-
       Inherit PROJECT-GROUPS-001 except the inherited compact completion policy
       and five-second native-read refresh interval. Refresh native receipts every
@@ -3597,8 +3759,10 @@ contracts:
       and completion instant. A matching local or native read clears the signal;
       native unread cannot override a matching local opening acknowledgement.
       Existing history and row attention remain independent. Batch delivery of
-      start and completion must not lose a live completion. Interrupted turns do
-      not create new compact signals. Preserve category and project order,
+      start and completion must not lose a live completion. Compare completion
+      identity using thread ID, turn ID and completion instant, independently of
+      mutable session metadata; metadata refresh must not re-admit the same turn.
+      Interrupted turns do not create new compact signals. Preserve category and project order,
       history limits, navigation, geometry, quota, and motion.
     rationale: Historical completions caused a green check even after the answer was read or without a current completion.
     source: user-reported-incident
@@ -3617,7 +3781,241 @@ contracts:
       - Tests/CodexNotchTests/NativeReadTrackingModeTests.swift
       - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
       - docs/decisions/065-compact-observed-completions.md
+      - docs/decisions/066-compact-completion-identity.md
       - "manual: finish and read an answer in native Codex, verify row and compact cue update, restart, and inspect physical notch and floating bar, including pointer tracking"
     supersedes: [PROJECT-GROUPS-001]
+    superseded_by: NATIVE-THREAD-ATTENTION-001
+    last_verified_commit: null
+
+  - id: NATIVE-THREAD-ATTENTION-001
+    title: Mirror scoped native thread read state with bounded freshness
+    status: active
+    statement: >-
+      Inherit COMPACT-ATTENTION-001, CONVERSATION-ORDER-001 and their other
+      protections except exact-turn SQLite native receipt sourcing. Read the
+      native client versioned thread unread list scoped to a verified local host
+      and one identity matching the known thread's database owner. A validated
+      full list's absence means native read; missing schema, source, identity,
+      host or thread ownership means unknown. Historical completions mirror this
+      native snapshot. Newly observed completions never inherit the prior
+      snapshot: accept a post-completion lookup only when the thread database
+      update is at least the completion instant (with a one-second precision
+      tolerance), or a changed scoped unread-list fingerprint has a file
+      modification later than completion. Bind that thread state to the immutable
+      turn and completion instant. This is an eventual-consistency
+      heuristic, not a native per-turn token: unrelated thread updates can
+      advance the list or database while this thread's native update is delayed,
+      and a fast unread-to-read transition can be missed when fresh thread
+      metadata is unavailable. Native refresh is every two
+      seconds, with no hard latency or causal guarantee. Source loss removes
+      transient native evidence. No native metadata is persisted. Native SQLite
+      unread receipts no longer drive compact signals. Keep local opening
+      receipts, running priority, compact observed completions, WAL, replacement,
+      generation cancellation, history and category order, privacy, geometry and
+      quota. Read no message bodies or credentials and write no Codex state.
+    rationale: The native client uses a separate thread unread list and its SQLite receipts can be stale or absent.
+    source: user-reported-incident-and-verified-native-state
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [native-read-metadata, recent-attention, compact-attention, live-refresh]
+      exclude: [message-content, authentication, codex-writes, geometry, quota, releases]
+    examples:
+      positive: A verified historical native read appears Viewed; a new completion stays New until a fresh native snapshot; active work remains Running.
+      negative: Missing or ambiguous source marks everything Viewed, an unchanged old snapshot acknowledges the next answer, or stale SQLite unread resurrects a compact cue.
+    guards:
+      - Tests/CodexNotchTests/NativeThreadSnapshotTests.swift
+      - Tests/CodexNotchTests/NativeConversationReadTests.swift
+      - Tests/CodexNotchTests/NativeReadTrackingModeTests.swift
+      - docs/decisions/066-native-thread-read-state.md
+      - "manual: read and finish actual native chats, verify list and compact state, restart, and inspect physical-notch and floating UI"
+    supersedes: [COMPACT-ATTENTION-001]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: APP-UPDATE-003
+    title: Personal fork checks only its own signed release feed
+    status: superseded
+    statement: >-
+      Inherit APP-UPDATE-002 except the upstream publisher key and feed. The
+      fork's public feed and release assets belong only to rapmetpar/codex-notch
+      and use its distinct Ed25519 key. The first migration from the upstream
+      publisher requires manual replacement, preserving bundle identity and
+      app-owned settings and pets. Never advertise an unpublished archive or
+      accept an upstream release URL as the fork's update. Remain manual, verify
+      signatures before extraction, and keep credentials and private data out.
+    rationale: The upstream key and release feed cannot publish the fork's updates.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [feed, key-rotation, release-destination, migration]
+      exclude: [unattended-updates, notarization, settings-reset, publication]
+    examples:
+      positive: After a manual migration, a signed fork release is offered and preserves existing app-owned data.
+      negative: A fork build offers an upstream archive, embeds a private key, or promises an unpublished update.
+    guards:
+      - Tests/CodexNotchTests/AppUpdateCheckerTests.swift
+      - Tests/CodexNotchTests/AppUpdaterConfigurationTests.swift
+      - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
+      - scripts/verify_app.sh
+      - docs/decisions/066-personal-fork-updates.md
+      - "manual: migrate from upstream with settings and pets intact; install a subsequent signed fork update and reject a tampered archive"
+    supersedes: [APP-UPDATE-002]
+    superseded_by: APP-UPDATE-004
+    last_verified_commit: null
+
+  - id: RELEASE-SIGNING-002
+    title: Personal fork signs its own release artifacts
+    status: superseded
+    statement: >-
+      Inherit RELEASE-SIGNING-001 except its publisher key and destination.
+      Local signing uses the separate com.rapmetpar.codexnotch.sparkle Keychain
+      account; a CI secret may only be configured with explicit authorization.
+      Publish verified fork archives before the fork appcast. A missing or wrong
+      key fails closed; packaging never publishes. Keep the existing bundle ID
+      and app-owned data, and never disclose or commit private key material.
+    rationale: A fork needs an independent publisher identity and release assets.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [fork-signing, release-artifacts, key-rotation]
+      exclude: [notarization, preferences-reset, publication]
+    examples:
+      positive: A correctly signed fork ZIP matches the embedded fork public key and fork release URL.
+      negative: An upstream signature or destination passes the personal fork release guard.
+    guards:
+      - scripts/sign_update.sh
+      - scripts/verify_update.swift
+      - scripts/verify_signing_failures.py
+      - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
+      - docs/decisions/066-personal-fork-updates.md
+    supersedes: [RELEASE-SIGNING-001]
+    superseded_by: RELEASE-PACKAGE-003
+    last_verified_commit: null
+
+  - id: APP-UPDATE-004
+    title: Manual updates open the personal release page only
+    status: active
+    statement: >-
+      Replace APP-UPDATE-003's signed updater and feed with manual-only updates.
+      Settings opens the fixed personal release page in the browser and never
+      starts Sparkle, downloads or installs an update. The bundled flag declares
+      manual-only, no feed or update public key is included, all automatic
+      Sparkle and profiling flags remain disabled, and the legacy verification
+      before extraction setting remains enabled. Preserve bundle identity,
+      app-owned preferences and pet libraries. No authentication, private data,
+      Keychain access or unattended update is introduced.
+    rationale: The user explicitly declined update signing and requested manual releases.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [manual-update-action, bundle-configuration, localized-labels]
+      exclude: [automatic-installation, keychain-access, notarization, data-reset]
+    examples:
+      positive: The action opens the personal releases page; no updater session starts.
+      negative: The action contacts the upstream release page or starts an installer.
+    guards:
+      - Tests/CodexNotchTests/AppUpdaterConfigurationTests.swift
+      - scripts/verify_app.sh
+      - docs/decisions/067-manual-updates.md
+      - "manual: open the release page from Settings in each supported language and confirm no update installer opens"
+    supersedes: [APP-UPDATE-003]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: RELEASE-PACKAGE-003
+    title: Manual release packages do not require update signing
+    status: active
+    statement: >-
+      Replace RELEASE-SIGNING-002 with manual ZIP and DMG packages, checksums,
+      bundled app verification and ad-hoc codesigning. No update feed or private
+      key is required or used, and no signing Keychain prompt is made. Retain
+      historical signed archive verification utilities and fixtures, and fail
+      closed before key access if signed packaging is requested. Hosted packaging
+      uses the personal repository and supported runner without secrets and never
+      publishes. Preserve package paths, app identity and app-owned data.
+    rationale: The user explicitly rejected publisher-key access for this release.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [manual-release-packaging, hosted-packaging, checksum, update-key-avoidance]
+      exclude: [notarization, publication, preferences-reset]
+    examples:
+      positive: A verified ZIP and DMG with checksums are created without Keychain interaction.
+      negative: A signed-update request touches the Keychain or an unsigned appcast entry is published.
+    guards:
+      - scripts/release.sh
+      - scripts/verify_app.sh
+      - Tests/CodexNotchTests/UpdateArchiveVerificationTests.swift
+      - Tests/CodexNotchTests/AppUpdaterConfigurationTests.swift
+      - .github/workflows/package.yml
+      - docs/decisions/067-manual-updates.md
+    supersedes: [RELEASE-SIGNING-002]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-004
+    title: Exact-source full CI runs on macOS 26 Apple Silicon
+    status: superseded
+    statement: >-
+      Inherit CI-VERIFICATION-003 except the Intel runner architecture. Run the
+      same complete verify.sh job named test on standard macos-26 Apple Silicon
+      with explicit Xcode 26.2, checkout SHA and toolchain logging and the
+      existing manual ref input. Preserve all tests, protected main, local full
+      ARM verification, separate packaging, exact-source successful CI and the
+      macOS 14 deployment target. A queued, cancelled, failed or unassigned job
+      is not a passing result. A current-image pass does not establish macOS 14
+      or 15 GUI acceptance. Rebuild release assets from the checked source.
+    rationale: The macOS 15 Intel job and two macOS 26 Intel attempts failed before runner acquisition; the standard ARM pool offers the release architecture without reducing checks.
+    source: observed-runner-acquisition-failures
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner-architecture, exact-source-verification]
+      exclude: [app-behavior, test-reduction, deployment-target, branch-protection, packaging]
+    examples:
+      positive: The ARM job logs the final checkout SHA and completes full verification, and the locally verified package comes from the final release source.
+      negative: Treating an unassigned runner as a pass, skipping tests, changing the required job context, or claiming older-OS GUI coverage.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/decisions/070-ci-apple-silicon.md
+      - "manual: verify final source SHA, successful complete CI and locally verified ARM archive provenance before publication"
+    supersedes: [CI-VERIFICATION-003]
+    superseded_by: CI-VERIFICATION-005
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-005
+    title: Exact-source full CI uses the supported macOS 26 Intel runner
+    status: active
+    statement: >-
+      Inherit CI-VERIFICATION-004 except the runner architecture. Run the
+      complete unchanged verify.sh job named test on macos-26-intel with
+      explicit Xcode 26.2, source SHA and toolchain logging and the existing
+      manual ref input. Preserve all tests, protected main, local full ARM
+      verification, separate ARM packaging, the macOS 14 deployment target and
+      successful exact-source CI before publication. A queued, failed, cancelled
+      or unassigned job is not a pass. A current-image pass does not establish
+      macOS 14 or 15 GUI acceptance. Rebuild release assets from checked source.
+    rationale: ARM jobs repeatedly failed runner acquisition with capacity notices despite one complete ARM success; Intel provides an alternative supported pool, with no guarantee of availability during a new Actions incident.
+    source: observed-runner-acquisition-failures
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner-architecture, exact-source-verification]
+      exclude: [app-behavior, test-reduction, deployment-target, branch-protection, packaging]
+    examples:
+      positive: The Intel job logs the final checkout SHA and completes the full suite; the locally verified ARM package comes from the final checked source.
+      negative: Counting runner allocation failure as success, skipping tests, changing the protected job context or claiming older-OS GUI coverage.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/decisions/071-ci-intel-reserve.md
+      - "manual: verify final checkout SHA, successful full CI and local ARM archive provenance before publication"
+    supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null

@@ -143,10 +143,10 @@ enum NotchExpandedLayout {
     static let width: CGFloat = 420
     static let resetScheduleControlHeight: CGFloat = 39
     static let settingsFooterHeight: CGFloat = 30
-    static let quotaContentHeight: CGFloat = 101
+    static let quotaContentHeight: CGFloat = 66
         + resetScheduleControlHeight
         + settingsFooterHeight
-    static let twoConversationContentHeight: CGFloat = 221
+    static let twoConversationContentHeight: CGFloat = 186
         + resetScheduleControlHeight
         + settingsFooterHeight
     static let maximumVisibleConversations = 5
@@ -157,7 +157,7 @@ enum NotchExpandedLayout {
     static let resetScheduleDetailVerticalPadding: CGFloat = 6
     // The base quota height reserves the weekly row. Add one measured row when
     // the usage response also contains the five-hour rolling limit.
-    static let fiveHourQuotaContentHeight: CGFloat = 58
+    static let fiveHourQuotaContentHeight: CGFloat = 55
 
     static func quotaContentSize(
         isResetScheduleExpanded: Bool = false,

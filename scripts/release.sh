@@ -2,7 +2,12 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-DIST_DIR="${1:-${DIST_DIR:-$ROOT_DIR/dist}}"
+# This build deliberately cannot produce signed Sparkle updates. Fail before
+# build or Keychain access, even if a signing key happens to be available.
+[[ "${SIGN_UPDATES:-0}" == "0" ]] || {
+    echo "error: signed updates are disabled for manual-only releases" >&2; exit 1;
+}
+source "$ROOT_DIR/scripts/package_paths.sh"
 VERSION="${VERSION:-$(plutil -extract CFBundleShortVersionString raw -o - "$ROOT_DIR/Resources/Info.plist")}"
 ARCH="$(uname -m)"
 APP_PATH="$DIST_DIR/CodexNotch.app"
@@ -23,13 +28,13 @@ cleanup_dmg_mount() {
 
 trap cleanup_dmg_mount EXIT
 
-RUN_TESTS="${RUN_TESTS:-1}" \
+SIGN_IDENTITY="-" RUN_TESTS="${RUN_TESTS:-1}" \
     "$ROOT_DIR/scripts/build_app.sh" "$DIST_DIR"
 "$ROOT_DIR/scripts/verify_app.sh" "$APP_PATH"
 
 rm -f "$ARCHIVE_PATH" "$ARCHIVE_PATH.sha256" "$DMG_PATH" "$DMG_PATH.sha256"
 ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ARCHIVE_PATH"
-shasum -a 256 "$ARCHIVE_PATH" | tee "$ARCHIVE_PATH.sha256"
+(cd "$DIST_DIR" && shasum -a 256 "$(basename "$ARCHIVE_PATH")") | tee "$ARCHIVE_PATH.sha256"
 
 DMG_STAGING_DIR="$(mktemp -d "${TMPDIR:-/tmp}/codex-notch-dmg-stage.XXXXXX")"
 ditto "$APP_PATH" "$DMG_STAGING_DIR/CodexNotch.app"
@@ -58,7 +63,6 @@ hdiutil detach -quiet "$DMG_MOUNT_DIR"
 rmdir "$DMG_MOUNT_DIR"
 DMG_MOUNT_DIR=""
 
-shasum -a 256 "$DMG_PATH" | tee "$DMG_PATH.sha256"
-"$ROOT_DIR/scripts/sign_update.sh" "$ARCHIVE_PATH" "$DIST_DIR/appcast.xml"
+(cd "$DIST_DIR" && shasum -a 256 "$(basename "$DMG_PATH")") | tee "$DMG_PATH.sha256"
 echo "Release ZIP: $ARCHIVE_PATH"
 echo "Release DMG: $DMG_PATH"

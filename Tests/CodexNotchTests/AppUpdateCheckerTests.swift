@@ -43,7 +43,7 @@ final class AppUpdateCheckerTests: XCTestCase {
         }
         XCTAssertEqual(current.displayValue, "v0.1.11")
         XCTAssertEqual(release.version.displayValue, "v0.1.12")
-        XCTAssertEqual(release.url.absoluteString, "https://github.com/fengdwx/codex-notch/releases/tag/v0.1.12")
+        XCTAssertEqual(release.url.absoluteString, "https://github.com/rapmetpar/codex-notch/releases/tag/v0.1.12")
     }
 
     func testCurrentStableReleaseIsReportedAsUpToDate() async throws {
@@ -116,13 +116,38 @@ final class AppUpdateCheckerTests: XCTestCase {
         }
     }
 
+    func testReleaseLinkRejectsUpstreamAndOtherRoutes() async throws {
+        for url in [
+            "https://github.com/fengdwx/codex-notch/releases/tag/v0.2.0",
+            "https://github.com/rapmetpar/codex-notch/releases/tag/v0.2.1",
+            "https://github.com/rapmetpar/codex-notch/releases/tag/v0.2.0?redirect=1",
+            "https://github.com/rapmetpar/codex-notch/releases/tag/v0.2.0#fragment",
+            "https://github.com:443/rapmetpar/codex-notch/releases/tag/v0.2.0"
+        ] {
+            UpdateMockURLProtocol.requestHandler = { _ in
+                (self.response(status: 200), self.releaseData(tag: "v0.2.0", htmlURL: url))
+            }
+            do {
+                _ = try await makeChecker().check()
+                XCTFail("Unexpectedly accepted \(url)")
+            } catch let error as AppUpdateError {
+                XCTAssertEqual(error, .invalidReleaseMetadata)
+            }
+        }
+    }
+
+    func testDefaultEndpointTargetsPersonalRepository() {
+        XCTAssertEqual(AppUpdateChecker.defaultEndpoint.absoluteString,
+                       "https://api.github.com/repos/rapmetpar/codex-notch/releases/latest")
+    }
+
     private func makeChecker() throws -> AppUpdateChecker {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [UpdateMockURLProtocol.self]
         return AppUpdateChecker(
             currentVersion: try XCTUnwrap(AppVersion(rawValue: "0.1.11")),
             session: URLSession(configuration: configuration),
-            endpoint: URL(string: "https://api.example.test/repos/fengdwx/codex-notch/releases/latest")!
+            endpoint: URL(string: "https://api.example.test/repos/rapmetpar/codex-notch/releases/latest")!
         )
     }
 
@@ -134,7 +159,7 @@ final class AppUpdateCheckerTests: XCTestCase {
     ) -> Data {
         let json: [String: Any] = [
             "tag_name": tag,
-            "html_url": htmlURL ?? "https://github.com/fengdwx/codex-notch/releases/tag/\(tag)",
+            "html_url": htmlURL ?? "https://github.com/rapmetpar/codex-notch/releases/tag/\(tag)",
             "draft": draft,
             "prerelease": prerelease
         ]
@@ -143,7 +168,7 @@ final class AppUpdateCheckerTests: XCTestCase {
 
     private func response(status: Int) -> HTTPURLResponse {
         HTTPURLResponse(
-            url: URL(string: "https://api.example.test/repos/fengdwx/codex-notch/releases/latest")!,
+            url: URL(string: "https://api.example.test/repos/rapmetpar/codex-notch/releases/latest")!,
             statusCode: status,
             httpVersion: nil,
             headerFields: ["Content-Type": "application/json"]

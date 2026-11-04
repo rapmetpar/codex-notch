@@ -1,94 +1,47 @@
-# Publisher update workflow
+# Manual release workflow
 
-CodexNotch uses Sparkle 2.9.6 with an Ed25519 update key. The private key is stored in the GitHub Actions repository Secret
-`SPARKLE_PRIVATE_KEY` and retained in the publisher's login Keychain, under account `com.david.codexnotch.sparkle` and
-service `https://sparkle-project.org`. Only the public key is in `Resources/Info.plist`.
-Users do not generate or download keys.
+CodexNotch releases use manual installation. Settings opens the personal
+[GitHub Releases page](https://github.com/rapmetpar/codex-notch/releases/latest);
+the app does not download or install updates. The build contains no update feed
+or update public key. There is no Sparkle archive-signing or Keychain step.
+The legacy signed-update verification utilities and tests remain for regression;
+the release script rejects `SIGN_UPDATES=1` before accessing any key.
 
-## Publish a version
+## Prepare and publish
 
-Write GitHub Release titles, release notes, and appcast release notes in English,
-including edits to historical releases. Keep notes focused on user-visible changes,
-compatibility, and installation instructions. Internal validation logs, pending
-checks, and publishing checklists belong outside the public release notes.
+1. Update both bundle version values and write English user-facing notes in
+   `docs/releases/<version>.md`.
+2. Run `./scripts/verify.sh` and `RUN_TESTS=0 ./scripts/release.sh` on the
+   intended source. The latter builds a verified app, ZIP, DMG and SHA-256 files
+   under `dist.noindex`. Both checks are local and do not publish anything.
+3. Require a passing CI run on the exact release source. Confirm its checkout SHA
+   and record the run URL. A local pass does not substitute for CI.
 
-1. Increase both `CFBundleShortVersionString` and `CFBundleVersion`; write
-   user-facing notes in `docs/releases/<version>.md`.
-2. Run `./scripts/verify.sh`, then `RUN_TESTS=0 ./scripts/release.sh` on the
-   publisher's Mac. Sparkle's `generate_appcast` may ask for Keychain permission
-   on its first use. No private key is exported. The release script independently
-   verifies the generated signature against the app's public key.
-3. Push the exact release commit and wait for its GitHub `CI` run to finish
-   successfully before publishing. CI uses Xcode 16.2 on macOS 15 and runs the
-   same full verification. A local pass does not replace a failed, pending,
-   cancelled, or missing CI result, even when the failure predates this release.
-   After a workflow-only fix, use CI's manual `ref` input to verify the release
-   commit or tag; confirm the checkout SHA in the log matches the intended
-   release source. Keep the successful run URL with the release verification.
-4. When a release is authorized and both checks have passed, upload the generated
-   ZIP, DMG and checksums to the matching `v<version>` GitHub Release. Read back
-   the public archive URLs.
-5. Copy `dist/appcast.xml` over the tracked `appcast.xml`, commit it and push it
-   to personal `main` only after the archive is publicly available.
-6. Check for Updates from an older updater-enabled installation; verify the
-   offered version, download, installation, relaunch, and saved preferences.
+CI uses macOS 26 Intel with explicitly selected Xcode 26.2. Local full
+verification and distribution use Apple Silicon. The app still targets macOS
+14; the current CI image does not prove GUI behavior on older macOS versions.
+4. After review and authorization, publish the ZIP, DMG and checksums to the
+   matching personal GitHub Release, then verify the downloaded assets. Do not
+   publish an unsigned appcast entry. The tracked appcast remains empty.
+5. Test manual replacement on the intended Mac and confirm Settings and pets.
 
-The tracked feed advertises published stable releases. Merely building a release
-does not advertise unpublished files or overwrite the production feed. Do not edit
-archive bytes after signing. The feed currently advertises full ZIP updates;
-it does not generate deltas or beta channels.
+The manual package workflow runs on the personal repository's main branch using
+macOS 15 and Xcode 16.2. It uploads artifacts without an update-signing secret;
+it does not publish a release. Verify the source SHA in the artifact and the
+separate CI run. Hosted and local packages are ad-hoc signed, not Apple Developer
+ID signed or notarized. Checksums detect corruption but do not establish publisher
+identity. macOS may display a first-launch security warning.
 
-## Local contributors and key storage
+## Replace the app
 
-`swift test`, `build_app.sh`, and `verify.sh` do not need the private key. Only
-publisher release signing requires it. Forks need their own key, feed URL, and
-release destination; never share the publisher's key with application users.
-Other computers can trigger the cloud workflow without possessing the private key.
-GitHub Secrets cannot be downloaded for local signing; local release signing
-still requires the existing Keychain. No Apple certificates are provisioned.
+Quit all CodexNotch instances, then replace only `CodexNotch.app` and launch the
+installed path. This applies to both upstream and prior fork installations. The
+bundle ID remains `com.david.codexnotch`; leave preferences and Application
+Support files in place to keep settings, custom artwork and pet libraries. Do
+not use uninstall cleaners during an upgrade. Launch at login remains managed by
+macOS. If a rollback is needed, rebuild the required revision from Git or obtain
+a verified prior release without retaining backups.
 
-Apple Developer ID signing/notarization is separate. The app still uses an
-ad-hoc signature; updating does not promise to eliminate Gatekeeper prompts.
-Restore the saved previous app if a local test fails. Withdraw a faulty public
-feed entry and publish a higher corrective build for users already updated.
-
-## Package from any computer with GitHub access
-
-After the version and release notes are committed to main, open Actions →
-Package signed release → Run workflow (main), or run:
-
-```bash
-gh workflow run package.yml --repo fengdwx/codex-notch --ref main
-```
-
-The hosted macOS runner runs full verification, builds the ZIP and DMG, signs
-with SPARKLE_PRIVATE_KEY, verifies against the existing public key, and uploads
-`signed-release-<source SHA>`. Download that artifact from the successful run:
-
-```bash
-gh run download <run-id> --repo fengdwx/codex-notch --dir release-artifacts
-```
-
-Confirm source-commit.txt matches the intended release and CI has passed for that
-SHA. Local full verification is still required before publication. Publish the
-ZIP, DMG and checksums using the existing release steps, then commit appcast.xml
-only after public archive verification. A package run does not publish anything.
-The Secret is scoped to the packaging step, streamed through stdin, and never
-included in uploaded artifacts. Missing or invalid keys fail the run.
-
-
-## Preserve local choices when replacing the app
-
-Quit all running CodexNotch instances, replace only `CodexNotch.app`, then open
-that exact installed path. The released bundle ID stays `com.david.codexnotch`.
-Ordinary replacement does not require removing preferences or Application
-Support. Uninstall cleaners that delete those files also delete chosen settings,
-custom status artwork and imported pet libraries; avoid that cleanup for an
-upgrade. Keep app-owned files outside the app bundle and retain the old bundle
-as a rollback copy. Launch at login remains the actual macOS registration.
-
-`./scripts/verify.sh` checks bundle identity and runs an isolated preference
-replacement/relocation guard with synthetic domains. It does not install the
-built app or change your settings. After a real update, confirm Settings and
-live display choices, custom artwork, pet selection/library and project order.
-The fixture proves process persistence, not Sparkle's actual installation flow.
+`./scripts/verify.sh` uses synthetic preference fixtures; it does not replace the
+installed app or prove the actual installation and settings transition. Confirm
+settings, custom artwork, pets and project order after a real replacement.

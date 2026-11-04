@@ -262,10 +262,8 @@ final class ConversationCategoryOrderTests: XCTestCase {
             defer { window.orderOut(nil); window.contentView = nil }
             XCTAssertLessThan(host.fittingSize.height, 160, "Category controls must fit the existing Settings window")
             if let folder = ProcessInfo.processInfo.environment["NOTCH_ORDER_PREVIEW_DIR"] {
-                let renderer = ImageRenderer(content: ConversationCategoryOrderControl(order: .constant(.defaultOrder), language: language)
+                let bitmap = try hostedViewSnapshot(ConversationCategoryOrderControl(order: .constant(.defaultOrder), language: language)
                     .padding(16).frame(width: 480).background(Color(nsColor: .windowBackgroundColor)))
-                renderer.scale = 2
-                let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(renderer.cgImage))
                 try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
                     .write(to: URL(fileURLWithPath: folder).appendingPathComponent("order-\(language.rawValue).png"))
             }

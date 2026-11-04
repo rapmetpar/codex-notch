@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ARCHIVE_PATH="${1:?usage: sign_update.sh /path/to/release.zip [output-appcast.xml]}"
 OUTPUT_PATH="${2:-$(dirname "$ARCHIVE_PATH")/appcast.xml}"
 TOOLS="$ROOT_DIR/.build/artifacts/sparkle/Sparkle/bin"
-KEY_ACCOUNT="com.david.codexnotch.sparkle"
+KEY_ACCOUNT="com.rapmetpar.codexnotch.sparkle"
 
 [[ -x "$TOOLS/generate_appcast" ]] || { echo "error: run swift package resolve first" >&2; exit 1; }
 STAGING_DIR="$(mktemp -d "${TMPDIR:-/tmp}/codex-notch-appcast.XXXXXX")"
@@ -19,7 +19,7 @@ if [[ -f "$NOTES_PATH" ]]; then
 fi
 # Isolating one ZIP prevents DMG/ZIP duplicates and unintended delta generation.
 APPCAST_ARGS=(--maximum-deltas 0
-    --download-url-prefix "https://github.com/fengdwx/codex-notch/releases/download/v$VERSION/"
+    --download-url-prefix "https://github.com/rapmetpar/codex-notch/releases/download/v$VERSION/"
     --embed-release-notes -o "$STAGING_DIR/appcast.xml" "$STAGING_DIR")
 if [[ -n "${SPARKLE_PRIVATE_KEY:-}" ]]; then
     # Stream the Actions secret directly; never put it in argv or a key file.

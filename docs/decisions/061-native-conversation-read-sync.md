@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [CONVERSATION-STATUS-003, ACTIVITY-STATE-008, PRIVACY-BOUNDARY-006, PRIVACY-APP-BUNDLE-040]
 supersedes: [060-conversation-attention]
-superseded_by: null
+superseded_by: 066-native-thread-read-state
 owner: project-maintainer
 created_at: 2026-11-01
 ---

@@ -9,13 +9,13 @@
 **把周额度、5 小时额度明细、精确重置时间和任务状态，固定在 MacBook 刘海旁。**<br>
 切到浏览器、IDE 或任何其他应用，额度仍然一眼可见。
 
-[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/fengdwx/codex-notch/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/rapmetpar/codex-notch/releases/latest)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white)](Package.swift)
-[![Latest release](https://img.shields.io/github/v/release/fengdwx/codex-notch?label=下载最新版&color=2ea44f)](https://github.com/fengdwx/codex-notch/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/rapmetpar/codex-notch?label=下载最新版&color=2ea44f)](https://github.com/rapmetpar/codex-notch/releases/latest)
 [![MIT License](https://img.shields.io/badge/License-MIT-4c8bf5)](LICENSE)
 [![LINUX DO](https://img.shields.io/badge/LINUX-DO-FFB003.svg)](https://linux.do)
 
-[**下载最新版**](https://github.com/fengdwx/codex-notch/releases/latest) · [**观看 26 秒中文演示**](docs/assets/codex-notch-demo-zh.mp4) · [English](README.md)
+[**下载最新版**](https://github.com/rapmetpar/codex-notch/releases/latest) · [**观看 26 秒中文演示**](docs/assets/codex-notch-demo-zh.mp4) · [English](README.md)
 
 </div>
 
@@ -34,7 +34,7 @@
 ## 0.2.1 更新
 
 - 设置窗口已打开时，再次点击设置会将它带到前面。
-- 在应用内下载、校验、安装更新并重启。从旧版本升级时，请先手动安装一次 0.2.1。
+- 当时可在应用内安装更新；当前版本使用手动安装。
 
 ## 0.2.0 更新
 
@@ -92,7 +92,7 @@ Codex 运行时显示蓝色状态回声，以及两侧实际可见额度指标�
 
 ## 立即安装
 
-前往 [**GitHub Releases**](https://github.com/fengdwx/codex-notch/releases/latest)。如果该版本提供 `CodexNotch-...dmg`，优先下载 DMG；否则使用 ZIP：
+前往 [**GitHub Releases**](https://github.com/rapmetpar/codex-notch/releases/latest)。如果该版本提供 `CodexNotch-...dmg`，优先下载 DMG；否则使用 ZIP：
 
 1. DMG 直接打开磁盘映像；ZIP 则先解压。
 2. 在 DMG 窗口中，将 `CodexNotch.app` 拖到“Applications”快捷方式上。（ZIP 需要手动将应用拖入“应用程序”。）
@@ -153,19 +153,19 @@ CodexNotch 默认读取 `~/.codex`。如果你的 Codex 使用其他目录，可
 - 任务状态只解析本地 `CODEX_HOME/sessions` 中的 rollout JSONL 文件。
 - 对话标题按 thread ID 优先匹配 `CODEX_HOME/session_index.jsonl` 中最新的简短 `thread_name`，再回退到只读 `CODEX_HOME/state_5.sqlite` 中的 `threads.title`；解析标题时不读取 rollout 消息正文、`first_user_message` 或 `preview`。
 - 不记录 Authorization header、完整 usage 响应、用户消息正文或对话标题缓存。
-- 手动检查更新读取 GitHub 公开更新列表，并下载经过签名的安装包；不发送 Codex 凭据、额度数据、任务数据或用户内容。
+- 更新按钮会在浏览器打开 GitHub 发布页面；CodexNotch 不会下载或安装更新。
 
 usage 接口属于 ChatGPT 内部接口，字段未来可能变化。接口异常时会保留最后一次成功额度，任务监听仍会继续工作。
 
 <details>
 <summary><strong>从源码构建</strong></summary>
 
-从源码构建需要 Xcode 16 或更新版本，以及该 Xcode 版本支持的 macOS 系统。构建后的应用支持 macOS 14 或更高版本。CI 使用 macOS 14 和 Xcode 16.2：
+从源码构建需要 Xcode 16 或更新版本，以及该 Xcode 版本支持的 macOS 系统。构建后的应用支持 macOS 14 或更高版本。CI 使用 macOS 15 和 Xcode 16.2：
 
 ```sh
 swift test
 ./scripts/build_app.sh
-open dist/CodexNotch.app
+open dist.noindex/CodexNotch.app
 ```
 
 生成可发布的 ZIP 和 DMG：
@@ -174,7 +174,7 @@ open dist/CodexNotch.app
 ./scripts/release.sh
 ```
 
-脚本会运行测试、构建 release `.app`、校验代码签名，生成 ZIP、DMG 及各自的 SHA-256 文件，挂载 DMG 验证其中的应用，并使用发布者钥匙串为 ZIP 签名、生成更新列表。具体步骤见[更新发布流程](docs/updating.md)。DMG 改善安装流程，但不等同于 Developer ID 签名或苹果公证。只想跳过签名时可使用：
+脚本会运行测试、构建使用临时签名的 release `.app`、校验代码签名，生成 ZIP、DMG 及各自的 SHA-256 文件，并挂载 DMG 验证其中的应用。此过程不使用更新签名密钥。具体步骤见[更新发布流程](docs/updating.md)。DMG 改善安装流程，但不等同于 Developer ID 签名或苹果公证。只想跳过签名时可使用：
 
 ```sh
 SIGN_IDENTITY=none ./scripts/build_app.sh
@@ -184,7 +184,7 @@ SIGN_IDENTITY=none ./scripts/build_app.sh
 
 ## 当前边界
 
-CodexNotch 目前处于 0.x 版本阶段，不提供终止 Codex 任务、成本统计、云同步、远程通知、未经用户操作自动下载安装或 Mac App Store 分发。ChatGPT Classic 不属于监听目标。
+CodexNotch 目前处于 0.x 版本阶段，不提供终止 Codex 任务、成本统计、云同步、远程通知、下载安装更新或 Mac App Store 分发。ChatGPT Classic 不属于监听目标。
 
 ## 开源许可
 

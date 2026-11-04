@@ -4,6 +4,7 @@ Record decisions here only when they affect active behavior contracts, could be 
 
 | Decision | Status | Related contract | Description |
 |---|---|---|---|
+| [066-local-build-search-exclusion](066-local-build-search-exclusion.md) | active | `PACKAGE-SEARCH-002` | Keep the current local build out of application search without retaining backups |
 | [059-conversation-status-animation](059-conversation-status-animation.md) | active | `CONVERSATION-STATUS-001` | Independent running spinners and one-time completion checks for recent chats |
 | [001-fixed-canvas-notch-motion](001-fixed-canvas-notch-motion.md) | superseded | `NOTCH-MOTION-002` | Fixed NSPanel canvas with an expanding inner SwiftUI island |
 | [004-zip-and-dmg-local-release](004-zip-and-dmg-local-release.md) | active | `PACKAGE-VERIFY-006`, `PACKAGE-DMG-018` | Keep a verified ZIP fallback while adding a verified DMG installation path |
@@ -55,3 +56,16 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [062: Optional pet companion stage](062-pet-companion-stage.md)
 
 - [063: Compact companion left wing](063-compact-pet-wing.md)
+
+- [066: Personal fork updates](066-personal-fork-updates.md)
+- [066: Stable completion event identity](066-compact-completion-identity.md)
+- [067: Bounded expanded card spacing](067-expanded-spacing.md)
+- [066: Native thread read state](066-native-thread-read-state.md)
+- [068: Supported Intel CI pool](068-ci-intel-runner.md)
+- [069: Explicit current-image CI](069-ci-current-image.md)
+
+- [067: Manual updates](067-manual-updates.md)
+
+- [070: Apple Silicon CI runner](070-ci-apple-silicon.md)
+
+- [071: Intel CI reserve](071-ci-intel-reserve.md)

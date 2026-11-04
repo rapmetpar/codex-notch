@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import XCTest
 @testable import CodexNotch
@@ -13,15 +12,41 @@ final class AppUpdaterConfigurationTests: XCTestCase {
             XCTAssertEqual(plist[key] as? Bool, false, key)
         }
         XCTAssertEqual(plist["SUVerifyUpdateBeforeExtraction"] as? Bool, true)
-        let publicKey = try XCTUnwrap(plist["SUPublicEDKey"] as? String)
-        let bytes = try XCTUnwrap(Data(base64Encoded: publicKey))
-        XCTAssertNoThrow(try Curve25519.Signing.PublicKey(rawRepresentation: bytes))
-        let feed = try XCTUnwrap(URL(string: try XCTUnwrap(plist["SUFeedURL"] as? String)))
-        XCTAssertEqual(feed.scheme, "https")
-        XCTAssertEqual(feed.host, "raw.githubusercontent.com")
-        XCTAssertEqual(feed.path, "/fengdwx/codex-notch/main/appcast.xml")
-        XCTAssertNil(feed.user)
-        XCTAssertNil(feed.query)
+        XCTAssertEqual(plist["CodexNotchManualUpdatesOnly"] as? Bool, true)
+        XCTAssertNil(plist["SUPublicEDKey"])
+        XCTAssertNil(plist["SUFeedURL"])
+    }
+
+    func testTrackedFeedNeverAdvertisesUpstreamArchives() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let feed = try String(contentsOf: root.appendingPathComponent("appcast.xml"), encoding: .utf8)
+        XCTAssertFalse(feed.contains("github.com/fengdwx/codex-notch/releases/"))
+    }
+
+    func testSignedPackagingFailsBeforeBuildingOrReadingKeychain() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let process = Process()
+        process.executableURL = root.appendingPathComponent("scripts/release.sh")
+        process.environment = ["PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "SIGN_UPDATES": "1"]
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = output
+        try process.run()
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        XCTAssertNotEqual(process.terminationStatus, 0)
+        XCTAssertTrue(String(decoding: data, as: UTF8.self).contains("signed updates are disabled"))
+    }
+
+    @MainActor
+    func testManualUpdaterOpensOnlyPersonalReleasePage() {
+        var opened: [URL] = []
+        let updater = AppUpdater(openURL: { opened.append($0); return true })
+        updater.checkForUpdates()
+        XCTAssertEqual(opened.map(\.absoluteString), ["https://github.com/rapmetpar/codex-notch/releases/latest"])
+        XCTAssertNil(updater.startupError)
     }
 
     @MainActor

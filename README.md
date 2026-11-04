@@ -9,13 +9,13 @@
 **Weekly quota, five-hour details, exact reset times, and task status stay beside your MacBook notch.**<br>
 Your browser, IDE, or any other app can be frontmost—your quota remains visible.
 
-[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/fengdwx/codex-notch/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/rapmetpar/codex-notch/releases/latest)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white)](Package.swift)
-[![Latest release](https://img.shields.io/github/v/release/fengdwx/codex-notch?label=download&color=2ea44f)](https://github.com/fengdwx/codex-notch/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/rapmetpar/codex-notch?label=download&color=2ea44f)](https://github.com/rapmetpar/codex-notch/releases/latest)
 [![MIT License](https://img.shields.io/badge/License-MIT-4c8bf5)](LICENSE)
 [![LINUX DO](https://img.shields.io/badge/LINUX-DO-FFB003.svg)](https://linux.do)
 
-[**Download the latest release**](https://github.com/fengdwx/codex-notch/releases/latest) · [**Watch the 26-second demo**](docs/assets/codex-notch-demo-en.mp4) · [简体中文](README.zh-CN.md)
+[**Download the latest release**](https://github.com/rapmetpar/codex-notch/releases/latest) · [**Watch the 26-second demo**](docs/assets/codex-notch-demo-en.mp4) · [简体中文](README.zh-CN.md)
 
 </div>
 
@@ -34,7 +34,7 @@ Your browser, IDE, or any other app can be frontmost—your quota remains visibl
 ## New in 0.2.1
 
 - Bring an already-open Settings window back to the front.
-- Download, verify, install, and relaunch updates inside the app. Install 0.2.1 manually once when upgrading from an earlier version.
+- At that version, updates could be installed inside the app. Current releases use manual installation.
 
 ## New in 0.2.0
 
@@ -92,7 +92,7 @@ While Codex works, a blue activity echo and restrained halos behind the real vis
 
 ## Install
 
-From [**GitHub Releases**](https://github.com/fengdwx/codex-notch/releases/latest), prefer `CodexNotch-...dmg` when the release provides one. Otherwise, use the ZIP archive:
+From [**GitHub Releases**](https://github.com/rapmetpar/codex-notch/releases/latest), prefer `CodexNotch-...dmg` when the release provides one. Otherwise, use the ZIP archive:
 
 1. For a DMG, open the disk image; for a ZIP, unzip the archive.
 2. In the DMG window, drag `CodexNotch.app` onto the `Applications` shortcut. (The ZIP requires dragging the app into Applications manually.)
@@ -118,7 +118,7 @@ In **Appearance**, enable **Custom color** to choose the quota and glow color, o
 - Choose a floating-bar center style and set a signature of up to 12 characters
 - Choose Chinese, English, or Russian for the app interface (English by default)
 - Show 0–20 recent conversations in the expanded card
-- Check for stable updates and download, install, and relaunch inside the app (from 0.2.1)
+- Open the releases page to download and install updates manually
 - Apply changes immediately and save them locally
 - Start automatically at login when enabled in General
 - Hide the left display area while keeping quota details in the expanded card
@@ -154,20 +154,22 @@ Compatible libraries contain a `manifest.json` and local PNG/WebP sprite atlases
 - Task state is parsed only from rollout JSONL files in `CODEX_HOME/sessions`.
 - Conversation labels use the latest short `thread_name` in `CODEX_HOME/session_index.jsonl`, falling back to `threads.title` in read-only `CODEX_HOME/state_5.sqlite`. Rollout message bodies, `first_user_message`, and `preview` are ignored when resolving titles.
 - CodexNotch never records Authorization headers, complete usage responses, user-message bodies, or conversation-title caches.
-- Manual update checks read a public GitHub appcast and download signed release archives; they send no Codex credentials, quota data, task data, or user content.
+- The update action opens the public GitHub releases page in your browser. CodexNotch does not download or install updates.
 
 The usage endpoint is an internal ChatGPT endpoint and its fields may change. If it fails, CodexNotch keeps the last successful quota while task monitoring continues.
 
 <details>
 <summary><strong>Build from source</strong></summary>
 
-Contributors need Xcode 16 or newer and a macOS version supported by that Xcode release. The built app supports macOS 14 or later. CI uses Xcode 16.2 on macOS 14:
+Contributors need Xcode 16 or newer and a macOS version supported by that Xcode release. The built app supports macOS 14 or later. CI uses Xcode 16.2 on macOS 15:
 
 ```sh
 swift test
 ./scripts/build_app.sh
-open dist/CodexNotch.app
+open dist.noindex/CodexNotch.app
 ```
+
+Local builds go in `dist.noindex/` so Spotlight does not list development apps alongside the installed copy. Keep only the current build; do not retain backup copies of the app or user data. An explicit output argument or `DIST_DIR` still overrides this default.
 
 Create distributable ZIP and DMG archives:
 
@@ -175,7 +177,7 @@ Create distributable ZIP and DMG archives:
 ./scripts/release.sh
 ```
 
-The release script runs tests, builds the release app, validates its code signature, produces ZIP and DMG archives plus SHA-256 files, mounts the DMG to verify its bundled app, and signs the ZIP to generate an update feed using the publisher’s Keychain. See [the publisher update workflow](docs/updating.md). The DMG improves installation flow; it does not replace Developer ID signing or notarization. To skip signing entirely:
+The release script runs tests, builds the ad-hoc-signed release app, validates its code signature, produces ZIP and DMG archives plus SHA-256 files, and mounts the DMG to verify its bundled app. No update signing key is used. See [the publisher update workflow](docs/updating.md). The DMG improves installation flow; it does not replace Developer ID signing or notarization. To skip signing entirely:
 
 ```sh
 SIGN_IDENTITY=none ./scripts/build_app.sh
@@ -185,7 +187,7 @@ SIGN_IDENTITY=none ./scripts/build_app.sh
 
 ## Current boundaries
 
-CodexNotch is currently in its 0.x release series. It does not terminate Codex tasks, estimate cost, sync to the cloud, send remote notifications, download or install updates without user action, or support Mac App Store distribution. ChatGPT Classic is not a monitored target.
+CodexNotch is currently in its 0.x release series. It does not terminate Codex tasks, estimate cost, sync to the cloud, send remote notifications, download or install updates, or support Mac App Store distribution. ChatGPT Classic is not a monitored target.
 
 ## License
 

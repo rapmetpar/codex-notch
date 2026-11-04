@@ -1,7 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [COMPACT-ATTENTION-001]
 supersedes: []
+superseded_by: 066-native-thread-read-state
 superseded_by: null
 owner: project-maintainer
 created_at: 2026-11-02

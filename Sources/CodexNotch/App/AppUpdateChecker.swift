@@ -88,7 +88,7 @@ enum AppUpdateError: Error, Equatable {
 
 struct AppUpdateChecker {
     static let defaultEndpoint = URL(
-        string: "https://api.github.com/repos/fengdwx/codex-notch/releases/latest"
+        string: "https://api.github.com/repos/rapmetpar/codex-notch/releases/latest"
     )!
 
     let currentVersion: AppVersion
@@ -138,10 +138,14 @@ struct AppUpdateChecker {
         guard !release.draft,
               !release.prerelease,
               let version = AppVersion(rawValue: release.tagName),
+              [version.description, "v" + version.description].contains(release.tagName),
               let url = URL(string: release.htmlURL),
-              url.scheme == "https",
-              url.host?.lowercased() == "github.com",
-              !release.htmlURL.isEmpty else {
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              components.scheme == "https",
+              components.host == "github.com",
+              components.user == nil, components.password == nil, components.port == nil,
+              components.query == nil, components.fragment == nil,
+              components.percentEncodedPath == "/rapmetpar/codex-notch/releases/tag/\(release.tagName)" else {
             throw AppUpdateError.invalidReleaseMetadata
         }
 

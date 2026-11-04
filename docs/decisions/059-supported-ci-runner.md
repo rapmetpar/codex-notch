@@ -1,7 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [CI-VERIFICATION-002]
 supersedes: [053-explicit-ci-toolchain]
+superseded_by: 068-ci-intel-runner
 owner: project-maintainer
 created_at: 2026-11-01
 ---

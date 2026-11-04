@@ -5,6 +5,11 @@ struct ConversationReadReceipt: Codable, Equatable, Sendable {
     let turnID: String
     let completedAt: Date
 
+    init(turnID: String, completedAt: Date) {
+        self.turnID = turnID
+        self.completedAt = completedAt
+    }
+
     init(_ completion: CompletedSession) {
         turnID = completion.session.turnID
         completedAt = completion.completedAt

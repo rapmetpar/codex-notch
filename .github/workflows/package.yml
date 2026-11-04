@@ -1,4 +1,4 @@
-name: Package signed release
+name: Package manual release
 
 on:
   workflow_dispatch:
@@ -7,13 +7,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: signed-release-package
+  group: manual-release-package
   cancel-in-progress: false
 
 jobs:
   package:
-    if: github.repository == 'fengdwx/codex-notch' && github.ref == 'refs/heads/main'
-    runs-on: macos-14
+    if: github.repository == 'rapmetpar/codex-notch' && github.ref == 'refs/heads/main'
+    runs-on: macos-15
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.2.app/Contents/Developer
     steps:
@@ -29,25 +29,20 @@ jobs:
           test "$(uname -m)" = arm64
       - name: Verify contracts, tests, and app bundle
         run: ./scripts/verify.sh
-      - name: Package and verify signed update
+      - name: Package and verify manual release
         env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           RUN_TESTS: '0'
         run: |
-          test -n "$SPARKLE_PRIVATE_KEY" || { echo "Missing SPARKLE_PRIVATE_KEY secret" >&2; exit 1; }
           ./scripts/release.sh
-          git rev-parse HEAD > dist/source-commit.txt
-      - name: Verify missing and wrong signing keys are rejected
-        run: python3 scripts/verify_signing_failures.py dist/*.zip
+          git rev-parse HEAD > dist.noindex/source-commit.txt
       - name: Upload verified release files
         uses: actions/upload-artifact@v4
         with:
-          name: signed-release-${{ github.sha }}
+          name: manual-release-${{ github.sha }}
           if-no-files-found: error
           retention-days: 14
           path: |
-            dist/*.zip
-            dist/*.dmg
-            dist/*.sha256
-            dist/appcast.xml
-            dist/source-commit.txt
+            dist.noindex/*.zip
+            dist.noindex/*.dmg
+            dist.noindex/*.sha256
+            dist.noindex/source-commit.txt
