@@ -67,3 +67,5 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [067: Manual updates](067-manual-updates.md)
 
 - [070: Apple Silicon CI runner](070-ci-apple-silicon.md)
+
+- [071: Intel CI reserve](071-ci-intel-reserve.md)

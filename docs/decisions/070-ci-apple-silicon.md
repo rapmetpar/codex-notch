@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [CI-VERIFICATION-004]
 supersedes: [069-ci-current-image]
-superseded_by: null
+superseded_by: 071-ci-intel-reserve
 owner: project-maintainer
 created_at: 2026-11-04
 ---

@@ -17,7 +17,7 @@ the release script rejects `SIGN_UPDATES=1` before accessing any key.
 3. Require a passing CI run on the exact release source. Confirm its checkout SHA
    and record the run URL. A local pass does not substitute for CI.
 
-CI uses macOS 26 Apple Silicon with explicitly selected Xcode 26.2. Local full
+CI uses macOS 26 Intel with explicitly selected Xcode 26.2. Local full
 verification and distribution use Apple Silicon. The app still targets macOS
 14; the current CI image does not prove GUI behavior on older macOS versions.
 4. After review and authorization, publish the ZIP, DMG and checksums to the

@@ -97,6 +97,6 @@ Do not use a static screenshot as proof that an animation is correct; describe t
 | Frequent hotspots | `NotchView`, `NotchRuntimeCoordinator`, `NotchWindowController`, `NotchPresentationReducer`, and quota parsing |
 | Current contracts | `docs/contracts/behavior-contracts.yaml` |
 | L3 | Authentication/token handling, privacy data, usage API permissions, and formal public release |
-| CI verification | GitHub CI runs full verification on macOS 26 Apple Silicon with explicit Xcode 26.2; local ARM verification and exact-source CI are required before publication. This is not older-OS GUI acceptance. The personal rapmetpar/codex-notch main branch requires an up-to-date PR and successful GitHub Actions test, including for administrators; no review approvals are required. |
+| CI verification | GitHub CI runs full verification on macOS 26 Intel with explicit Xcode 26.2; local ARM verification and exact-source CI are required before publication. This is not older-OS GUI acceptance. The personal rapmetpar/codex-notch main branch requires an up-to-date PR and successful GitHub Actions test, including for administrators; no review approvals are required. |
 | Deployment target | None; a release is a locally distributable archive, not automatic deployment |
 | Template sections not adopted | Online deployment evidence, canaries, and data migrations; this project has no corresponding runtime or data layer |
