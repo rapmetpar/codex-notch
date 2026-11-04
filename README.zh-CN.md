@@ -165,7 +165,7 @@ usage 接口属于 ChatGPT 内部接口，字段未来可能变化。接口异�
 ```sh
 swift test
 ./scripts/build_app.sh
-open dist/CodexNotch.app
+open dist.noindex/CodexNotch.app
 ```
 
 生成可发布的 ZIP 和 DMG：

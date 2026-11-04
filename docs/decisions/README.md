@@ -4,6 +4,7 @@ Record decisions here only when they affect active behavior contracts, could be 
 
 | Decision | Status | Related contract | Description |
 |---|---|---|---|
+| [066-local-build-search-exclusion](066-local-build-search-exclusion.md) | active | `PACKAGE-SEARCH-002` | Keep the current local build out of application search without retaining backups |
 | [059-conversation-status-animation](059-conversation-status-animation.md) | active | `CONVERSATION-STATUS-001` | Independent running spinners and one-time completion checks for recent chats |
 | [001-fixed-canvas-notch-motion](001-fixed-canvas-notch-motion.md) | superseded | `NOTCH-MOTION-002` | Fixed NSPanel canvas with an expanding inner SwiftUI island |
 | [004-zip-and-dmg-local-release](004-zip-and-dmg-local-release.md) | active | `PACKAGE-VERIFY-006`, `PACKAGE-DMG-018` | Keep a verified ZIP fallback while adding a verified DMG installation path |

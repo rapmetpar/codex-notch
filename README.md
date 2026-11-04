@@ -166,8 +166,10 @@ Contributors need Xcode 16 or newer and a macOS version supported by that Xcode 
 ```sh
 swift test
 ./scripts/build_app.sh
-open dist/CodexNotch.app
+open dist.noindex/CodexNotch.app
 ```
+
+Local builds go in `dist.noindex/` so Spotlight does not list development apps alongside the installed copy. Keep only the current build; do not retain backup copies of the app or user data. An explicit output argument or `DIST_DIR` still overrides this default.
 
 Create distributable ZIP and DMG archives:
 

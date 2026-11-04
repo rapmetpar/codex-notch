@@ -28,10 +28,10 @@ Before writing code, state what will change, what must remain stable, what is ou
 swift test
 ./scripts/verify.sh
 ./scripts/build_app.sh
-open dist/CodexNotch.app
+open dist.noindex/CodexNotch.app
 ```
 
-- `./scripts/build_app.sh` runs the tests and builds `dist/CodexNotch.app`.
+- `./scripts/build_app.sh` runs the tests and builds `dist.noindex/CodexNotch.app`.
 - Latest complete verification: 63 tests passed.
 - After changing the UI, rebuild and restart the `.app`, then have the user confirm it on a real notch. Do not claim that an animation is correct based only on screenshots.
 
@@ -55,6 +55,7 @@ open dist/CodexNotch.app
 
 ## User Collaboration Preferences
 
+- Do not create or retain persistent backups of CodexNotch app bundles, preferences, or pet libraries, including before builds, replacements, or installations. The user explicitly requested deletion of existing backups on 2026-11-04. Keep only the installed app and current build output; use Git history and rebuilding when an older implementation is needed. Disposable test fixtures must be cleaned up after verification.
 - Use concise Chinese, lead with the result, and then explain the approach; the user may provide screenshots for pixel-level feedback.
 - Do not expand this into an Atoll plugin or add an Atoll dependency; this is the user's independent app.
 - The user values real-machine appearance, smoothness, and notch geometry over changes based only on guessed parameters.

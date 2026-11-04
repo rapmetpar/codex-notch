@@ -68,7 +68,7 @@ the tag. Record the checkout SHA and successful run URL. See `docs/updating.md`.
 | full | `./scripts/verify.sh` | L2/L3: tests, release build, app bundle, and signing validation |
 | release | `./scripts/release.sh` | When distributable ZIP and DMG artifacts are required; creates only local artifacts and does not upload them |
 
-`full` does not send notifications, request real task operations, or change remote state by default. Only the local `dist/` packaging directory is updated, and that directory is ignored by Git.
+`full` does not send notifications, request real task operations, or change remote state by default. Only the local `dist.noindex/` packaging directory is updated, and that directory is ignored by Git.
 
 ## Real-Hardware Acceptance
 

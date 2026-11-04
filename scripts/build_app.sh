@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PRODUCT_NAME="CodexNotch"
 CONFIGURATION="${CONFIGURATION:-release}"
-DIST_DIR="${1:-${DIST_DIR:-$ROOT_DIR/dist}}"
+source "$ROOT_DIR/scripts/package_paths.sh"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 RUN_TESTS="${RUN_TESTS:-1}"
 

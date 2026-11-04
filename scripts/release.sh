@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-DIST_DIR="${1:-${DIST_DIR:-$ROOT_DIR/dist}}"
+source "$ROOT_DIR/scripts/package_paths.sh"
 VERSION="${VERSION:-$(plutil -extract CFBundleShortVersionString raw -o - "$ROOT_DIR/Resources/Info.plist")}"
 ARCH="$(uname -m)"
 APP_PATH="$DIST_DIR/CodexNotch.app"

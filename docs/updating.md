@@ -28,7 +28,7 @@ checks, and publishing checklists belong outside the public release notes.
 4. When a release is authorized and both checks have passed, upload the generated
    ZIP, DMG and checksums to the matching `v<version>` GitHub Release. Read back
    the public archive URLs.
-5. Copy `dist/appcast.xml` over the tracked `appcast.xml`, commit it and push it
+5. Copy `dist.noindex/appcast.xml` over the tracked `appcast.xml`, commit it and push it
    to personal `main` only after the archive is publicly available.
 6. Check for Updates from an older updater-enabled installation; verify the
    offered version, download, installation, relaunch, and saved preferences.

@@ -1,4 +1,71 @@
 contracts:
+  - id: PACKAGE-SEARCH-002
+    title: Local builds stay outside search without retained backups
+    status: active
+    statement: >-
+      Preserve PACKAGE-SEARCH-001 output paths, explicit output precedence,
+      installed application, bundle identity, signing, resources, ZIP and DMG
+      delivery, live settings and login items. Replace its rollback-retention
+      requirement: do not create or retain persistent app, preference or pet
+      library backups during development, packaging or installation. Keep the
+      installed app and current build output. Existing backup removal is an
+      explicitly authorized one-time cleanup; packaging scripts do not delete
+      arbitrary existing directories. Clean disposable verification fixtures
+      after use. Obtain old implementations from Git history and rebuilding.
+      Do not alter global indexing or hide the installed app from search.
+    rationale: The user explicitly requested deletion of accumulated backups and no future backup retention.
+    source: user-correction
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [default-package-output, backup-retention-policy, local-installation, build-documentation]
+      exclude: [app-runtime, live-user-data, system-wide-indexing, public-release, git-history]
+    examples:
+      positive: Rebuilding replaces only the current output; the installed app and live settings remain intact and no app or user-data backup is retained.
+      negative: An installation leaves another previous.app, snapshots real preferences or pet artwork, or cleanup deletes the installed app or live user data.
+    guards:
+      - scripts/verify_package_paths.sh
+      - scripts/build_app.sh
+      - scripts/verify_preferences.py
+      - docs/decisions/066-local-build-search-exclusion.md
+      - "manual: confirm the known backup locations are absent and installed/current app hashes unchanged after the authorized cleanup; keep only the installed app in Spotlight"
+    supersedes: [PACKAGE-SEARCH-001]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: PACKAGE-SEARCH-001
+    title: Local builds do not crowd application search
+    status: superseded
+    statement: >-
+      Build, verification and release entry points share dist.noindex as their
+      default output directory so Spotlight excludes local app bundles and
+      rollback copies stored beneath it. Preserve explicit output arguments and
+      DIST_DIR overrides, including argument precedence. Preserve app contents,
+      bundle identity, signing, resource verification, ZIP and DMG delivery,
+      installed application, settings and login items. Do not silently move or
+      delete existing builds in packaging scripts, change system-wide indexing,
+      or suppress search visibility of the installed application. Existing
+      indexed output directories require a separate reversible local migration.
+    rationale: Spotlight listed the installed app and seven local build or rollback bundles as separate CodexNotch applications.
+    source: user-reported-incident
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [default-package-output, build-documentation, package-workflow-artifact-paths]
+      exclude: [app-runtime, installed-bundle, preferences, system-wide-indexing, public-release]
+    examples:
+      positive: A default full verification builds dist.noindex/CodexNotch.app; the installed /Applications copy remains searchable, while local backups remain available outside search.
+      negative: A default build recreates indexed dist/CodexNotch.app, an explicit output is ignored, or a cleanup deletes rollback apps or resets settings.
+    guards:
+      - scripts/verify_package_paths.sh
+      - scripts/verify.sh
+      - scripts/verify_app.sh
+      - docs/decisions/066-local-build-search-exclusion.md
+      - "manual: query Spotlight by com.david.codexnotch after indexing settles; only the installed app should remain; confirm refreshed application-search UI on the user's Mac"
+    supersedes: []
+    superseded_by: PACKAGE-SEARCH-002
+    last_verified_commit: null
+
   - id: CONVERSATION-STATUS-002
     title: Running, new and locally viewed answers have distinct rows
     status: superseded
@@ -2828,7 +2895,7 @@ contracts:
       include: [build, bundle, local-release]
       exclude: [remote-release-upload]
     examples:
-      positive: './scripts/verify.sh builds and verifies dist/CodexNotch.app.'
+      positive: './scripts/verify.sh builds and verifies dist.noindex/CodexNotch.app.'
       negative: Running only `swift test` and claiming that the release is installable, or verifying an old bundle and then replacing its binary with a new one.
     guards:
       - scripts/build_app.sh
