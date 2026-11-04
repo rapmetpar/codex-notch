@@ -3681,7 +3681,7 @@ contracts:
 
   - id: COMPACT-ATTENTION-001
     title: Compact completion reflects observed unacknowledged answers
-    status: active
+    status: superseded
     statement: >-
       Inherit PROJECT-GROUPS-001 except the inherited compact completion policy
       and five-second native-read refresh interval. Refresh native receipts every
@@ -3721,6 +3721,52 @@ contracts:
       - docs/decisions/066-compact-completion-identity.md
       - "manual: finish and read an answer in native Codex, verify row and compact cue update, restart, and inspect physical notch and floating bar, including pointer tracking"
     supersedes: [PROJECT-GROUPS-001]
+    superseded_by: NATIVE-THREAD-ATTENTION-001
+    last_verified_commit: null
+
+  - id: NATIVE-THREAD-ATTENTION-001
+    title: Mirror scoped native thread read state with bounded freshness
+    status: active
+    statement: >-
+      Inherit COMPACT-ATTENTION-001, CONVERSATION-ORDER-001 and their other
+      protections except exact-turn SQLite native receipt sourcing. Read the
+      native client versioned thread unread list scoped to a verified local host
+      and one identity matching the known thread's database owner. A validated
+      full list's absence means native read; missing schema, source, identity,
+      host or thread ownership means unknown. Historical completions mirror this
+      native snapshot. Newly observed completions never inherit the prior
+      snapshot: accept a post-completion lookup only when the thread database
+      update is at least the completion instant (with a one-second precision
+      tolerance), or a changed scoped unread-list fingerprint has a file
+      modification later than completion. Bind that thread state to the immutable
+      turn and completion instant. This is an eventual-consistency
+      heuristic, not a native per-turn token: unrelated thread updates can
+      advance the list or database while this thread's native update is delayed,
+      and a fast unread-to-read transition can be missed when fresh thread
+      metadata is unavailable. Native refresh is every two
+      seconds, with no hard latency or causal guarantee. Source loss removes
+      transient native evidence. No native metadata is persisted. Native SQLite
+      unread receipts no longer drive compact signals. Keep local opening
+      receipts, running priority, compact observed completions, WAL, replacement,
+      generation cancellation, history and category order, privacy, geometry and
+      quota. Read no message bodies or credentials and write no Codex state.
+    rationale: The native client uses a separate thread unread list and its SQLite receipts can be stale or absent.
+    source: user-reported-incident-and-verified-native-state
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [native-read-metadata, recent-attention, compact-attention, live-refresh]
+      exclude: [message-content, authentication, codex-writes, geometry, quota, releases]
+    examples:
+      positive: A verified historical native read appears Viewed; a new completion stays New until a fresh native snapshot; active work remains Running.
+      negative: Missing or ambiguous source marks everything Viewed, an unchanged old snapshot acknowledges the next answer, or stale SQLite unread resurrects a compact cue.
+    guards:
+      - Tests/CodexNotchTests/NativeThreadSnapshotTests.swift
+      - Tests/CodexNotchTests/NativeConversationReadTests.swift
+      - Tests/CodexNotchTests/NativeReadTrackingModeTests.swift
+      - docs/decisions/066-native-thread-read-state.md
+      - "manual: read and finish actual native chats, verify list and compact state, restart, and inspect physical-notch and floating UI"
+    supersedes: [COMPACT-ATTENTION-001]
     superseded_by: null
     last_verified_commit: null
 

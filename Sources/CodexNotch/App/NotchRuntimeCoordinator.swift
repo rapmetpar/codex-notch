@@ -105,9 +105,11 @@ final class NotchRuntimeCoordinator {
         )
         self.threadTitleReader = threadTitleReader ?? CodexThreadTitleReader(codexHomeURL: codexHome)
         self.threadProjectReader = threadProjectReader ?? CodexThreadProjectReader(codexHomeURL: codexHome)
-        self.nativeReadMonitor = NativeConversationReadMonitor(
-            reader: nativeReadReader ?? CodexConversationReadReader(codexHomeURL: codexHome)
-        )
+        if let nativeReadReader {
+            self.nativeReadMonitor = NativeConversationReadMonitor(reader: nativeReadReader)
+        } else {
+            self.nativeReadMonitor = NativeConversationReadMonitor(snapshotReader: NativeThreadReadSnapshotReader(codexHomeURL: codexHome))
+        }
         self.rolloutMonitor = RolloutActivityMonitor(
             rootURL: codexHome.appendingPathComponent("sessions", isDirectory: true),
             store: sessionStore
@@ -284,7 +286,7 @@ final class NotchRuntimeCoordinator {
                 completedAt: completion.completedAt
             )
         }
-        nativeReadMonitor.updateThreadIDs(recentCompletions.map(\.session.threadID))
+        nativeReadMonitor.updateCompletions(recentCompletions)
         refreshTitlesIfNeeded(now: now)
         render(now: now)
     }
