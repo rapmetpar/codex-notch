@@ -56,7 +56,7 @@ open dist.noindex/CodexNotch.app
 ## User Collaboration Preferences
 
 - Do not create or retain persistent backups of CodexNotch app bundles, preferences, or pet libraries, including before builds, replacements, or installations. The user explicitly requested deletion of existing backups on 2026-11-04. Keep only the installed app and current build output; use Git history and rebuilding when an older implementation is needed. Disposable test fixtures must be cleaned up after verification.
-- Use concise Chinese, lead with the result, and then explain the approach; the user may provide screenshots for pixel-level feedback.
+- Write concise Russian responses, lead with the result, and then explain the approach; the user may provide screenshots for pixel-level feedback.
 - Do not expand this into an Atoll plugin or add an Atoll dependency; this is the user's independent app.
 - The user values real-machine appearance, smoothness, and notch geometry over changes based only on guessed parameters.
 - When a UI regression appears, inspect the actual runtime state and corresponding state machine before changing styles.
