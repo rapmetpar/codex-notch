@@ -9,13 +9,13 @@
 **把周额度、5 小时额度明细、精确重置时间和任务状态，固定在 MacBook 刘海旁。**<br>
 切到浏览器、IDE 或任何其他应用，额度仍然一眼可见。
 
-[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/fengdwx/codex-notch/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/rapmetpar/codex-notch/releases/latest)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white)](Package.swift)
-[![Latest release](https://img.shields.io/github/v/release/fengdwx/codex-notch?label=下载最新版&color=2ea44f)](https://github.com/fengdwx/codex-notch/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/rapmetpar/codex-notch?label=下载最新版&color=2ea44f)](https://github.com/rapmetpar/codex-notch/releases/latest)
 [![MIT License](https://img.shields.io/badge/License-MIT-4c8bf5)](LICENSE)
 [![LINUX DO](https://img.shields.io/badge/LINUX-DO-FFB003.svg)](https://linux.do)
 
-[**下载最新版**](https://github.com/fengdwx/codex-notch/releases/latest) · [**观看 26 秒中文演示**](docs/assets/codex-notch-demo-zh.mp4) · [English](README.md)
+[**下载最新版**](https://github.com/rapmetpar/codex-notch/releases/latest) · [**观看 26 秒中文演示**](docs/assets/codex-notch-demo-zh.mp4) · [English](README.md)
 
 </div>
 
@@ -92,7 +92,7 @@ Codex 运行时显示蓝色状态回声，以及两侧实际可见额度指标�
 
 ## 立即安装
 
-前往 [**GitHub Releases**](https://github.com/fengdwx/codex-notch/releases/latest)。如果该版本提供 `CodexNotch-...dmg`，优先下载 DMG；否则使用 ZIP：
+前往 [**GitHub Releases**](https://github.com/rapmetpar/codex-notch/releases/latest)。如果该版本提供 `CodexNotch-...dmg`，优先下载 DMG；否则使用 ZIP：
 
 1. DMG 直接打开磁盘映像；ZIP 则先解压。
 2. 在 DMG 窗口中，将 `CodexNotch.app` 拖到“Applications”快捷方式上。（ZIP 需要手动将应用拖入“应用程序”。）

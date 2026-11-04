@@ -9,13 +9,13 @@
 **Weekly quota, five-hour details, exact reset times, and task status stay beside your MacBook notch.**<br>
 Your browser, IDE, or any other app can be frontmost—your quota remains visible.
 
-[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/fengdwx/codex-notch/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-111111?logo=apple)](https://github.com/rapmetpar/codex-notch/releases/latest)
 [![Swift 5.9](https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white)](Package.swift)
-[![Latest release](https://img.shields.io/github/v/release/fengdwx/codex-notch?label=download&color=2ea44f)](https://github.com/fengdwx/codex-notch/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/rapmetpar/codex-notch?label=download&color=2ea44f)](https://github.com/rapmetpar/codex-notch/releases/latest)
 [![MIT License](https://img.shields.io/badge/License-MIT-4c8bf5)](LICENSE)
 [![LINUX DO](https://img.shields.io/badge/LINUX-DO-FFB003.svg)](https://linux.do)
 
-[**Download the latest release**](https://github.com/fengdwx/codex-notch/releases/latest) · [**Watch the 26-second demo**](docs/assets/codex-notch-demo-en.mp4) · [简体中文](README.zh-CN.md)
+[**Download the latest release**](https://github.com/rapmetpar/codex-notch/releases/latest) · [**Watch the 26-second demo**](docs/assets/codex-notch-demo-en.mp4) · [简体中文](README.zh-CN.md)
 
 </div>
 
@@ -92,7 +92,7 @@ While Codex works, a blue activity echo and restrained halos behind the real vis
 
 ## Install
 
-From [**GitHub Releases**](https://github.com/fengdwx/codex-notch/releases/latest), prefer `CodexNotch-...dmg` when the release provides one. Otherwise, use the ZIP archive:
+From [**GitHub Releases**](https://github.com/rapmetpar/codex-notch/releases/latest), prefer `CodexNotch-...dmg` when the release provides one. Otherwise, use the ZIP archive:
 
 1. For a DMG, open the disk image; for a ZIP, unzip the archive.
 2. In the DMG window, drag `CodexNotch.app` onto the `Applications` shortcut. (The ZIP requires dragging the app into Applications manually.)
