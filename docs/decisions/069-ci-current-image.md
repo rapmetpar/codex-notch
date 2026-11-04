@@ -1,8 +1,8 @@
 ---
-status: active
+status: superseded
 contract_ids: [CI-VERIFICATION-003]
 supersedes: [068-ci-intel-runner]
-superseded_by: null
+superseded_by: 070-ci-apple-silicon
 owner: project-maintainer
 created_at: 2026-11-04
 ---

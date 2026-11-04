@@ -424,7 +424,7 @@ contracts:
 
   - id: CI-VERIFICATION-003
     title: Exact-source full verification uses an explicit supported current SDK
-    status: active
+    status: superseded
     statement: >-
       Inherit CI-VERIFICATION-002 except its unavailable macOS 15 pool and SDK
       pin. Run the complete unchanged verify.sh job named test on macos-26-intel
@@ -451,7 +451,7 @@ contracts:
       - docs/decisions/069-ci-current-image.md
       - "manual: confirm checkout SHA, full CI result and ARM archive provenance before publication"
     supersedes: [CI-VERIFICATION-002]
-    superseded_by: null
+    superseded_by: CI-VERIFICATION-004
     last_verified_commit: null
 
   - id: SETTINGS-WINDOW-022
@@ -3955,5 +3955,36 @@ contracts:
       - .github/workflows/package.yml
       - docs/decisions/067-manual-updates.md
     supersedes: [RELEASE-SIGNING-002]
+    superseded_by: null
+    last_verified_commit: null
+
+  - id: CI-VERIFICATION-004
+    title: Exact-source full CI runs on macOS 26 Apple Silicon
+    status: active
+    statement: >-
+      Inherit CI-VERIFICATION-003 except the Intel runner architecture. Run the
+      same complete verify.sh job named test on standard macos-26 Apple Silicon
+      with explicit Xcode 26.2, checkout SHA and toolchain logging and the
+      existing manual ref input. Preserve all tests, protected main, local full
+      ARM verification, separate packaging, exact-source successful CI and the
+      macOS 14 deployment target. A queued, cancelled, failed or unassigned job
+      is not a passing result. A current-image pass does not establish macOS 14
+      or 15 GUI acceptance. Rebuild release assets from the checked source.
+    rationale: The macOS 15 Intel job and two macOS 26 Intel attempts failed before runner acquisition; the standard ARM pool offers the release architecture without reducing checks.
+    source: observed-runner-acquisition-failures
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [ci-runner-architecture, exact-source-verification]
+      exclude: [app-behavior, test-reduction, deployment-target, branch-protection, packaging]
+    examples:
+      positive: The ARM job logs the final checkout SHA and completes full verification, and the locally verified package comes from the final release source.
+      negative: Treating an unassigned runner as a pass, skipping tests, changing the required job context, or claiming older-OS GUI coverage.
+    guards:
+      - .github/workflows/ci.yml
+      - scripts/verify.sh
+      - docs/decisions/070-ci-apple-silicon.md
+      - "manual: verify final source SHA, successful complete CI and locally verified ARM archive provenance before publication"
+    supersedes: [CI-VERIFICATION-003]
     superseded_by: null
     last_verified_commit: null

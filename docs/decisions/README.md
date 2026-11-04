@@ -65,3 +65,5 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [069: Explicit current-image CI](069-ci-current-image.md)
 
 - [067: Manual updates](067-manual-updates.md)
+
+- [070: Apple Silicon CI runner](070-ci-apple-silicon.md)
