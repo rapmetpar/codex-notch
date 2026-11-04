@@ -52,6 +52,28 @@ final class CompactCompletionStoreTests: XCTestCase {
         XCTAssertTrue(result.isEmpty)
     }
 
+    func testMetadataRefreshDoesNotRediscoverSuccessfulTurn() {
+        let date = Date().addingTimeInterval(-1)
+        let before = SessionActivity(threadID: "thread", turnID: "turn", cwd: nil,
+            originator: nil, startedAt: date, lastActivityAt: date)
+        let after = before.updating(cwd: "/different")
+        let old = ActiveSessionReduction(active: [], completed: [before], successful: [before])
+        let current = ActiveSessionReduction(active: [], completed: [after], successful: [after])
+        let rediscovered = RolloutActivityMonitor.newSuccessfulCompletions(previous: old, current: current,
+            events: [], startedAt: date.addingTimeInterval(-1))
+        let suite = "CompactCompletionStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let signals = CompactCompletionStore(defaults: defaults)
+        signals.record(rediscovered)
+        let history = CompletedSession(session: after, completedAt: date)
+        let state = NotchPresentationReducer.reduce(NotchPresentationInput(now: Date(), isChatGPTFrontmost: false,
+            activeSessions: [], recentCompletions: [history], usage: nil, isHovered: false,
+            compactCompletionSignals: signals.signals))
+        XCTAssertEqual(state, .quotaCompact(nil))
+        XCTAssertTrue(signals.signals.isEmpty)
+    }
+
     func testSignalPersistsAndExactReadClearsIt() throws {
         let suite = "CompactCompletionStoreTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

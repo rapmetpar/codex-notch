@@ -250,7 +250,10 @@ final class RolloutActivityMonitor {
         let observedAt = Date()
         return current.successful.filter { item in
             item.lastActivityAt >= startedAt && item.lastActivityAt <= observedAt
-                && !previous.successful.contains(item)
+                && !previous.successful.contains(where: {
+                    $0.threadID == item.threadID && $0.turnID == item.turnID
+                        && $0.lastActivityAt == item.lastActivityAt
+                })
         }.map { CompletedSession(session: $0, completedAt: $0.lastActivityAt) }
     }
 

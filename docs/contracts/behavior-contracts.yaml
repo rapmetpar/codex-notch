@@ -3664,8 +3664,10 @@ contracts:
       and completion instant. A matching local or native read clears the signal;
       native unread cannot override a matching local opening acknowledgement.
       Existing history and row attention remain independent. Batch delivery of
-      start and completion must not lose a live completion. Interrupted turns do
-      not create new compact signals. Preserve category and project order,
+      start and completion must not lose a live completion. Compare completion
+      identity using thread ID, turn ID and completion instant, independently of
+      mutable session metadata; metadata refresh must not re-admit the same turn.
+      Interrupted turns do not create new compact signals. Preserve category and project order,
       history limits, navigation, geometry, quota, and motion.
     rationale: Historical completions caused a green check even after the answer was read or without a current completion.
     source: user-reported-incident
@@ -3684,6 +3686,7 @@ contracts:
       - Tests/CodexNotchTests/NativeReadTrackingModeTests.swift
       - Tests/CodexNotchTests/NotchPresentationReducerTests.swift
       - docs/decisions/065-compact-observed-completions.md
+      - docs/decisions/066-compact-completion-identity.md
       - "manual: finish and read an answer in native Codex, verify row and compact cue update, restart, and inspect physical notch and floating bar, including pointer tracking"
     supersedes: [PROJECT-GROUPS-001]
     superseded_by: null
