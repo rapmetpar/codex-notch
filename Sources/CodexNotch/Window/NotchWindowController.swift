@@ -505,6 +505,11 @@ final class NotchWindowController: NSWindowController {
                 ))
             }
         }
+        let limit = NotchRuntimePreferences.read(from: AppPreferences.store).recentConversationLimit
+        if limit != .none {
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(actionItem(title: appLanguage.localized(chinese: "搜索最近对话…", english: "Search recent conversations…", russian: "Поиск недавних чатов…"), representedObject: "__search_recent__"))
+        }
         if includesShowNotchAction {
             menu.addItem(NSMenuItem.separator())
             menu.addItem(actionItem(
@@ -548,7 +553,9 @@ final class NotchWindowController: NSWindowController {
 
     @objc private func handleStatusItemAction(_ sender: NSMenuItem) {
         guard let representedObject = sender.representedObject as? String else { return }
-        if representedObject == "__show_notch__" {
+        if representedObject == "__search_recent__" {
+            NotificationCenter.default.post(name: .openConversationSearch, object: nil)
+        } else if representedObject == "__show_notch__" {
             AppPreferences.store.set(
                 true,
                 forKey: NotchDisplayPreference.storageKey

@@ -40,6 +40,8 @@ final class NotchRuntimeCoordinator {
     private let conversationReadStore: ConversationReadStore
     private let compactCompletionStore: CompactCompletionStore
     private let nativeReadMonitor: NativeConversationReadMonitor
+    private let searchWindow = ConversationSearchWindow()
+    private var searchObserver: NSObjectProtocol?
     private let viewModel: NotchViewModel
     private let titleReadQueue = DispatchQueue(
         label: "com.david.codexnotch.thread-title-read",
@@ -120,6 +122,10 @@ final class NotchRuntimeCoordinator {
         guard !started else { return }
         started = true
         observePreferenceChanges()
+        searchWindow.model.onOpen = { [weak self] id in self?.openThread(id) }
+        searchObserver = NotificationCenter.default.addObserver(forName: .openConversationSearch, object: nil, queue: .main) { [weak self] _ in
+            self?.showConversationSearch()
+        }
         visibilityShortcut = NotchVisibilityShortcut { [weak self] in
             self?.toggleNotchDisplay()
         }
@@ -192,6 +198,8 @@ final class NotchRuntimeCoordinator {
     }
 
     func stop() {
+        if let searchObserver { NotificationCenter.default.removeObserver(searchObserver); self.searchObserver = nil }
+        searchWindow.close()
         guard started else { return }
         started = false
         metadataGeneration &+= 1
@@ -583,7 +591,28 @@ final class NotchRuntimeCoordinator {
         return content.usage?.fiveHourWindow != nil
     }
 
+    private func showConversationSearch() {
+        guard recentConversationLimit != .none else { return }
+        updateConversationSearch()
+        searchWindow.show()
+    }
+
+    private func updateConversationSearch() {
+        let preferences = runtimePreferences
+        guard preferences.recentConversationLimit != .none else { searchWindow.close(); return }
+        let input = NotchPresentationInput(now: nowProvider(), isChatGPTFrontmost: isChatGPTFrontmost,
+            activeSessions: activeSessions, recentCompletions: recentCompletions, usage: usage, isHovered: true,
+            readReceipts: conversationReadStore.receipts, nativeReadReceipts: nativeReadMonitor.receipts,
+            conversationCategoryOrder: preferences.conversationCategoryOrder, threadProjects: threadProjects,
+            conversationProjectOrder: preferences.conversationProjectOrder)
+        if case let .expanded(content) = NotchPresentationReducer.reduce(input).limitingRecentConversations(to: preferences.recentConversationLimit) {
+            searchWindow.model.conversations = content.conversations
+            searchWindow.model.language = preferences.language
+        }
+    }
+
     private func render(now: Date? = nil) {
+        if searchWindow.isOpen { updateConversationSearch() }
         let renderDate = now ?? nowProvider()
         let preferences = runtimePreferences
         PetCompanionController.shared.observe(activeSessions: activeSessions, completions: recentCompletions,
