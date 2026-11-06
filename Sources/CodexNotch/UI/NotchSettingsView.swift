@@ -70,30 +70,35 @@ struct NotchSettingsView: View {
 
     @AppStorage(NotchDisplayPreference.storageKey)
     private var notchDisplayEnabled = NotchDisplayPreference.defaultEnabled
-    @State private var selectedTab: SettingsTab = .general
+    @State private var search = SettingsSearchState()
     @State private var layoutMode: NotchLayoutMode?
     @State private var previewState = FloatingPreviewState.running
 
-    private enum SettingsTab { case general, appearance, floating, pets }
     private var floatingStyle: FloatingCenterStyle { .fromStoredValue(floatingCenterStyleRaw) }
     private var floatingContext: FloatingSettingsContext {
         FloatingSettingsContext(layoutMode: layoutMode, displayEnabled: notchDisplayEnabled)
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            generalSettings
-                .tabItem { Label(appLanguage.localized(chinese: "通用", english: "General", russian: "Основные"), systemImage: "gearshape") }
-                .tag(SettingsTab.general)
-            appearanceSettings
-                .tabItem { Label(appLanguage.localized(chinese: "外观", english: "Appearance", russian: "Внешний вид"), systemImage: "paintpalette") }
-                .tag(SettingsTab.appearance)
-            PetCompanionSettingsView(companion: companion, language: appLanguage)
-                .tabItem { Label(appLanguage.localized(chinese: "宠物", english: "Companions", russian: "Питомцы"), systemImage: "pawprint") }
-                .tag(SettingsTab.pets)
-            floatingSettings
-                .tabItem { Label(appLanguage.localized(chinese: "浮动横条", english: "Floating Bar", russian: "Плавающая панель"), systemImage: "display") }
-                .tag(SettingsTab.floating)
+        VStack(spacing: 12) {
+            SettingsSearchView(search: $search, language: appLanguage)
+                .zIndex(1)
+            TabView(selection: $search.selectedTab) {
+                SettingsSearchPane(tab: .general, search: search) { generalSettings }
+                    .tabItem { Label(SettingsTab.general.title(for: appLanguage), systemImage: "gearshape") }
+                    .tag(SettingsTab.general)
+                SettingsSearchPane(tab: .appearance, search: search) { appearanceSettings }
+                    .tabItem { Label(SettingsTab.appearance.title(for: appLanguage), systemImage: "paintpalette") }
+                    .tag(SettingsTab.appearance)
+                SettingsSearchPane(tab: .pets, search: search) {
+                    PetCompanionSettingsView(companion: companion, language: appLanguage)
+                }
+                    .tabItem { Label(SettingsTab.pets.title(for: appLanguage), systemImage: "pawprint") }
+                    .tag(SettingsTab.pets)
+                SettingsSearchPane(tab: .floating, search: search) { floatingSettings }
+                    .tabItem { Label(SettingsTab.floating.title(for: appLanguage), systemImage: "display") }
+                    .tag(SettingsTab.floating)
+            }
         }
         .environment(\.customStatusIconData, customIconData)
         .fileImporter(isPresented: $choosingIcon, allowedContentTypes: [.png, .jpeg]) { result in
@@ -127,6 +132,7 @@ struct NotchSettingsView: View {
             refreshSystemState()
             SettingsWindowPresenter.bringToFront()
         }
+        .onDisappear { search.dismiss() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshSystemState()
         }
@@ -144,12 +150,15 @@ struct NotchSettingsView: View {
                         Text(language.title).tag(language)
                     }
                 }
+                .settingsSearchTarget(.language)
                 Picker(appLanguage.localized(chinese: "最近任务数量", english: "Number of recent tasks", russian: "Недавних задач"), selection: recentConversationLimitBinding) {
                     ForEach(RecentConversationLimit.allCases) { limit in
                         Text(limit.title(for: appLanguage)).tag(limit)
                     }
                 }
+                .settingsSearchTarget(.recentTasks)
                 ConversationCategoryOrderControl(order: conversationCategoryOrderBinding, language: appLanguage)
+                    .settingsSearchTarget(.categoryOrder)
             } header: {
                 Text(appLanguage.localized(chinese: "日常使用", english: "Everyday use", russian: "Общие настройки"))
             } footer: {
@@ -168,6 +177,7 @@ struct NotchSettingsView: View {
                     Label(appLanguage.localized(chinese: "打开更新页面…", english: "Open Updates Page…", russian: "Открыть страницу обновлений…"), systemImage: "arrow.clockwise")
                 }
                 .disabled(!updater.canCheckForUpdates)
+                .settingsSearchTarget(.updates)
                 if let error = updater.startupError {
                     Text(error).font(.callout).foregroundStyle(.red)
                 }
@@ -184,6 +194,7 @@ struct NotchSettingsView: View {
             appLanguage.localized(chinese: "登录时启动", english: "Launch at login", russian: "Запускать при входе"),
             isOn: Binding(get: { launchAtLogin.isRequested }, set: { launchAtLogin.setEnabled($0) })
         )
+        .settingsSearchTarget(.launchAtLogin)
         .help(appLanguage.localized(chinese: "登录 Mac 时自动启动 CodexNotch。", english: "Automatically launch CodexNotch when you log in to your Mac.", russian: "Автоматически запускать CodexNotch при входе в macOS."))
 
         if launchAtLogin.status == .requiresApproval {
@@ -212,6 +223,7 @@ struct NotchSettingsView: View {
                     }
                 }
                 .pickerStyle(.radioGroup)
+                .settingsSearchTarget(.quotaStyle)
                 Picker(appLanguage.localized(chinese: "左侧显示", english: "Left side", russian: "Слева"), selection: statusIconStyleBinding) {
                     ForEach(StatusIconStyle.allCases) { style in
                         Label {
@@ -223,6 +235,7 @@ struct NotchSettingsView: View {
                     }
                 }
                 .pickerStyle(.radioGroup)
+                .settingsSearchTarget(.statusIcon)
                 if statusIconStyleBinding.wrappedValue == .custom {
                     HStack {
                         Button(appLanguage.localized(chinese: "选择图片…", english: "Choose image…", russian: "Выбрать картинку…")) {
@@ -250,6 +263,7 @@ struct NotchSettingsView: View {
 
             Section {
                 Toggle(appLanguage.localized(chinese: "自定义颜色", english: "Custom color", russian: "Свой цвет"), isOn: $customQuotaColorEnabled)
+                    .settingsSearchTarget(.quotaColor)
                 if customQuotaColorEnabled {
                     ColorPicker(appLanguage.localized(chinese: "额度与光效", english: "Quota and glow", russian: "Лимиты и подсветка"), selection: Binding(
                         get: { (QuotaAppearance.parse(customQuotaColorHex) ?? QuotaAppearance.defaultColor).color },
@@ -272,6 +286,7 @@ struct NotchSettingsView: View {
 
             Section {
                 Toggle(appLanguage.localized(chinese: "动画效果", english: "Animations", russian: "Анимация"), isOn: $animationsEnabled)
+                    .settingsSearchTarget(.animations)
             } header: {
                 Text(appLanguage.localized(chinese: "动画与性能", english: "Animations and performance", russian: "Анимация и производительность"))
             } footer: {
@@ -298,7 +313,7 @@ struct NotchSettingsView: View {
             }
 
             Section {
-                if selectedTab == .floating {
+                if search.selectedTab == .floating {
                     FloatingBarSettingsPreview(
                         style: floatingStyle, customText: floatingCenterText, state: previewState,
                         language: appLanguage, animationsEnabled: animationsEnabled
@@ -317,6 +332,7 @@ struct NotchSettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+                .settingsSearchTarget(.floatingPreview)
             } header: {
                 Text(appLanguage.localized(chinese: "效果预览", english: "Preview", russian: "Предпросмотр"))
             } footer: {
@@ -335,6 +351,7 @@ struct NotchSettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+                .settingsSearchTarget(.floatingCenter)
 
                 if floatingStyle.usesCustomText {
                     FloatingCenterTextField(text: $floatingCenterText, language: appLanguage)

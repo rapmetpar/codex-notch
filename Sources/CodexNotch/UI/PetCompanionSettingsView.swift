@@ -17,10 +17,12 @@ struct PetCompanionSettingsView: View {
                     ForEach(companion.library.entries) { entry in Text(entry.name).tag(entry.id) }
                 }
                 .disabled(companion.isBusy)
+                .settingsSearchTarget(.companion)
                 Button(language.localized(chinese: "导入宠物库…", english: "Import companion library…", russian: "Импортировать библиотеку питомцев…")) {
                     choosingLibrary = true
                 }
                 .disabled(companion.isBusy)
+                .settingsSearchTarget(.importCompanions)
                 if companion.isBusy { ProgressView().controlSize(.small) }
                 if companion.library.entries.isEmpty {
                     Text(language.localized(chinese: "导入本地宠物库文件夹，然后选择宠物。", english: "Import a local library folder, then choose a companion.", russian: "Импортируйте локальную папку библиотеки и выберите питомца."))

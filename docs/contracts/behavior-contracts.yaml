@@ -4019,3 +4019,43 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: SETTINGS-SEARCH-001
+    title: Settings search navigates to existing controls without changing choices
+    status: active
+    statement: >-
+      Add a local in-memory Settings query over a static typed registry of
+      setting titles and synonyms in English, Russian and Simplified Chinese.
+      Match all query terms without case or width sensitivity, independent of
+      the selected interface language. Render result labels in the live app
+      language. Selecting a result or submitting the first match switches the
+      existing tab, scrolls to and highlights its real control and requests
+      keyboard and accessibility focus. Never activate that control. Conditional
+      image, color and signature options lead to their always-visible controlling
+      choice without changing it. Clear and Escape dismiss results without
+      editing preferences; an empty or unmatched query cannot navigate. Keep
+      the query transient and exclude all preference values, signatures, paths,
+      companion names, messages and runtime data from indexing and persistence.
+      Preserve SETTINGS-WINDOW-022, SETTINGS-PERSISTENCE-001, SETTINGS-TEXT-023,
+      LOCALIZATION-001 and APP-LOGIN-001, existing defaults and bindings, four
+      tab contents, window size, and all notch geometry and runtime behavior.
+    rationale: Settings span four tabs; users can find an infrequent choice by meaning without duplicating controls or exposing private values.
+    source: assigned-feature-F18
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [settings-search, static-localized-index, settings-navigation]
+      exclude: [preference-values, runtime-data, notch-layout, network-search, installation, releases]
+    examples:
+      positive: Searching motion, число чатов or 导入宠物 reveals the corresponding existing control; Enter navigates without toggling or importing.
+      negative: Searching invokes an update or import, persists a query, reads a signature or pet name, changes a hidden option to reveal it, or reactivates the Settings window over a popup.
+    guards:
+      - Tests/CodexNotchTests/SettingsSearchTests.swift
+      - Tests/CodexNotchTests/SettingsSearchViewTests.swift
+      - Tests/CodexNotchTests/SettingsWindowPresenterTests.swift
+      - Tests/CodexNotchTests/AppPreferencesTests.swift
+      - docs/decisions/072-settings-search.md
+      - "manual: EN/RU/zh-Hans text fit, keyboard Enter/Escape/Tab, VoiceOver, Chinese IME, repeated same-result scrolling and native popups after navigation; physical notch remains unchanged"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
