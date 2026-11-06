@@ -17,7 +17,6 @@ final class NotchRuntimeCoordinator {
     static let sessionPollInterval: TimeInterval = 1
     // Recovery only stats unchanged files; normal events read just changed paths.
     static let rolloutRescanInterval: TimeInterval = 5
-    static let usageRefreshInterval: TimeInterval = 60
     static let titleRefreshInterval: TimeInterval = 15
     static let hoverExpandDelay: TimeInterval = 0.18
     static let hoverCollapseDelay: TimeInterval = 0.12
@@ -36,6 +35,7 @@ final class NotchRuntimeCoordinator {
     private let urlSession: URLSession
     private let usageEndpoint: URL
     private let nowProvider: () -> Date
+    private let dataHealth: DataHealth
     private let userDefaults: UserDefaults
     private let conversationReadStore: ConversationReadStore
     private let compactCompletionStore: CompactCompletionStore
@@ -48,7 +48,6 @@ final class NotchRuntimeCoordinator {
 
     private var sessionTimer: Timer?
     private var rolloutRescanTimer: Timer?
-    private var usageTask: Task<Void, Never>?
     private var started = false
     private var isChatGPTFrontmost = false
     private var isHovered = false
@@ -62,9 +61,7 @@ final class NotchRuntimeCoordinator {
     private var threadTitles: [String: String] = [:]
     private var lastTitleRefreshAt: Date?
     private var titleRefreshInFlight = false
-    private var usage: UsageSnapshot?
-    private var lastUsageRequestAt: Date?
-    private var usageRequestID: UUID?
+    private var usage: UsageSnapshot? { dataHealth.usageSnapshot }
     private var hoverExpandWorkItem: DispatchWorkItem?
     private var hoverCollapseWorkItem: DispatchWorkItem?
     private var preferencesObserver: NSObjectProtocol?
@@ -83,6 +80,7 @@ final class NotchRuntimeCoordinator {
         urlSession: URLSession = .shared,
         usageEndpoint: URL = CodexUsageClient.defaultEndpoint,
         nowProvider: @escaping () -> Date = { .now },
+        dataHealth: DataHealth = .shared,
         userDefaults: UserDefaults = AppPreferences.store
     ) {
         self.windowController = windowController
@@ -93,6 +91,7 @@ final class NotchRuntimeCoordinator {
         self.urlSession = urlSession
         self.usageEndpoint = usageEndpoint
         self.nowProvider = nowProvider
+        self.dataHealth = dataHealth
         self.userDefaults = userDefaults
         self.conversationReadStore = ConversationReadStore(defaults: userDefaults)
         self.compactCompletionStore = CompactCompletionStore(defaults: userDefaults)
@@ -119,6 +118,9 @@ final class NotchRuntimeCoordinator {
     func start() {
         guard !started else { return }
         started = true
+        dataHealth.start(at: nowProvider())
+        dataHealth.onRetry = { [weak self] in self?.refreshUsage() }
+        dataHealth.onOpenCodex = { [weak self] in self?.activateChatGPT() }
         observePreferenceChanges()
         visibilityShortcut = NotchVisibilityShortcut { [weak self] in
             self?.toggleNotchDisplay()
@@ -166,10 +168,18 @@ final class NotchRuntimeCoordinator {
             guard let self, self.started else { return }
             self.compactCompletionStore.record(completions)
         }
+        rolloutMonitor.onHealthObservation = { [weak self] observation in
+            guard let self, self.started else { return }
+            self.dataHealth.recordRollouts(observation, at: self.nowProvider())
+        }
         rolloutMonitor.start()
         nativeReadMonitor.onChange = { [weak self] in
             guard let self, self.started else { return }
             self.render()
+        }
+        nativeReadMonitor.onHealthObservation = { [weak self] observation in
+            guard let self, self.started else { return }
+            self.dataHealth.recordNativeRead(observation, at: self.nowProvider())
         }
         nativeReadMonitor.start()
 
@@ -202,9 +212,7 @@ final class NotchRuntimeCoordinator {
         sessionTimer = nil
         rolloutRescanTimer?.invalidate()
         rolloutRescanTimer = nil
-        usageTask?.cancel()
-        usageTask = nil
-        usageRequestID = nil
+        dataHealth.stop()
         hoverExpandWorkItem?.cancel()
         hoverExpandWorkItem = nil
         hoverCollapseWorkItem?.cancel()
@@ -229,7 +237,7 @@ final class NotchRuntimeCoordinator {
     deinit {
         sessionTimer?.invalidate()
         rolloutRescanTimer?.invalidate()
-        usageTask?.cancel()
+        dataHealth.stop()
         hoverExpandWorkItem?.cancel()
         hoverCollapseWorkItem?.cancel()
         visibilityShortcut = nil
@@ -241,8 +249,9 @@ final class NotchRuntimeCoordinator {
 
     private func handleTimerTick() {
         let now = nowProvider()
+        dataHealth.updateClock(now)
         pollSessions()
-        if now.timeIntervalSince(lastUsageRequestAt ?? .distantPast) >= Self.usageRefreshInterval {
+        if dataHealth.automaticRefreshIsDue(at: now) {
             refreshUsage()
         }
     }
@@ -358,38 +367,18 @@ final class NotchRuntimeCoordinator {
     }
 
     private func refreshUsage() {
-        let requestID = UUID()
-        usageRequestID = requestID
-        lastUsageRequestAt = nowProvider()
-        usageTask?.cancel()
-
+        guard started else { return }
         let reader = authReader
         let urlSession = self.urlSession
         let endpoint = usageEndpoint
-        usageTask = Task { [weak self] in
-            do {
-                let credentials = try reader.read()
-                let snapshot = try await CodexUsageClient(
-                    credentials: credentials,
-                    session: urlSession,
-                    endpoint: endpoint
-                ).fetch()
-                guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    guard let self, self.usageRequestID == requestID else { return }
-                    self.usage = snapshot
-                    self.render()
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                await MainActor.run { [weak self] in
-                    guard let self, self.usageRequestID == requestID else { return }
-                    // Keep the last successful snapshot. A transient usage failure
-                    // must not hide an otherwise valid session indicator.
-                    self.render()
-                }
-            }
-        }
+        dataHealth.requestUsage(nowProvider: nowProvider, fetch: {
+            let credentials = try reader.read()
+            return try await CodexUsageClient(
+                credentials: credentials,
+                session: urlSession,
+                endpoint: endpoint
+            ).fetch()
+        }, didFinish: { [weak self] in self?.render() })
     }
 
     private func setChatGPTFrontmost(_ isFrontmost: Bool) {

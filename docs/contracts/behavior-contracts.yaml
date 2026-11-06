@@ -1,4 +1,47 @@
 contracts:
+  - id: DATA-HEALTH-001
+    title: Separate source freshness and bounded quota recovery
+    status: active
+    statement: >-
+      Add an explicit General Settings action opening one reusable normal Data
+      Status window, without showing it at launch or changing notch geometry.
+      Show independent quota, rollout monitoring and native-read health using
+      only idle/loading/fresh/stale/unavailable states, last successful check
+      times and fixed EN/RU/zh-Hans copy. Keep health in memory only. Never show
+      raw errors, responses, paths, credentials, identities or thread content.
+      Usage failure retains the exact last successful snapshot and timestamp,
+      never creates zero quota, and does not alter Running or read semantics.
+      Single-flight usage requests have a ten-second minimum attempt interval;
+      automatic refresh stays sixty seconds after success or failure. Reject
+      late results after stop/new generation. Retry only requests quota through
+      the existing client, and Open Codex uses the existing navigator. Local
+      monitors report their existing checks without extra reads or timers;
+      missing native metadata remains unknown and no completed chats means idle.
+      A successful check ages to stale after 120 seconds for usage, 15 seconds
+      for rollouts or 6 seconds for native metadata. These are observation-age
+      bounds, not a guarantee of causal read state or filesystem-event latency.
+      Preserve all existing defaults, preferences, task priority, quota values,
+      authentication, privacy, window focus rules and notch/floating layouts.
+    rationale: Retained quota otherwise looks fresh after a failed request and offers no explicit recovery action.
+    source: user-assigned-feature
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [data-status-window, source-health, bounded-usage-retry, localized-copy]
+      exclude: [authentication, endpoints, persistence, notch-layout, read-semantics, releases]
+    examples:
+      positive: A failed quota check leaves 75 percent and its earlier timestamp; one retry recovers while local Running stays visible.
+      negative: Ten rapid clicks start ten requests, a late response overwrites recovery, missing metadata marks a chat Viewed, or raw errors enter the window.
+    guards:
+      - Tests/CodexNotchTests/DataHealthTests.swift
+      - Tests/CodexNotchTests/DataHealthMonitorTests.swift
+      - Tests/CodexNotchTests/NativeThreadSnapshotTests.swift
+      - docs/decisions/072-data-health.md
+      - "manual: open/close/reopen Data Status on a real Mac, inspect all languages and VoiceOver, use synthetic offline/recovery data and confirm unchanged notch/floating geometry and motion"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
   - id: EXPANDED-SPACING-001
     title: Expanded quota and grouped history have bounded gaps
     status: active

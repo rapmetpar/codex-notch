@@ -5,6 +5,7 @@ import Foundation
 final class NativeConversationReadMonitor {
     static let refreshInterval: TimeInterval = 2
     var onChange: (() -> Void)?
+    var onHealthObservation: ((DataHealthObservation) -> Void)?
     private(set) var receipts: [String: NativeConversationReadReceipt] = [:]
 
     private let reader: NativeConversationReadReading?
@@ -83,6 +84,7 @@ final class NativeConversationReadMonitor {
     private func refresh() {
         guard started, !inFlight else { return }
         guard !threadIDs.isEmpty else {
+            onHealthObservation?(.idle)
             if !receipts.isEmpty { receipts = [:]; onChange?() }
             return
         }
@@ -103,6 +105,10 @@ final class NativeConversationReadMonitor {
                     return
                 }
                 let resolved = self.snapshotReader != nil ? self.snapshotPolicy.apply(snapshot: snapshot) : (legacy ?? [:])
+                let available = self.snapshotReader != nil
+                    ? ids.allSatisfy { snapshot?.status[$0] != nil }
+                    : ids.allSatisfy { legacy?[$0] != nil }
+                self.onHealthObservation?(available ? .success : .failure)
                 guard resolved != self.receipts else { return }
                 self.receipts = resolved
                 self.onChange?()
