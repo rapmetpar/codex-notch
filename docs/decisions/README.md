@@ -69,3 +69,5 @@ New decisions must include `status`, `contract_ids`, rejected alternatives, and 
 - [070: Apple Silicon CI runner](070-ci-apple-silicon.md)
 
 - [071: Intel CI reserve](071-ci-intel-reserve.md)
+
+- [072: Session-only appearance undo](072-appearance-undo.md)
