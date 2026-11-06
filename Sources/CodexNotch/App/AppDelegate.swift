@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 enum AppIdentity {
     static let bundleIdentifier = "com.david.codexnotch"
@@ -7,6 +8,20 @@ enum AppIdentity {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var runtimeCoordinator: NotchRuntimeCoordinator?
+    private var quotaWindow: NSWindow?
+
+    func showQuotaCheckpoint() {
+        guard let checkpoint = runtimeCoordinator?.quotaCheckpoint else { return }
+        if quotaWindow == nil {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 230), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: QuotaCheckpointView(checkpoint: checkpoint))
+            window.center()
+            quotaWindow = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        quotaWindow?.makeKeyAndOrderFront(nil)
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if CommandLine.arguments.contains("--verify-bundled-resources") {

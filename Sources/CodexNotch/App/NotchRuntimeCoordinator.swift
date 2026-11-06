@@ -62,6 +62,7 @@ final class NotchRuntimeCoordinator {
     private var threadTitles: [String: String] = [:]
     private var lastTitleRefreshAt: Date?
     private var titleRefreshInFlight = false
+    let quotaCheckpoint = QuotaCheckpoint()
     private var usage: UsageSnapshot?
     private var lastUsageRequestAt: Date?
     private var usageRequestID: UUID?
@@ -194,6 +195,7 @@ final class NotchRuntimeCoordinator {
     func stop() {
         guard started else { return }
         started = false
+        quotaCheckpoint.stop()
         metadataGeneration &+= 1
         threadProjects = [:]
         lastTitleRefreshAt = nil
@@ -378,12 +380,14 @@ final class NotchRuntimeCoordinator {
                 await MainActor.run { [weak self] in
                     guard let self, self.usageRequestID == requestID else { return }
                     self.usage = snapshot
+                    self.quotaCheckpoint.update(snapshot)
                     self.render()
                 }
             } catch {
                 guard !Task.isCancelled else { return }
                 await MainActor.run { [weak self] in
                     guard let self, self.usageRequestID == requestID else { return }
+                    self.quotaCheckpoint.failed()
                     // Keep the last successful snapshot. A transient usage failure
                     // must not hide an otherwise valid session indicator.
                     self.render()

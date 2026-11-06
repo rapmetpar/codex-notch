@@ -4019,3 +4019,34 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: QUOTA-CHECKPOINT-001
+    title: Session-only quota checkpoint compares compatible fresh windows
+    status: active
+    statement: >-
+      An explicit menu action opens a separate window to start or clear one in-memory
+      checkpoint from a fresh successful snapshot. Compare five-hour and weekly
+      remaining percentages independently only with matching kind, ID and known
+      future reset time, a non-increasing remaining value, and a fresh successful
+      current snapshot. Failure or age over 120 seconds marks data stale; missing
+      data is unavailable and changed or elapsed reset, changed ID or increased
+      remaining is incomparable. Clear on monitor stop and process restart. Never
+      persist checkpoint data, issue extra requests or attribute changes to tasks.
+      Preserve existing quota indicators, refresh cadence, privacy and geometry.
+    rationale: A user can compare remaining quota without implying task-level usage.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [session-checkpoint, quota-details-window, localized-comparison]
+      exclude: [history, task-attribution, extra-requests, notch-layout, release]
+    examples:
+      positive: Remaining 80 to 67 in the same fresh window shows minus 13 percentage points.
+      negative: A reset or increased remaining value is reported as consumption.
+    guards:
+      - Tests/CodexNotchTests/QuotaCheckpointTests.swift
+      - docs/decisions/072-quota-checkpoint.md
+      - "manual: open the menu and verify all languages and accessibility on hardware"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
