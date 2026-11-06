@@ -150,6 +150,11 @@ struct NotchSettingsView: View {
                     }
                 }
                 ConversationCategoryOrderControl(order: conversationCategoryOrderBinding, language: appLanguage)
+                Button {
+                    DataHealthWindowPresenter.shared.show()
+                } label: {
+                    Label(DataHealthText.title(appLanguage), systemImage: "checkmark.icloud")
+                }
             } header: {
                 Text(appLanguage.localized(chinese: "日常使用", english: "Everyday use", russian: "Общие настройки"))
             } footer: {

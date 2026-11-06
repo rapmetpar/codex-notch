@@ -1,5 +1,7 @@
 # CodexNotch Architecture Decisions
 
+- [072: Source freshness and bounded retry](072-data-health.md)
+
 Record decisions here only when they affect active behavior contracts, could be accidentally changed by a future agent, or capture a historical failure boundary.
 
 | Decision | Status | Related contract | Description |

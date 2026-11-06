@@ -6,6 +6,7 @@ final class RolloutActivityMonitor {
     // Delivered on the main queue after the ordered store update has committed.
     var onChange: (() -> Void)?
     var onNewCompletions: (([CompletedSession]) -> Void)?
+    var onHealthObservation: ((DataHealthObservation) -> Void)?
 
     private let rootURL: URL
     private let store: ActiveSessionStore
@@ -26,6 +27,7 @@ final class RolloutActivityMonitor {
     private var activeGeneration: UInt64 = 0
     private var publicationTask: Task<Void, Never>?
     private var fingerprints: [URL: FileFingerprint] = [:]
+    private var scanSucceeded = true
 
     private struct FileFingerprint: Equatable {
         let size: UInt64
@@ -116,10 +118,22 @@ final class RolloutActivityMonitor {
                 let changedURLs = self.pendingURLs
                 self.needsFullScan = false
                 self.pendingURLs.removeAll()
+                self.scanSucceeded = true
                 if fullScan {
                     self.scanRollouts()
                 } else {
                     for url in changedURLs { self.process(url: url) }
+                }
+                // A successful targeted read must not erase a failure elsewhere.
+                // Only the bounded full recovery scan can mark the source healthy.
+                guard fullScan || !self.scanSucceeded else { return }
+                let observation: DataHealthObservation = self.scanSucceeded ? .success : .failure
+                let generation = self.activeGeneration
+                let delivery = self.delivery
+                let notify = self.onHealthObservation
+                DispatchQueue.main.async {
+                    guard delivery.claim([], generation: generation) != nil else { return }
+                    notify?(observation)
                 }
             }
             self.pendingScan = workItem
@@ -128,7 +142,10 @@ final class RolloutActivityMonitor {
     }
 
     private func scanRollouts() {
-        guard fileManager.fileExists(atPath: rootURL.path) else {
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: rootURL.path, isDirectory: &isDirectory),
+              isDirectory.boolValue, fileManager.isReadableFile(atPath: rootURL.path) else {
+            scanSucceeded = false
             for url in Array(eventsByFile.keys) { remove(url: url) }
             return
         }
@@ -160,16 +177,23 @@ final class RolloutActivityMonitor {
         guard let enumerator = fileManager.enumerator(
             at: rootURL,
             includingPropertiesForKeys: [.contentModificationDateKey, .isRegularFileKey],
-            options: [.skipsHiddenFiles]
+            options: [.skipsHiddenFiles],
+            errorHandler: { [weak self] _, _ in
+                self?.scanSucceeded = false
+                return true
+            }
         ) else {
+            scanSucceeded = false
             return []
         }
 
         let files: [(URL, Date)] = enumerator.compactMap { item in
-            guard let url = item as? URL,
-                  url.pathExtension == "jsonl",
-                  let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .isRegularFileKey]),
-                  values.isRegularFile == true,
+            guard let url = item as? URL, url.pathExtension == "jsonl" else { return nil }
+            guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .isRegularFileKey]) else {
+                scanSucceeded = false
+                return nil
+            }
+            guard values.isRegularFile == true,
                   let modifiedAt = values.contentModificationDate else {
                 return nil
             }
@@ -237,6 +261,7 @@ final class RolloutActivityMonitor {
                 }
             }
         } catch {
+            scanSucceeded = false
             // A rollout may be rotated or partially written while Codex is appending.
             // A later filesystem event or recovery scan retries it.
         }
