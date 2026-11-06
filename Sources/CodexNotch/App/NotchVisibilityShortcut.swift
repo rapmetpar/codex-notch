@@ -33,7 +33,12 @@ final class NotchVisibilityShortcut {
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
         )
-        let handler: EventHandlerUPP = { _, _, userData in
+        let handler: EventHandlerUPP = { _, event, userData in
+            guard let event else { return OSStatus(eventNotHandledErr) }
+            var id = EventHotKeyID()
+            guard GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &id) == noErr,
+                  id.signature == NotchVisibilityShortcutConfiguration.hotKeySignature,
+                  id.id == NotchVisibilityShortcutConfiguration.hotKeyIdentifier else { return OSStatus(eventNotHandledErr) }
             guard let userData else { return noErr }
             let shortcut = Unmanaged<NotchVisibilityShortcut>
                 .fromOpaque(userData)
