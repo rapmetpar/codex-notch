@@ -70,6 +70,8 @@ struct NotchSettingsView: View {
 
     @AppStorage(NotchDisplayPreference.storageKey)
     private var notchDisplayEnabled = NotchDisplayPreference.defaultEnabled
+    @AppStorage(DisplaySelection.storageKey) private var selectedDisplay = DisplaySelection.automatic
+    @State private var availableScreens: [NSScreen] = []
     @State private var selectedTab: SettingsTab = .general
     @State private var layoutMode: NotchLayoutMode?
     @State private var previewState = FloatingPreviewState.running
@@ -123,6 +125,7 @@ struct NotchSettingsView: View {
         } message: { Text(iconImportError ?? "") }
         .padding(16)
         .frame(width: 560, height: 580)
+        .onChange(of: selectedDisplay) { _ in refreshSystemState() }
         .onAppear {
             refreshSystemState()
             SettingsWindowPresenter.bringToFront()
@@ -138,6 +141,19 @@ struct NotchSettingsView: View {
     private var generalSettings: some View {
         Form {
             Section {
+                Picker(appLanguage.localized(chinese: "显示器", english: "Display", russian: "Дисплей"), selection: $selectedDisplay) {
+                    Text(appLanguage.localized(chinese: "自动", english: "Automatic", russian: "Автоматически")).tag(DisplaySelection.automatic)
+                    ForEach(Array(availableScreens.enumerated()), id: \.offset) { index, screen in
+                        if let id = DisplaySelection.screenID(screen), let identity = DisplaySelection.identity(id) {
+                            Text("\(screen.localizedName) (\(index + 1))").tag(identity)
+                        }
+                    }
+                    if !selectedDisplay.isEmpty && !availableScreens.contains(where: { DisplaySelection.screenID($0).flatMap(DisplaySelection.identity) == selectedDisplay }) {
+                        Text(DisplaySelection.onlineDisplays().contains(where: { $0.identity == selectedDisplay })
+                            ? appLanguage.localized(chinese: "已选镜像显示器", english: "Selected mirrored display", russian: "Выбранный зеркальный дисплей")
+                            : appLanguage.localized(chinese: "显示器不可用（自动）", english: "Display unavailable (Automatic)", russian: "Дисплей недоступен (автоматически)")).tag(selectedDisplay)
+                    }
+                }
                 launchAtLoginControls
                 Picker(appLanguage.localized(chinese: "语言", english: "Language", russian: "Язык"), selection: appLanguageBinding) {
                     ForEach(AppLanguage.allCases) { language in
@@ -355,7 +371,8 @@ struct NotchSettingsView: View {
 
     private func refreshSystemState() {
         launchAtLogin.refresh()
-        layoutMode = NotchScreenMetrics.preferredScreen().map {
+        availableScreens = NSScreen.screens
+        layoutMode = NotchScreenMetrics.preferredScreen(selection: selectedDisplay).map {
             NotchGeometry.layout(metrics: NotchScreenMetrics(screen: $0)).mode
         }
     }
