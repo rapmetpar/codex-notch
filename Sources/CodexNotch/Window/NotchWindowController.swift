@@ -26,7 +26,38 @@ final class NotchWindowController: NSWindowController {
     var onOpenThread: ((String) -> Void)?
     var onActivateChatGPT: (() -> Void)?
 
+    private var localDismissMonitor: Any?
+    private var globalDismissMonitor: Any?
+    private var clickDismiss: (() -> Void)?
     private var screenObserver: NSObjectProtocol?
+
+    func setClickDisclosureOpen(_ open: Bool, onDismiss: @escaping () -> Void) {
+        guard let panel = window as? NotchPanel else { return }
+        if let monitor = localDismissMonitor { NSEvent.removeMonitor(monitor); localDismissMonitor = nil }
+        if let monitor = globalDismissMonitor { NSEvent.removeMonitor(monitor); globalDismissMonitor = nil }
+        clickDismiss = open ? onDismiss : nil
+        panel.onEscape = open ? onDismiss : nil
+        panel.acceptsDisclosureKeys = open
+        if !open { if panel.isKeyWindow { panel.resignKey() }; return }
+        panel.makeKey()
+        let mask: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        localDismissMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
+            self?.handleClickDisclosureMouseDown(at: NSEvent.mouseLocation)
+            return event
+        }
+        globalDismissMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] _ in
+            self?.handleClickDisclosureMouseDown(at: NSEvent.mouseLocation)
+        }
+    }
+
+    func handleClickDisclosureMouseDown(at point: NSPoint) {
+        guard let frame = lastPreparedTargetFrame, !frame.contains(point) else { return }
+        clickDismiss?()
+    }
+
+    func setHiddenSensorInteractive(_ interactive: Bool) {
+        window?.ignoresMouseEvents = !interactive
+    }
     private var hostingView: NSHostingView<AnyView>?
     private var statusItem: NSStatusItem?
     private var deferredFrameWorkItem: DispatchWorkItem?
@@ -296,6 +327,8 @@ final class NotchWindowController: NSWindowController {
     }
 
     deinit {
+        if let monitor = localDismissMonitor { NSEvent.removeMonitor(monitor) }
+        if let monitor = globalDismissMonitor { NSEvent.removeMonitor(monitor) }
         cancelDeferredFrameSettlement()
         if let screenObserver {
             NotificationCenter.default.removeObserver(screenObserver)

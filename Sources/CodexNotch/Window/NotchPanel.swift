@@ -52,6 +52,12 @@ final class NotchPanel: NSPanel {
         hidesOnDeactivate = false
     }
 
-    override var canBecomeKey: Bool { false }
+    var acceptsDisclosureKeys = false
+    var onEscape: (() -> Void)?
+    override var canBecomeKey: Bool { acceptsDisclosureKeys }
+    override func keyDown(with event: NSEvent) {
+        if acceptsDisclosureKeys && event.keyCode == 53 { onEscape?(); return }
+        super.keyDown(with: event)
+    }
     override var canBecomeMain: Bool { false }
 }
