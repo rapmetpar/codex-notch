@@ -3247,7 +3247,7 @@ contracts:
     last_verified_commit: null
   - id: NOTCH-MOTION-009
     title: Hover transitions ease into motion and preserve landing geometry
-    status: active
+    status: superseded
     statement: >-
       Supersede the opening, closing and compact-hover timing inherited from
       NOTCH-MOTION-008, including the measured closing curve and pronounced
@@ -3288,7 +3288,7 @@ contracts:
       - docs/decisions/059-continuous-hover-spring.md
       - "manual: inspect installed opening, closing, brief hover and rapid reentry on a physical notch; confirm camera clearance, stable icons, text, final hit area and the app animation switch"
     supersedes: [NOTCH-MOTION-008]
-    superseded_by: null
+    superseded_by: NOTCH-ACTIVATION-010
     last_verified_commit: null
   - id: CONVERSATION-STATUS-003
     title: Native Codex reads acknowledge only the matching published answer
@@ -4017,5 +4017,44 @@ contracts:
       - docs/decisions/071-ci-intel-reserve.md
       - "manual: verify final checkout SHA, successful full CI and local ARM archive provenance before publication"
     supersedes: [CI-VERIFICATION-004]
+    superseded_by: null
+    last_verified_commit: null
+
+
+  - id: NOTCH-ACTIVATION-010
+    title: Optional click disclosure preserves default hover and motion
+    status: active
+    statement: >-
+      Inherit NOTCH-MOTION-009 and its guarantees except disclosure triggers
+      and compact click mapping in the opt-in click mode. Default and unknown
+      preferences select the unchanged hover policy. In click mode pointer
+      movement provides compact feedback but never opens or closes details;
+      clicking the compact header toggles the existing card. Escape, a click
+      outside the card, or opening a conversation closes it; only an explicit
+      row action navigates and can acknowledge a conversation. The nonactivating
+      panel accepts keys only while this card is open; no global keyboard hook
+      or new permission is used. Disabled display has a non-interactive hidden
+      sensor in click mode and can be restored using the existing visibility
+      shortcut or menu. Preserve exact compact hit-area reclamation after close,
+      stale-callback rejection, fixed canvas, current geometry, quota, task,
+      privacy and all hover-mode interactions.
+    rationale: An optional deliberate trigger can prevent accidental hover openings.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [click-activation, settings, explicit-dismissal, hidden-recovery]
+      exclude: [geometry, spring-tuning, global-keyboard-hook, releases]
+    examples:
+      positive: In click mode a click opens details, Escape closes it, and a row opens its chat.
+      negative: Pointer movement opens details, opening marks a chat read, or closing leaves an expanded hit area.
+    guards:
+      - Tests/CodexNotchTests/NotchClickActivationTests.swift
+      - Tests/CodexNotchTests/NotchHoverFeedbackTests.swift
+      - Tests/CodexNotchTests/NotchCollapseMotionTests.swift
+      - Tests/CodexNotchTests/NotchMotionCaptureTests.swift
+      - docs/decisions/072-click-disclosure.md
+      - "manual: verify both modes, Escape, outside clicks, hidden recovery, reentry, physical-notch and mirrored displays, focus and exact hit-area reclamation"
+    supersedes: [NOTCH-MOTION-009]
     superseded_by: null
     last_verified_commit: null

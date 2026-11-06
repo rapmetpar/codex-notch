@@ -52,6 +52,7 @@ final class NotchRuntimeCoordinator {
     private var started = false
     private var isChatGPTFrontmost = false
     private var isHovered = false
+    private var clickActivation = NotchClickActivation()
     private var isPointerInside = false
     private var isResetScheduleExpanded = false
     private var activeSessions: [SessionActivity] = []
@@ -134,6 +135,7 @@ final class NotchRuntimeCoordinator {
         viewModel.onActivateChatGPT = { [weak self] in
             self?.activateChatGPT()
         }
+        viewModel.onToggleDisclosure = { [weak self] in self?.toggleClickDisclosure() }
         viewModel.onHoverChanged = { [weak self] hovered in
             self?.setHovered(hovered)
         }
@@ -210,9 +212,11 @@ final class NotchRuntimeCoordinator {
         hoverCollapseWorkItem?.cancel()
         hoverCollapseWorkItem = nil
         visibilityShortcut = nil
+        windowController.setClickDisclosureOpen(false, onDismiss: {})
         stopObservingPreferenceChanges()
         isPointerInside = false
         isHovered = false
+        clickActivation.send(.dismiss)
         isResetScheduleExpanded = false
 
         frontmostMonitor.stop()
@@ -277,7 +281,7 @@ final class NotchRuntimeCoordinator {
         activeSessions = snapshot.activeSessions.map {
             $0.withTitle(threadTitles[$0.threadID])
         }
-        if hadActiveSessions, activeSessions.isEmpty {
+        if hadActiveSessions, activeSessions.isEmpty, runtimePreferences.activationMode == .hover {
             resetHoverState()
         }
         recentCompletions = snapshot.recentCompletions.map { completion in
@@ -429,6 +433,11 @@ final class NotchRuntimeCoordinator {
             render()
         }
 
+        if runtimePreferences.activationMode == .click {
+            clickActivation.send(.pointerMoved)
+            return
+        }
+
         if hovered {
             hoverCollapseWorkItem?.cancel()
             hoverCollapseWorkItem = nil
@@ -467,6 +476,26 @@ final class NotchRuntimeCoordinator {
         )
     }
 
+    private func toggleClickDisclosure() {
+        guard started, runtimePreferences.activationMode == .click,
+              runtimePreferences.notchDisplayEnabled else { return }
+        clickActivation.send(.toggle)
+        isHovered = clickActivation.isOpen
+        if !isHovered { isPointerInside = false; isResetScheduleExpanded = false }
+        render()
+        windowController.setClickDisclosureOpen(isHovered) { [weak self] in self?.closeClickDisclosure() }
+    }
+
+    private func closeClickDisclosure() {
+        guard clickActivation.isOpen else { return }
+        clickActivation.send(.dismiss)
+        isHovered = false
+        isPointerInside = false
+        isResetScheduleExpanded = false
+        windowController.setClickDisclosureOpen(false, onDismiss: {})
+        render()
+    }
+
     private func resetHoverState() {
         hoverExpandWorkItem?.cancel()
         hoverExpandWorkItem = nil
@@ -474,6 +503,8 @@ final class NotchRuntimeCoordinator {
         hoverCollapseWorkItem = nil
         isPointerInside = false
         isHovered = false
+        clickActivation.send(.dismiss)
+        windowController.setClickDisclosureOpen(false, onDismiss: {})
         isResetScheduleExpanded = false
     }
 
@@ -487,6 +518,7 @@ final class NotchRuntimeCoordinator {
     }
 
     private func openThread(_ threadID: String) {
+        if runtimePreferences.activationMode == .click { closeClickDisclosure() }
         // Capture the completed turn before handing off. Opening a running
         // thread must never acknowledge the answer that will arrive later.
         let completion = activeSessions.contains(where: { $0.threadID == threadID })
@@ -527,7 +559,11 @@ final class NotchRuntimeCoordinator {
             guard let self, self.started else { return }
             let preferences = self.runtimePreferences
             guard preferences != self.lastObservedPreferences else { return }
+            let modeChanged = preferences.activationMode != self.lastObservedPreferences?.activationMode
+            let displayDisabled = self.lastObservedPreferences?.notchDisplayEnabled == true
+                && !preferences.notchDisplayEnabled
             self.lastObservedPreferences = preferences
+            if modeChanged || displayDisabled { self.resetHoverState() }
             self.render()
         }
     }
@@ -742,6 +778,7 @@ final class NotchRuntimeCoordinator {
             state: hiddenState,
             animationsEnabled: false
         )
+        windowController.setHiddenSensorInteractive(runtimePreferences.activationMode == .hover)
         viewModel.update(
             state: hiddenState,
             now: now,
@@ -772,7 +809,7 @@ final class NotchRuntimeCoordinator {
         let transitionIdentifier = windowController.prepare(
             layout: layout,
             state: displayState,
-            isHovering: isPointerInside && displayState != .hidden,
+            isHovering: isPointerInside && displayState != .hidden && runtimePreferences.activationMode == .hover,
             animationsEnabled: animationsEnabled
         )
         let animationWillComplete = viewModel.update(

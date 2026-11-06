@@ -18,6 +18,7 @@ final class NotchViewModel: ObservableObject {
     private var isSurfaceAnimationInFlight = false
 
     var onProjectOrderChange: ([String]) -> Void = { _ in }
+    var onToggleDisclosure: () -> Void = {}
 
     var onOpenThread: (String) -> Void
     var onActivateChatGPT: () -> Void
@@ -253,14 +254,14 @@ struct NotchView: View {
     private var surfaceBorder: Color {
         switch surfaceMaterial {
         case .black:
-            return isExpanded ? NotchPalette.border : .clear
+            return (isExpanded || (clickActivation && model.isPointerInside)) ? NotchPalette.border : .clear
         case .clear:
             return .clear
         }
     }
 
     private var surfaceSize: CGSize {
-        if isHidden || isExpanded {
+        if isHidden || isExpanded || clickActivation {
             return model.surfaceSize
         }
         return NotchPresentationMotion.hoverSurfaceSize(
@@ -302,6 +303,12 @@ struct NotchView: View {
         _companion = ObservedObject(wrappedValue: companion)
     }
 
+    @AppStorage(NotchActivationMode.storageKey) private var activationModeRaw = NotchActivationMode.hover.rawValue
+    private var clickActivation: Bool { activationModeRaw == NotchActivationMode.click.rawValue }
+    private func compactAction(_ action: @escaping () -> Void) -> () -> Void {
+        clickActivation ? model.onToggleDisclosure : action
+    }
+
     private var compactContent: some View {
         Group {
             switch model.state {
@@ -320,7 +327,8 @@ struct NotchView: View {
                     subtitle: NotchText.quotaSubtitle(usage: usage, language: appLanguage),
                     usage: usage,
                     quotaDisplayStyle: quotaDisplayStyle,
-                    action: model.onActivateChatGPT
+                    disclosureAction: clickActivation,
+                    action: compactAction(model.onActivateChatGPT)
                 )
             case let .workingCompact(primary, count, usage):
                 CompactNotchView(
@@ -350,7 +358,8 @@ struct NotchView: View {
                     quotaDisplayStyle: quotaDisplayStyle,
                     runningStartedAt: primary.startedAt,
                     now: model.now,
-                    action: { model.onOpenThread(primary.threadID) }
+                    disclosureAction: clickActivation,
+                    action: compactAction { model.onOpenThread(primary.threadID) }
                 )
             case let .completedCompact(session, usage):
                 CompactNotchView(
@@ -368,7 +377,8 @@ struct NotchView: View {
                     subtitle: NotchText.projectName(cwd: session.cwd, language: appLanguage),
                     usage: usage,
                     quotaDisplayStyle: quotaDisplayStyle,
-                    action: { model.onOpenThread(session.threadID) }
+                    disclosureAction: clickActivation,
+                    action: compactAction { model.onOpenThread(session.threadID) }
                 )
             case let .expanded(content):
                 expandedView(content: content).header
@@ -389,6 +399,7 @@ struct NotchView: View {
             isResetScheduleExpanded: model.isResetScheduleExpanded,
             onActivateChatGPT: model.onActivateChatGPT,
             onOpenThread: model.onOpenThread,
+            onHeaderToggle: clickActivation ? model.onToggleDisclosure : nil,
             onDropProjects: model.dropProjects,
             onMoveProject: model.moveProject,
             onResetScheduleExpandedChanged: model.onResetScheduleExpandedChanged,
@@ -670,6 +681,7 @@ private struct CompactNotchView: View {
     var runningStartedAt: Date? = nil
     var now: Date = .now
     var isExpanded = false
+    var disclosureAction = false
     let action: () -> Void
     @Environment(\.notchAppLanguage) private var language
     @Environment(\.notchStatusIconStyle) private var iconStyle
@@ -686,6 +698,9 @@ private struct CompactNotchView: View {
         }
         .buttonStyle(NotchButtonStyle())
         .accessibilityLabel(accessibilityText)
+        .accessibilityHint(disclosureAction ? language.localized(
+            chinese: "点击打开或关闭详情", english: "Open or close details", russian: "Открыть или закрыть карточку"
+        ) : "")
         .help(accessibilityText)
     }
 
@@ -1510,6 +1525,7 @@ private struct ExpandedNotchView: View {
     let isResetScheduleExpanded: Bool
     let onActivateChatGPT: () -> Void
     let onOpenThread: (String) -> Void
+    let onHeaderToggle: (() -> Void)?
     let onDropProjects: ([ProjectDragToken], String) -> Bool
     let onMoveProject: (String, Int) -> Void
     let onResetScheduleExpandedChanged: (Bool) -> Void
@@ -1532,6 +1548,7 @@ private struct ExpandedNotchView: View {
             runningStartedAt: content.sessions.first?.startedAt,
             now: now,
             isExpanded: true,
+            disclosureAction: onHeaderToggle != nil,
             action: headerAction
         )
         .frame(width: compactWidth, height: compactHeight)
@@ -1709,6 +1726,7 @@ private struct ExpandedNotchView: View {
     }
 
     private var headerAction: () -> Void {
+        if let onHeaderToggle { return onHeaderToggle }
         if let session = content.sessions.first {
             return { onOpenThread(session.threadID) }
         }

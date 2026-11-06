@@ -71,6 +71,7 @@ struct NotchRuntimePreferences: Equatable, Sendable {
     var conversationCategoryOrder: ConversationCategoryOrder = .defaultOrder
 
     var conversationProjectOrder = ConversationProjectOrder()
+    var activationMode: NotchActivationMode = .hover
 
     static func read(from userDefaults: UserDefaults) -> NotchRuntimePreferences {
         let recentConversationLimit = (userDefaults.object(
@@ -91,7 +92,8 @@ struct NotchRuntimePreferences: Equatable, Sendable {
             conversationCategoryOrder: ConversationCategoryOrder.fromStoredValue(
                 userDefaults.string(forKey: ConversationCategoryOrder.storageKey)
             ),
-            conversationProjectOrder: .read(from: userDefaults)
+            conversationProjectOrder: .read(from: userDefaults),
+            activationMode: .read(from: userDefaults)
         )
     }
 }

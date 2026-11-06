@@ -19,6 +19,8 @@ struct NotchSettingsView: View {
     private var conversationCategoryOrderRaw = ConversationCategoryOrder.defaultOrder.rawValue
     @AppStorage(AppLanguage.storageKey)
     private var appLanguageRaw = AppLanguage.defaultLanguage.rawValue
+    @AppStorage(NotchActivationMode.storageKey)
+    private var activationModeRaw = NotchActivationMode.hover.rawValue
     @AppStorage(AppAnimationPreference.storageKey)
     private var animationsEnabled = AppAnimationPreference.defaultEnabled
     @AppStorage(FloatingCenterStyle.storageKey)
@@ -150,13 +152,22 @@ struct NotchSettingsView: View {
                     }
                 }
                 ConversationCategoryOrderControl(order: conversationCategoryOrderBinding, language: appLanguage)
+                Toggle(appLanguage.localized(chinese: "点击打开面板", english: "Open panel on click", russian: "Открывать панель по нажатию"), isOn: Binding(
+                    get: { activationModeRaw == NotchActivationMode.click.rawValue },
+                    set: { activationModeRaw = ($0 ? NotchActivationMode.click : .hover).rawValue }
+                ))
+                Text(appLanguage.localized(
+                    chinese: "开启后，点击顶部面板打开或关闭详情；从列表打开对话。",
+                    english: "When enabled, click the compact panel to open or close details; open chats from their rows.",
+                    russian: "При включении нажатие на панель открывает или закрывает карточку; чаты открываются из списка."
+                )).font(.caption).foregroundStyle(.secondary)
             } header: {
                 Text(appLanguage.localized(chinese: "日常使用", english: "Everyday use", russian: "Общие настройки"))
             } footer: {
                 Text(appLanguage.localized(
-                    chinese: "将指针移至屏幕顶部可查看最近任务。超过 5 条时可滚动查看，设为 0 时隐藏列表。",
-                    english: "Hover over CodexNotch to view recent tasks. Scroll to see more than 5. Set to 0 to hide the list.",
-                    russian: "Наведите указатель на CodexNotch, чтобы увидеть недавние чаты. Если их больше 5, прокрутите список. Значение 0 скрывает список."
+                    chinese: "打开 CodexNotch 查看最近任务。超过 5 条时可滚动查看，设为 0 时隐藏列表。",
+                    english: "Open CodexNotch to view recent tasks. Scroll to see more than 5. Set to 0 to hide the list.",
+                    russian: "Откройте CodexNotch, чтобы увидеть недавние чаты. Если их больше 5, прокрутите список. Значение 0 скрывает список."
                 ))
             }
 
