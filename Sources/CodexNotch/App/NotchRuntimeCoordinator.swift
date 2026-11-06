@@ -69,6 +69,7 @@ final class NotchRuntimeCoordinator {
     private var hoverCollapseWorkItem: DispatchWorkItem?
     private var preferencesObserver: NSObjectProtocol?
     private var lastObservedPreferences: NotchRuntimePreferences?
+    private var lastObservedPrivacy = false
     private var visibilityShortcut: NotchVisibilityShortcut?
 
     init(
@@ -487,6 +488,11 @@ final class NotchRuntimeCoordinator {
     }
 
     private func openThread(_ threadID: String) {
+        let policy = PresentationPrivacyPolicy(enabled: userDefaults.bool(forKey: PresentationPrivacyPolicy.storageKey))
+        policy.navigate(confirm: confirmCodexOpeningIfNeeded) { openThreadAfterConfirmation(threadID) }
+    }
+
+    private func openThreadAfterConfirmation(_ threadID: String) {
         // Capture the completed turn before handing off. Opening a running
         // thread must never acknowledge the answer that will arrive later.
         let completion = activeSessions.contains(where: { $0.threadID == threadID })
@@ -499,7 +505,19 @@ final class NotchRuntimeCoordinator {
     }
 
     private func activateChatGPT() {
-        _ = threadNavigator.activateCodex()
+        let policy = PresentationPrivacyPolicy(enabled: userDefaults.bool(forKey: PresentationPrivacyPolicy.storageKey))
+        policy.navigate(confirm: confirmCodexOpeningIfNeeded) { _ = threadNavigator.activateCodex() }
+    }
+
+    private func confirmCodexOpeningIfNeeded() -> Bool {
+        guard userDefaults.bool(forKey: PresentationPrivacyPolicy.storageKey) else { return true }
+        let language = AppLanguage.fromStoredValue(userDefaults.string(forKey: AppLanguage.storageKey) ?? "")
+        let alert = NSAlert()
+        alert.messageText = language.localized(chinese: "打开 Codex？", english: "Open Codex?", russian: "Открыть Codex?")
+        alert.informativeText = language.localized(chinese: "Codex 可能显示个人内容。", english: "Codex may display personal content.", russian: "В Codex могут быть видны личные данные.")
+        alert.addButton(withTitle: language.localized(chinese: "取消", english: "Cancel", russian: "Отмена"))
+        alert.addButton(withTitle: language.localized(chinese: "打开 Codex", english: "Open Codex", russian: "Открыть Codex"))
+        return alert.runModal() == .alertSecondButtonReturn
     }
 
     private var recentConversationLimit: RecentConversationLimit {
@@ -519,6 +537,8 @@ final class NotchRuntimeCoordinator {
     private func observePreferenceChanges() {
         guard preferencesObserver == nil else { return }
         lastObservedPreferences = runtimePreferences
+        lastObservedPrivacy = userDefaults.bool(forKey: PresentationPrivacyPolicy.storageKey)
+        windowController.privacyEnabled = lastObservedPrivacy
         preferencesObserver = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
             object: userDefaults,
@@ -526,8 +546,11 @@ final class NotchRuntimeCoordinator {
         ) { [weak self] _ in
             guard let self, self.started else { return }
             let preferences = self.runtimePreferences
-            guard preferences != self.lastObservedPreferences else { return }
+            let privacy = self.userDefaults.bool(forKey: PresentationPrivacyPolicy.storageKey)
+            guard preferences != self.lastObservedPreferences || privacy != self.lastObservedPrivacy else { return }
             self.lastObservedPreferences = preferences
+            self.lastObservedPrivacy = privacy
+            self.windowController.privacyEnabled = privacy
             self.render()
         }
     }

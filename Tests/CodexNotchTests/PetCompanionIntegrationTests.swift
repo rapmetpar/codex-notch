@@ -157,6 +157,39 @@ final class PetCompanionIntegrationTests: XCTestCase {
     }
 
     @MainActor
+    func testPresentationPrivacyHidesSelectedCompanionAndRestoresIt() throws {
+        _ = NSApplication.shared
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: temp) }
+        try makeLibrary(at: temp.appendingPathComponent("package"))
+        let store = PetLibraryStore(rootURL: temp.appendingPathComponent("library"))
+        try store.importLibrary(from: temp.appendingPathComponent("package"))
+        try store.selectPet(id: "synthetic_one")
+        let suite = "PrivacyCompanion.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let companion = PetCompanionController(store: store, defaults: defaults, loadImmediately: false)
+        awaitOperation(companion) { companion.reload() }
+        let now = Date(timeIntervalSince1970: 20_000)
+        let task = session(at: now)
+        let model = NotchViewModel(state: .completedCompact(task, usage: nil), now: now,
+            layoutMode: .notch, cameraSafeAreaInset: 32, compactWidth: 257, compactHeight: 32,
+            surfaceSize: NSSize(width: 257, height: 32), animationsEnabled: false)
+        func stageCount(_ privacy: Bool) -> Int {
+            defaults.set(privacy, forKey: PresentationPrivacyPolicy.storageKey)
+            let host = NSHostingView(rootView: NotchView(model: model, companion: companion)
+                .defaultAppStorage(defaults).frame(width: 257, height: 32))
+            host.frame = CGRect(x: 0, y: 0, width: 257, height: 32)
+            host.layoutSubtreeIfNeeded()
+            return descendants(PetCompanionStageView.self, in: host).count
+        }
+        XCTAssertEqual(stageCount(false), 1)
+        XCTAssertEqual(stageCount(true), 0, "The selected private atlas must not reach the hosted scene")
+        XCTAssertEqual(stageCount(false), 1)
+        XCTAssertEqual(try store.load().selectedPetID, "synthetic_one")
+    }
+
+    @MainActor
     func testSelectedCompanionAppearsBesidePhysicalNotchWithoutHover() throws {
         _ = NSApplication.shared
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

@@ -198,6 +198,7 @@ final class NotchViewModel: ObservableObject {
 }
 
 struct NotchView: View {
+    @AppStorage(PresentationPrivacyPolicy.storageKey) private var privacyEnabled = false
     @ObservedObject private var companion: PetCompanionController
     @ObservedObject private var model: NotchViewModel
     @AppStorage(QuotaDisplayStyle.storageKey)
@@ -328,7 +329,7 @@ struct NotchView: View {
                     compactHeight: model.compactHeight,
                     icon: .working,
                     title: NotchText.compactActivityTitle(
-                        primary.title,
+                        privacyEnabled ? nil : primary.title,
                         fallback: appLanguage.localized(
                             chinese: "Codex 运行中",
                             english: "Codex running",
@@ -358,14 +359,14 @@ struct NotchView: View {
                     compactHeight: model.compactHeight,
                     icon: .completed,
                     title: NotchText.compactActivityTitle(
-                        session.title,
+                        privacyEnabled ? nil : session.title,
                         fallback: appLanguage.localized(
                             chinese: "Codex 已完成",
                             english: "Codex completed",
                             russian: "Codex завершил работу"
                         )
                     ),
-                    subtitle: NotchText.projectName(cwd: session.cwd, language: appLanguage),
+                    subtitle: privacyEnabled ? "" : NotchText.projectName(cwd: session.cwd, language: appLanguage),
                     usage: usage,
                     quotaDisplayStyle: quotaDisplayStyle,
                     action: { model.onOpenThread(session.threadID) }
@@ -379,6 +380,7 @@ struct NotchView: View {
     private func expandedView(content: ExpandedContent) -> ExpandedNotchView {
         ExpandedNotchView(
             content: content,
+            privacyEnabled: privacyEnabled,
             now: model.now,
             layoutMode: model.layoutMode,
             cameraSafeAreaInset: model.cameraSafeAreaInset,
@@ -421,8 +423,8 @@ struct NotchView: View {
                     .transition(motionEnabled ? NotchPresentationMotion.compactReturnTransition : .identity)
             }
         }
-        .environment(\.compactPetWingEnabled, model.layoutMode == .notch && companion.hasSelectedPet)
-        .environment(\.petCompanionContext, companion.atlas.flatMap { atlas in
+        .environment(\.compactPetWingEnabled, !privacyEnabled && model.layoutMode == .notch && companion.hasSelectedPet)
+        .environment(\.petCompanionContext, privacyEnabled ? nil : companion.atlas.flatMap { atlas in
             companion.library.selectedPet.map { entry in
                 PetCompanionSceneContext(atlas: atlas, name: entry.name, pose: companion.pose, session: companion.sceneSession)
             }
@@ -483,8 +485,8 @@ struct NotchView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .environment(\.notchAppLanguage, appLanguage)
         .environment(\.quotaAppearance, QuotaAppearance(enabled: customQuotaColorEnabled, hex: customQuotaColorHex))
-        .environment(\.customStatusIconData, customIconData)
-        .environment(\.notchStatusIconStyle, StatusIconStyle.fromStoredValue(statusIconStyleRaw))
+        .environment(\.customStatusIconData, privacyEnabled ? Data() : customIconData)
+        .environment(\.notchStatusIconStyle, PresentationPrivacyPolicy(enabled: privacyEnabled).statusIconStyle(StatusIconStyle.fromStoredValue(statusIconStyleRaw)))
         .environment(\.notchMotionEnabled, motionEnabled)
         .transaction { transaction in
             guard !motionEnabled else { return }
@@ -1500,6 +1502,7 @@ struct QuotaRing: View {
 
 private struct ExpandedNotchView: View {
     let content: ExpandedContent
+    let privacyEnabled: Bool
     let now: Date
     let layoutMode: NotchLayoutMode
     let cameraSafeAreaInset: CGFloat
@@ -1677,7 +1680,7 @@ private struct ExpandedNotchView: View {
         switch headerIcon {
         case .working:
             return NotchText.compactActivityTitle(
-                content.sessions.first?.title,
+                privacyEnabled ? nil : content.sessions.first?.title,
                 fallback: language.localized(
                     chinese: "Codex 运行中",
                     english: "Codex running",
@@ -1686,7 +1689,7 @@ private struct ExpandedNotchView: View {
             )
         case .completed:
             return NotchText.compactActivityTitle(
-                content.headerConversation?.title,
+                privacyEnabled ? nil : content.headerConversation?.title,
                 fallback: language.localized(
                     chinese: "Codex 已完成",
                     english: "Codex completed",
@@ -1699,6 +1702,7 @@ private struct ExpandedNotchView: View {
     }
 
     private var headerSubtitle: String {
+        if privacyEnabled { return "" }
         if let session = content.sessions.first {
             return NotchText.sessionSubtitle(session, now: now, language: language)
         }

@@ -22,6 +22,7 @@ enum NotchPanelFramePolicy {
 }
 
 final class NotchWindowController: NSWindowController {
+    var privacyEnabled = false
     var onScreenParametersChanged: (() -> Void)?
     var onOpenThread: ((String) -> Void)?
     var onActivateChatGPT: (() -> Void)?
@@ -29,6 +30,7 @@ final class NotchWindowController: NSWindowController {
     private var screenObserver: NSObjectProtocol?
     private var hostingView: NSHostingView<AnyView>?
     private var statusItem: NSStatusItem?
+    var fallbackMenu: NSMenu? { statusItem?.menu }
     private var deferredFrameWorkItem: DispatchWorkItem?
     private var deferredFrameIdentifier: UUID?
     private var lastPreparedTargetFrame: NSRect?
@@ -380,7 +382,7 @@ final class NotchWindowController: NSWindowController {
                 : appLanguage.localized(chinese: "Codex 正在运行", english: "Codex running", russian: "Codex работает")
             menu.addItem(disabledItem(title: title))
             menu.addItem(disabledItem(
-                title: NotchText.sessionSubtitle(primary, now: .now, language: appLanguage)
+                title: privacyEnabled ? appLanguage.localized(chinese: "运行中", english: "Running", russian: "В работе") : NotchText.sessionSubtitle(primary, now: .now, language: appLanguage)
             ))
             if let usage, !usage.windows.isEmpty {
                 menu.addItem(disabledItem(
@@ -403,7 +405,7 @@ final class NotchWindowController: NSWindowController {
                 ))
             }
             menu.addItem(actionItem(
-                title: appLanguage.localized(
+                title: privacyEnabled ? PresentationAliases.shared.chat(session.threadID, language: appLanguage) : appLanguage.localized(
                     chinese: "打开 \(NotchText.projectName(cwd: session.cwd, language: appLanguage))",
                     english: "Open \(NotchText.projectName(cwd: session.cwd, language: appLanguage))",
                     russian: "Открыть \(NotchText.projectName(cwd: session.cwd, language: appLanguage))"
@@ -439,7 +441,7 @@ final class NotchWindowController: NSWindowController {
                 )))
                 for credit in usage.resetCredits {
                     menu.addItem(disabledItem(
-                        title: "\(NotchText.resetCreditTitle(credit, language: appLanguage)) · \(NotchText.resetCreditExpiry(credit, language: appLanguage))"
+                        title: "\(privacyEnabled ? appLanguage.localized(chinese: "重置", english: "Reset", russian: "Сброс") : NotchText.resetCreditTitle(credit, language: appLanguage)) · \(NotchText.resetCreditExpiry(credit, language: appLanguage))"
                     ))
                 }
             }
@@ -447,8 +449,8 @@ final class NotchWindowController: NSWindowController {
                 menu.addItem(NSMenuItem.separator())
                 for conversation in content.conversations {
                     menu.addItem(actionItem(
-                        title: conversation.title
-                            ?? NotchText.projectName(cwd: conversation.cwd, language: appLanguage),
+                        title: privacyEnabled ? PresentationAliases.shared.chat(conversation.threadID, language: appLanguage) : (conversation.title
+                            ?? NotchText.projectName(cwd: conversation.cwd, language: appLanguage)),
                         representedObject: conversation.threadID
                     ))
                 }
@@ -461,7 +463,7 @@ final class NotchWindowController: NSWindowController {
                 menu.addItem(NSMenuItem.separator())
                 for session in content.sessions {
                     menu.addItem(actionItem(
-                        title: appLanguage.localized(
+                        title: privacyEnabled ? PresentationAliases.shared.chat(session.threadID, language: appLanguage) : appLanguage.localized(
                             chinese: "打开 \(NotchText.projectName(cwd: session.cwd, language: appLanguage))",
                             english: "Open \(NotchText.projectName(cwd: session.cwd, language: appLanguage))",
                             russian: "Открыть \(NotchText.projectName(cwd: session.cwd, language: appLanguage))"
@@ -477,7 +479,7 @@ final class NotchWindowController: NSWindowController {
                 )))
                 menu.addItem(NSMenuItem.separator())
                 menu.addItem(actionItem(
-                    title: appLanguage.localized(
+                    title: privacyEnabled ? PresentationAliases.shared.chat(conversation.threadID, language: appLanguage) : appLanguage.localized(
                         chinese: "打开 \(NotchText.projectName(cwd: conversation.cwd, language: appLanguage))",
                         english: "Open \(NotchText.projectName(cwd: conversation.cwd, language: appLanguage))",
                         russian: "Открыть \(NotchText.projectName(cwd: conversation.cwd, language: appLanguage))"

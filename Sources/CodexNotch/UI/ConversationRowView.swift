@@ -4,6 +4,8 @@ struct ConversationRowView: View {
     let conversation: ConversationSummary
     let now: Date
     let language: AppLanguage
+    var privacyTitle: String? = nil
+    var privacyProject: String? = nil
     let action: () -> Void
 
     private var attention: ConversationAttention { conversation.attention }
@@ -15,7 +17,7 @@ struct ConversationRowView: View {
         }
     }
     private var title: String {
-        conversation.title ?? NotchText.projectName(cwd: conversation.cwd, language: language)
+        privacyTitle ?? conversation.title ?? NotchText.projectName(cwd: conversation.cwd, language: language)
     }
 
     var body: some View {
@@ -68,7 +70,7 @@ struct ConversationRowView: View {
     }
 
     private var metadataText: String {
-        let project = NotchText.projectName(cwd: conversation.cwd, language: language)
+        let project = privacyProject ?? NotchText.projectName(cwd: conversation.cwd, language: language)
         switch conversation.activity {
         case let .running(startedAt):
             return "\(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)"

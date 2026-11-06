@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct NotchSettingsView: View {
+    @AppStorage(PresentationPrivacyPolicy.storageKey) private var privacyEnabled = false
     @ObservedObject private var companion = PetCompanionController.shared
     @State private var petPreviewSession = PetCompanionSceneSession()
     @AppStorage(QuotaAppearance.enabledKey) private var customQuotaColorEnabled = false
@@ -85,13 +86,13 @@ struct NotchSettingsView: View {
             generalSettings
                 .tabItem { Label(appLanguage.localized(chinese: "通用", english: "General", russian: "Основные"), systemImage: "gearshape") }
                 .tag(SettingsTab.general)
-            appearanceSettings
+            Group { if privacyEnabled { privacyPlaceholder } else { appearanceSettings } }
                 .tabItem { Label(appLanguage.localized(chinese: "外观", english: "Appearance", russian: "Внешний вид"), systemImage: "paintpalette") }
                 .tag(SettingsTab.appearance)
-            PetCompanionSettingsView(companion: companion, language: appLanguage)
+            Group { if privacyEnabled { privacyPlaceholder } else { PetCompanionSettingsView(companion: companion, language: appLanguage) } }
                 .tabItem { Label(appLanguage.localized(chinese: "宠物", english: "Companions", russian: "Питомцы"), systemImage: "pawprint") }
                 .tag(SettingsTab.pets)
-            floatingSettings
+            Group { if privacyEnabled { privacyPlaceholder } else { floatingSettings } }
                 .tabItem { Label(appLanguage.localized(chinese: "浮动横条", english: "Floating Bar", russian: "Плавающая панель"), systemImage: "display") }
                 .tag(SettingsTab.floating)
         }
@@ -135,9 +136,17 @@ struct NotchSettingsView: View {
         }
     }
 
+    private var privacyPlaceholder: some View {
+        Text(appLanguage.localized(chinese: "演示模式下隐藏外观设置。", english: "Appearance settings are hidden during presentation privacy.", russian: "Настройки внешнего вида скрыты в режиме демонстрации."))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var generalSettings: some View {
         Form {
             Section {
+                Toggle(appLanguage.localized(chinese: "演示模式", english: "Presentation privacy", russian: "Режим демонстрации"), isOn: $privacyEnabled)
+                Text(appLanguage.localized(chinese: "隐藏 CodexNotch 中的个人名称和图像。其他应用仍可能显示个人内容。", english: "Hides personal names and images in CodexNotch. Other apps may still show personal content.", russian: "Скрывает личные названия и изображения в CodexNotch. В других приложениях личные данные остаются видимыми."))
+                    .font(.caption).foregroundStyle(.secondary)
                 launchAtLoginControls
                 Picker(appLanguage.localized(chinese: "语言", english: "Language", russian: "Язык"), selection: appLanguageBinding) {
                     ForEach(AppLanguage.allCases) { language in
