@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 struct NotchSettingsView: View {
     @ObservedObject private var companion = PetCompanionController.shared
+    @StateObject private var appearanceUndo = AppearanceUndoSession()
     @State private var petPreviewSession = PetCompanionSceneSession()
     @AppStorage(QuotaAppearance.enabledKey) private var customQuotaColorEnabled = false
     @AppStorage(QuotaAppearance.colorKey) private var customQuotaColorHex = QuotaAppearance.defaultHex
@@ -39,7 +40,7 @@ struct NotchSettingsView: View {
     private var selectedStyleBinding: Binding<QuotaDisplayStyle> {
         Binding(
             get: { selectedStyle },
-            set: { quotaDisplayStyleRaw = $0.rawValue }
+            set: { appearanceUndo.set(.quotaStyle, to: .string($0.rawValue)) }
         )
     }
 
@@ -50,7 +51,7 @@ struct NotchSettingsView: View {
     private var statusIconStyleBinding: Binding<StatusIconStyle> {
         Binding(
             get: { StatusIconStyle.fromStoredValue(statusIconStyleRaw) },
-            set: { statusIconStyleRaw = $0.rawValue }
+            set: { appearanceUndo.set(.iconStyle, to: .string($0.rawValue)) }
         )
     }
 
@@ -81,6 +82,7 @@ struct NotchSettingsView: View {
     }
 
     var body: some View {
+        VStack {
         TabView(selection: $selectedTab) {
             generalSettings
                 .tabItem { Label(appLanguage.localized(chinese: "通用", english: "General", russian: "Основные"), systemImage: "gearshape") }
@@ -95,6 +97,16 @@ struct NotchSettingsView: View {
                 .tabItem { Label(appLanguage.localized(chinese: "浮动横条", english: "Floating Bar", russian: "Плавающая панель"), systemImage: "display") }
                 .tag(SettingsTab.floating)
         }
+        if selectedTab == .appearance || selectedTab == .floating {
+            HStack {
+                Spacer()
+                Button(appLanguage.localized(chinese: "撤销外观更改", english: "Undo Appearance", russian: "Отменить оформление")) { appearanceUndo.undo() }
+                    .disabled(!appearanceUndo.canUndo)
+                Button(appLanguage.localized(chinese: "重做外观更改", english: "Redo Appearance", russian: "Повторить оформление")) { appearanceUndo.redo() }
+                    .disabled(!appearanceUndo.canRedo)
+            }
+        }
+        }
         .environment(\.customStatusIconData, customIconData)
         .fileImporter(isPresented: $choosingIcon, allowedContentTypes: [.png, .jpeg]) { result in
             switch result {
@@ -103,6 +115,7 @@ struct NotchSettingsView: View {
                 defer { if accessing { url.stopAccessingSecurityScopedResource() } }
                 do {
                     let png = try CustomStatusIcon.importFile(url)
+                    appearanceUndo.clear()
                     customIconData = png
                     statusIconStyleRaw = StatusIconStyle.custom.rawValue
                 } catch {
@@ -127,6 +140,7 @@ struct NotchSettingsView: View {
             refreshSystemState()
             SettingsWindowPresenter.bringToFront()
         }
+        .onDisappear { appearanceUndo.clear() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshSystemState()
         }
@@ -230,6 +244,7 @@ struct NotchSettingsView: View {
                         }
                         if !customIconData.isEmpty {
                             Button(appLanguage.localized(chinese: "移除", english: "Remove", russian: "Удалить")) {
+                                appearanceUndo.clear()
                                 statusIconStyleRaw = StatusIconStyle.defaultStyle.rawValue
                                 customIconData = Data()
                             }
@@ -249,13 +264,14 @@ struct NotchSettingsView: View {
             }
 
             Section {
-                Toggle(appLanguage.localized(chinese: "自定义颜色", english: "Custom color", russian: "Свой цвет"), isOn: $customQuotaColorEnabled)
+                Toggle(appLanguage.localized(chinese: "自定义颜色", english: "Custom color", russian: "Свой цвет"), isOn: Binding(get: { customQuotaColorEnabled }, set: { appearanceUndo.set(.customColorEnabled, to: .boolean($0)) }))
                 if customQuotaColorEnabled {
                     ColorPicker(appLanguage.localized(chinese: "额度与光效", english: "Quota and glow", russian: "Лимиты и подсветка"), selection: Binding(
                         get: { (QuotaAppearance.parse(customQuotaColorHex) ?? QuotaAppearance.defaultColor).color },
                         set: { if let hex = QuotaAppearance.hex(for: NSColor($0)) { customQuotaColorHex = hex } }
                     ), supportsOpacity: false)
                     Button(appLanguage.localized(chinese: "恢复默认颜色", english: "Restore default colors", russian: "Вернуть стандартные цвета")) {
+                        appearanceUndo.clear()
                         customQuotaColorEnabled = false
                         customQuotaColorHex = QuotaAppearance.defaultHex
                     }
@@ -271,7 +287,7 @@ struct NotchSettingsView: View {
             }
 
             Section {
-                Toggle(appLanguage.localized(chinese: "动画效果", english: "Animations", russian: "Анимация"), isOn: $animationsEnabled)
+                Toggle(appLanguage.localized(chinese: "动画效果", english: "Animations", russian: "Анимация"), isOn: Binding(get: { animationsEnabled }, set: { appearanceUndo.set(.animations, to: .boolean($0)) }))
             } header: {
                 Text(appLanguage.localized(chinese: "动画与性能", english: "Animations and performance", russian: "Анимация и производительность"))
             } footer: {
@@ -327,7 +343,7 @@ struct NotchSettingsView: View {
 
             Section {
                 Picker(appLanguage.localized(chinese: "中间样式", english: "Center style", russian: "В центре"), selection: Binding(
-                    get: { floatingStyle }, set: { floatingCenterStyleRaw = $0.rawValue }
+                    get: { floatingStyle }, set: { appearanceUndo.set(.floatingStyle, to: .string($0.rawValue)) }
                 )) {
                     ForEach(FloatingCenterStyle.allCases) { style in
                         Text(style.title(for: appLanguage)).tag(style)

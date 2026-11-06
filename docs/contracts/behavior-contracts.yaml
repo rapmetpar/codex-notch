@@ -1,4 +1,39 @@
 contracts:
+
+  - id: SETTINGS-APPEARANCE-UNDO-001
+    title: Discrete appearance choices have session-only undo
+    status: active
+    statement: >-
+      Provide explicit Undo and Redo actions in Settings for quota style, icon
+      style, floating center style, custom-color switch and app animation switch. Apply choices live
+      and retain exact stored scalar values, including absent and false, when
+      undoing or redoing. Retain at most 30 actions in a volatile Settings
+      session; closing clears history. If a tracked value, custom color or custom artwork has
+      changed outside the history, discard history before applying an undo or
+      redo. Image import and removal clear history and are never undoable. Keep
+      native text editing and its keyboard undo unchanged. Color selection and
+      color reset remain outside this initial history. Preserve existing preference
+      identity, defaults, live updates, popup focus, animation policy, artwork,
+      library, login registration and all unrelated settings.
+    rationale: Provide a safe, bounded way to reverse discrete appearance experiments in Settings.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [discrete-appearance-settings, volatile-undo-redo]
+      exclude: [color-picker, artwork-files, text-editing, login, pet-library, releases]
+    examples:
+      positive: Three discrete changes undo and redo exactly while the live display follows each choice.
+      negative: Undo overwrites an external choice, changes artwork, survives closing Settings, or intercepts native text undo.
+    guards:
+      - Tests/CodexNotchTests/AppearanceUndoSessionTests.swift
+      - Tests/CodexNotchTests/FloatingCenterTextFieldTests.swift
+      - docs/decisions/072-appearance-undo.md
+      - "manual: verify buttons and live preview, close/reopen Settings, popup focus, native text Cmd-Z and physical-notch appearance"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
+
   - id: EXPANDED-SPACING-001
     title: Expanded quota and grouped history have bounded gaps
     status: active
