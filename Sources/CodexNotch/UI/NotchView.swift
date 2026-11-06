@@ -370,6 +370,7 @@ struct NotchView: View {
                     quotaDisplayStyle: quotaDisplayStyle,
                     action: { model.onOpenThread(session.threadID) }
                 )
+                .environment(\.notchCompletionEffectsEnabled, session.permitsCompletionEffects)
             case let .expanded(content):
                 expandedView(content: content).header
             }
@@ -502,11 +503,20 @@ private struct NotchMotionEnabledKey: EnvironmentKey {
     static let defaultValue = true
 }
 
+private struct NotchCompletionEffectsEnabledKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
 private struct NotchStatusIconStyleKey: EnvironmentKey {
     static let defaultValue = StatusIconStyle.defaultStyle
 }
 
 extension EnvironmentValues {
+    var notchCompletionEffectsEnabled: Bool {
+        get { self[NotchCompletionEffectsEnabledKey.self] }
+        set { self[NotchCompletionEffectsEnabledKey.self] = newValue }
+    }
+
     var notchStatusIconStyle: StatusIconStyle {
         get { self[NotchStatusIconStyleKey.self] }
         set { self[NotchStatusIconStyleKey.self] = newValue }
@@ -886,6 +896,7 @@ struct CompactQuotaView: View {
 
 private struct CompletedStatusIcon: View {
     @Environment(\.notchMotionEnabled) private var motionEnabled
+    @Environment(\.notchCompletionEffectsEnabled) private var completionEffectsEnabled
     @State private var hasSettled = false
 
     let iconStyle: StatusIconStyle
@@ -903,7 +914,7 @@ private struct CompletedStatusIcon: View {
 
     var body: some View {
         ZStack {
-            if motionEnabled {
+            if motionEnabled && completionEffectsEnabled {
                 StatusMark(style: iconStyle, size: size, tint: NotchPalette.success, monochrome: true)
                     .scaleEffect(hasSettled ? 1.14 : 0.92)
                     .opacity(hasSettled ? 0 : 0.42)
@@ -926,11 +937,11 @@ private struct CompletedStatusIcon: View {
         .offset(x: compositeOffset, y: compositeOffset)
         .frame(width: size, height: size)
         .onAppear {
-            guard motionEnabled else { return }
+            guard motionEnabled && completionEffectsEnabled else { return }
             hasSettled = true
         }
         .animation(
-            motionEnabled ? .easeOut(duration: 0.48) : nil,
+            motionEnabled && completionEffectsEnabled ? .easeOut(duration: 0.48) : nil,
             value: hasSettled
         )
     }
@@ -1217,6 +1228,7 @@ private struct QuotaWaveBall: View {
     let fontSize: CGFloat
 
     @Environment(\.notchMotionEnabled) private var motionEnabled
+    @Environment(\.notchCompletionEffectsEnabled) private var completionEffectsEnabled
     @State private var displayedProgress: CGFloat = 0
 
     private var remainingPercent: Double {
@@ -1248,7 +1260,7 @@ private struct QuotaWaveBall: View {
 
             if QuotaIndicatorMotion.shouldShowCompletionFirework(
                 activity: activity,
-                motionEnabled: motionEnabled
+                motionEnabled: motionEnabled && completionEffectsEnabled
             ) {
                 QuotaCompletionParticles(
                     color: NotchPalette.success,
@@ -1335,6 +1347,7 @@ struct QuotaRing: View {
     let fontSize: CGFloat
 
     @Environment(\.notchMotionEnabled) private var motionEnabled
+    @Environment(\.notchCompletionEffectsEnabled) private var completionEffectsEnabled
     @State private var displayedProgress: CGFloat = 0
 
     private var remainingPercent: Double {
@@ -1396,7 +1409,7 @@ struct QuotaRing: View {
 
                 if QuotaIndicatorMotion.shouldShowCompletionFirework(
                     activity: activity,
-                    motionEnabled: motionEnabled
+                    motionEnabled: motionEnabled && completionEffectsEnabled
                 ) {
                     QuotaCompletionParticles(
                         color: NotchPalette.success,

@@ -22,7 +22,11 @@ struct ConversationRowView: View {
         Button(action: action) {
             HStack(spacing: 9) {
                 Group {
-                    if attention == .viewed {
+                    if conversation.outcome == .interrupted || conversation.outcome == .unknown {
+                        Image(systemName: "minus.circle")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(NotchPalette.secondaryText)
+                    } else if attention == .viewed {
                         Image(systemName: attention.symbolName)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(tint)
@@ -61,19 +65,19 @@ struct ConversationRowView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(ConversationRowButtonStyle())
-        .help("\(title)\n\(attention.hint(language: language))")
+        .help("\(title)\n\(conversation.outcome?.explanation(language: language).appending("\n") ?? "")\(attention.hint(language: language))")
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(title), \(attention.label(language: language)), \(metadataText)")
-        .accessibilityHint(attention.hint(language: language))
+        .accessibilityHint("\(conversation.outcome?.explanation(language: language).appending(". ") ?? "")\(attention.hint(language: language))")
     }
 
-    private var metadataText: String {
+    var metadataText: String {
         let project = NotchText.projectName(cwd: conversation.cwd, language: language)
         switch conversation.activity {
         case let .running(startedAt):
             return "\(NotchText.formatDuration(seconds: max(0, now.timeIntervalSince(startedAt)))) · \(project)"
         case let .completed(completedAt):
-            return "\(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)"
+            return "\(conversation.outcome?.label(language: language).appending(" · ") ?? "")\(NotchText.relativeTime(from: completedAt, now: now, language: language)) · \(project)"
         }
     }
 }

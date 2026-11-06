@@ -283,7 +283,8 @@ final class NotchRuntimeCoordinator {
         recentCompletions = snapshot.recentCompletions.map { completion in
             CompletedSession(
                 session: completion.session.withTitle(threadTitles[completion.session.threadID]),
-                completedAt: completion.completedAt
+                completedAt: completion.completedAt,
+                outcome: completion.outcome
             )
         }
         nativeReadMonitor.updateCompletions(recentCompletions)
@@ -345,7 +346,8 @@ final class NotchRuntimeCoordinator {
         let resolvedRecentCompletions = recentCompletions.map { completion in
             CompletedSession(
                 session: completion.session.withTitle(threadTitles[completion.session.threadID]),
-                completedAt: completion.completedAt
+                completedAt: completion.completedAt,
+                outcome: completion.outcome
             )
         }
         guard resolvedActiveSessions != activeSessions

@@ -41,11 +41,12 @@ struct PetCompanionPolicy {
         isHovered: Bool, now: Date
     ) {
         let keys = completions.map(PetCompletionKey.init)
+        let celebratable = Set(completions.filter { $0.outcome == .completedEvent }.map(PetCompletionKey.init))
         let previousObservation = observedAt
         if startedAt == nil { startedAt = now }
         // Newly discovered historical logs do not become fresh celebrations.
         let fresh = keys.filter {
-            !seenCompletions.contains($0) && previousObservation != nil
+            celebratable.contains($0) && !seenCompletions.contains($0) && previousObservation != nil
         }.filter { key in
             guard let previousObservation else { return false }
             return key.completedAt >= previousObservation && key.completedAt <= now

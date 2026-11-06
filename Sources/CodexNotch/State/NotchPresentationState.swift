@@ -3,6 +3,7 @@ import Foundation
 struct CompletedSession: Equatable, Sendable {
     let session: SessionActivity
     let completedAt: Date
+    var outcome: TurnOutcome = .completedEvent
 }
 
 enum ConversationActivity: Equatable, Sendable {
@@ -23,6 +24,7 @@ struct ConversationSummary: Equatable, Identifiable, Sendable {
     let activity: ConversationActivity
     let isViewed: Bool
     let project: ConversationProject
+    let outcome: TurnOutcome?
 
     var id: String { threadID }
 
@@ -30,12 +32,13 @@ struct ConversationSummary: Equatable, Identifiable, Sendable {
         activity.isRunning ? .running : (isViewed ? .viewed : .unread)
     }
 
-    init(session: SessionActivity, activity: ConversationActivity, isViewed: Bool = false, project: ConversationProject? = nil) {
+    init(session: SessionActivity, activity: ConversationActivity, isViewed: Bool = false, project: ConversationProject? = nil, outcome: TurnOutcome? = nil) {
         self.threadID = session.threadID
         self.title = session.title
         self.cwd = session.cwd
         self.lastActivityAt = session.lastActivityAt
         self.activity = activity
+        self.outcome = outcome
         self.isViewed = isViewed
         self.project = project ?? .fallback(cwd: session.cwd)
     }
