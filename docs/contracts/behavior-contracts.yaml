@@ -4019,3 +4019,37 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: ACTION-PANEL-001
+    title: Explicit keyboard actions use an independent key window
+    status: active
+    statement: >-
+      An explicit app menu request opens a separate key window with weekly quota,
+      Settings and the same bounded recent conversation snapshot and ordering as
+      the notch. Zero hides conversations; at most twenty are available. Keyboard
+      focus follows thread identity across reorder and language changes. Arrow keys,
+      Tab, Enter and Escape provide navigation; Escape closes without opening or
+      acknowledging a thread and returns focus to the previously active app. Only
+      explicit activation invokes the existing thread navigator and read policy.
+      A separately enabled shortcut must not replace the visibility shortcut;
+      registration failure is visible and the menu remains available. The notch
+      remains non-key and keeps its existing geometry, hover and activity priority.
+      No message bodies, input monitoring or archive search are introduced.
+    rationale: Keyboard access should not make the passive notch take focus.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [action-panel, keyboard-navigation, optional-shortcut]
+      exclude: [notch-geometry, input-monitoring, archive-search, release]
+    examples:
+      positive: An explicit request opens a list of twenty chats and Enter opens the focused thread.
+      negative: Hover or Escape acknowledges a conversation, or a reordered list opens a different thread.
+    guards:
+      - Tests/CodexNotchTests/ActionPanelTests.swift
+      - Tests/CodexNotchTests/CodexThreadNavigatorTests.swift
+      - docs/decisions/072-keyboard-action-panel.md
+      - "manual: keyboard and VoiceOver from another app, full-screen Space, no-notch and mirrored display; Escape restores focus and leaves no input capture"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null

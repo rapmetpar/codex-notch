@@ -70,6 +70,12 @@ final class NotchRuntimeCoordinator {
     private var preferencesObserver: NSObjectProtocol?
     private var lastObservedPreferences: NotchRuntimePreferences?
     private var visibilityShortcut: NotchVisibilityShortcut?
+    private var actionPanel: ActionPanelController?
+    private var actionObserver: NSObjectProtocol?
+    private var shortcutObserver: NSObjectProtocol?
+    private var actionShortcut = ActionShortcutToggle()
+    private var lastExternalApp: NSRunningApplication?
+    private var appActivationObserver: NSObjectProtocol?
 
     init(
         windowController: NotchWindowController = NotchWindowController(),
@@ -120,6 +126,20 @@ final class NotchRuntimeCoordinator {
         guard !started else { return }
         started = true
         observePreferenceChanges()
+        if let app = NSWorkspace.shared.frontmostApplication, app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            lastExternalApp = app
+        }
+        appActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { [weak self] notification in
+            guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
+            self?.lastExternalApp = app
+        }
+        actionObserver = NotificationCenter.default.addObserver(forName: .openActionPanel, object: nil, queue: .main) { [weak self] _ in
+            self?.showActions()
+        }
+        shortcutObserver = NotificationCenter.default.addObserver(forName: .enableActionShortcut, object: nil, queue: .main) { [weak self] _ in
+            self?.enableActionShortcut()
+        }
         visibilityShortcut = NotchVisibilityShortcut { [weak self] in
             self?.toggleNotchDisplay()
         }
@@ -210,6 +230,16 @@ final class NotchRuntimeCoordinator {
         hoverCollapseWorkItem?.cancel()
         hoverCollapseWorkItem = nil
         visibilityShortcut = nil
+        if let actionObserver { NotificationCenter.default.removeObserver(actionObserver) }
+        actionObserver = nil
+        if let shortcutObserver { NotificationCenter.default.removeObserver(shortcutObserver) }
+        shortcutObserver = nil
+        actionShortcut = ActionShortcutToggle()
+        if let appActivationObserver { NSWorkspace.shared.notificationCenter.removeObserver(appActivationObserver) }
+        appActivationObserver = nil
+        lastExternalApp = nil
+        actionPanel?.dismiss()
+        actionPanel = nil
         stopObservingPreferenceChanges()
         isPointerInside = false
         isHovered = false
@@ -583,9 +613,47 @@ final class NotchRuntimeCoordinator {
         return content.usage?.fiveHourWindow != nil
     }
 
+    private func actionContent(now: Date) -> ExpandedContent {
+        let preferences = runtimePreferences
+        let input = NotchPresentationInput(now: now, isChatGPTFrontmost: isChatGPTFrontmost,
+            activeSessions: activeSessions, recentCompletions: recentCompletions, usage: usage,
+            isHovered: true, readReceipts: conversationReadStore.receipts,
+            nativeReadReceipts: nativeReadMonitor.receipts,
+            compactCompletionSignals: compactCompletionStore.signals,
+            conversationCategoryOrder: preferences.conversationCategoryOrder,
+            threadProjects: threadProjects, conversationProjectOrder: preferences.conversationProjectOrder)
+        guard case let .expanded(content) = NotchPresentationReducer.reduce(input) else {
+            preconditionFailure("Hovered presentation must be expanded")
+        }
+        return content.limitingRecentConversations(to: preferences.recentConversationLimit)
+    }
+
+    private func enableActionShortcut() {
+        actionShortcut.toggle(register: { [weak self] in
+            ActionShortcut { [weak self] in self?.showActions() }
+        }, unavailable: { [weak self] in
+            guard let self else { return }
+            let language = runtimePreferences.language
+            let alert = NSAlert()
+            alert.messageText = language.localized(chinese: "无法注册快捷键", english: "Shortcut unavailable", russian: "Сочетание недоступно")
+            alert.informativeText = language.localized(chinese: "快捷键可能已被占用。请使用菜单打开操作。", english: "The shortcut may already be in use. Open Actions remains available in the menu.", russian: "Возможно, сочетание уже занято. Открыть действия можно через меню.")
+            alert.runModal()
+        })
+    }
+
+    private func showActions() {
+        if actionPanel == nil {
+            let panel = ActionPanelController()
+            panel.onOpenThread = { [weak self] id in self?.openThread(id) }
+            actionPanel = panel
+        }
+        actionPanel?.present(content: actionContent(now: nowProvider()), language: runtimePreferences.language, previousApp: lastExternalApp)
+    }
+
     private func render(now: Date? = nil) {
         let renderDate = now ?? nowProvider()
         let preferences = runtimePreferences
+        actionPanel?.update(content: actionContent(now: renderDate), language: preferences.language)
         PetCompanionController.shared.observe(activeSessions: activeSessions, completions: recentCompletions,
             isHovered: isHovered, now: renderDate)
         guard let screen = NotchScreenMetrics.preferredScreen() else {
