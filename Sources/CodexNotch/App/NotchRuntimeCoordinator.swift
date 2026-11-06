@@ -39,6 +39,7 @@ final class NotchRuntimeCoordinator {
     private let userDefaults: UserDefaults
     private let conversationReadStore: ConversationReadStore
     private let compactCompletionStore: CompactCompletionStore
+    private let completionSoundPolicy = CompletionSoundPolicy { CompletionSoundPlayer.shared.play() }
     private let nativeReadMonitor: NativeConversationReadMonitor
     private let viewModel: NotchViewModel
     private let titleReadQueue = DispatchQueue(
@@ -162,9 +163,12 @@ final class NotchRuntimeCoordinator {
             guard let self, self.started else { return }
             self.pollSessions()
         }
+        completionSoundPolicy.start()
         rolloutMonitor.onNewCompletions = { [weak self] completions in
             guard let self, self.started else { return }
             self.compactCompletionStore.record(completions)
+            self.completionSoundPolicy.receive(completions, enabled: self.userDefaults.bool(forKey: CompletionSoundPolicy.storageKey),
+                muted: CompletionSoundPlayer.shared.muted, uptime: ProcessInfo.processInfo.systemUptime)
         }
         rolloutMonitor.start()
         nativeReadMonitor.onChange = { [weak self] in
@@ -194,6 +198,7 @@ final class NotchRuntimeCoordinator {
     func stop() {
         guard started else { return }
         started = false
+        completionSoundPolicy.stop()
         metadataGeneration &+= 1
         threadProjects = [:]
         lastTitleRefreshAt = nil

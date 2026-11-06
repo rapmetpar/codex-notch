@@ -2,6 +2,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct NotchSettingsView: View {
+    @ObservedObject private var soundPlayer = CompletionSoundPlayer.shared
+    @AppStorage(CompletionSoundPolicy.storageKey) private var completionSoundEnabled = false
     @ObservedObject private var companion = PetCompanionController.shared
     @State private var petPreviewSession = PetCompanionSceneSession()
     @AppStorage(QuotaAppearance.enabledKey) private var customQuotaColorEnabled = false
@@ -158,6 +160,16 @@ struct NotchSettingsView: View {
                     english: "Hover over CodexNotch to view recent tasks. Scroll to see more than 5. Set to 0 to hide the list.",
                     russian: "Наведите указатель на CodexNotch, чтобы увидеть недавние чаты. Если их больше 5, прокрутите список. Значение 0 скрывает список."
                 ))
+            }
+
+            Section {
+                Toggle(appLanguage.localized(chinese: "完成时播放声音", english: "Play sound on completion", russian: "Звук при завершении"), isOn: $completionSoundEnabled)
+                Button(appLanguage.localized(chinese: "试听声音", english: "Preview sound", russian: "Прослушать звук")) {
+                    soundPlayer.play()
+                }
+                Toggle(appLanguage.localized(chinese: "本次运行静音", english: "Mute until quit", russian: "Без звука до выхода"), isOn: $soundPlayer.muted)
+            } header: {
+                Text(appLanguage.localized(chinese: "完成声音", english: "Completion sound", russian: "Звук завершения"))
             }
 
             Section {

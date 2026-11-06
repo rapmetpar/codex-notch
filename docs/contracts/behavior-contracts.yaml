@@ -4019,3 +4019,35 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: COMPLETION-SOUND-001
+    title: Optional live completion sound
+    status: active
+    statement: >-
+      An independent sound channel is off by default. When enabled and not muted
+      until quit, play one short local non-speech cue for a batch of live successful
+      completions observed after monitoring starts, with a ten-second cooldown.
+      Maintain a bounded in-memory identity ledger; do not replay history, aborted
+      or child turns, metadata refreshes or events suppressed while disabled, muted
+      or cooling down. Explicit preview is available in Settings. Stop cancels
+      delivery; audio failure does not affect monitoring. Preserve native attention,
+      privacy, existing settings, animations and visual cues; no new permissions.
+    rationale: An opt-in audible cue makes live completions noticeable away from the notch.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [live-completion-sound, settings, temporary-mute]
+      exclude: [notifications, speech, history-replay, geometry, releases]
+    examples:
+      positive: One enabled live completion plays a cue; a batch yields one cue.
+      negative: Startup history, abort, mute or metadata refresh plays automatically.
+    guards:
+      - Tests/CodexNotchTests/CompletionSoundPolicyTests.swift
+      - Tests/CodexNotchTests/CompactCompletionStoreTests.swift
+      - Tests/CodexNotchTests/RolloutResponsivenessTests.swift
+      - docs/decisions/072-optional-completion-sound.md
+      - "manual: preview and verify live sound, volume, headphones and mute on target Mac"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
