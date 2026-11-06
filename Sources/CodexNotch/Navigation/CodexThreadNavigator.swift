@@ -5,12 +5,18 @@ enum CodexThreadNavigationError: Error, Equatable {
     case invalidThreadID
 }
 
+enum ThreadHandoffResult: Equatable {
+    case accepted, invalidID, refused, appUnavailable
+}
+
 struct CodexThreadNavigator {
     private let openURL: (URL) -> Bool
     private let activateApp: () -> Bool
+    private let isAppAvailable: () -> Bool
 
     init(workspace: NSWorkspace = .shared) {
         openURL = { workspace.open($0) }
+        isAppAvailable = { workspace.urlForApplication(withBundleIdentifier: AppIdentity.chatGPTCodexBundleIdentifier) != nil }
         activateApp = {
             guard let appURL = workspace.urlForApplication(
                 withBundleIdentifier: AppIdentity.chatGPTCodexBundleIdentifier
@@ -19,9 +25,10 @@ struct CodexThreadNavigator {
         }
     }
 
-    init(openURL: @escaping (URL) -> Bool, activateApp: @escaping () -> Bool) {
+    init(openURL: @escaping (URL) -> Bool, activateApp: @escaping () -> Bool, isAppAvailable: @escaping () -> Bool = { true }) {
         self.openURL = openURL
         self.activateApp = activateApp
+        self.isAppAvailable = isAppAvailable
     }
 
     static func threadURL(id: String) throws -> URL {
@@ -47,6 +54,12 @@ struct CodexThreadNavigator {
 
     static func threadURLIfValid(id: String) -> URL? {
         try? threadURL(id: id)
+    }
+
+    func handoff(threadID: String) -> ThreadHandoffResult {
+        guard let url = Self.threadURLIfValid(id: threadID) else { return .invalidID }
+        guard isAppAvailable() else { return .appUnavailable }
+        return openURL(url) ? .accepted : .refused
     }
 
     @discardableResult

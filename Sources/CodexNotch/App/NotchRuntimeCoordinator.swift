@@ -486,15 +486,53 @@ final class NotchRuntimeCoordinator {
         render()
     }
 
+    private func currentCompletion(_ threadID: String) -> CompletedSession? {
+        guard !activeSessions.contains(where: { $0.threadID == threadID }) else { return nil }
+        return recentCompletions.first(where: { $0.session.threadID == threadID })
+    }
+
+    private var navigationRecovery: ThreadNavigationRecovery<ConversationReadReceipt> {
+        ThreadNavigationRecovery(
+            handoff: { [weak self] id in self?.threadNavigator.handoff(threadID: id) ?? .appUnavailable },
+            currentTurn: { [weak self] id in self?.currentCompletion(id).map(ConversationReadReceipt.init) },
+            acknowledge: { [weak self] id, receipt in
+                guard let self, let completion = self.currentCompletion(id),
+                      ConversationReadReceipt(completion) == receipt else { return }
+                if self.conversationReadStore.acknowledge(completion, threadLinkOpened: true) { self.render() }
+            },
+            showFailure: { [weak self] id, result, receipt in
+                self?.showNavigationFailure(threadID: id, result: result, receipt: receipt)
+            }
+        )
+    }
+
     private func openThread(_ threadID: String) {
-        // Capture the completed turn before handing off. Opening a running
-        // thread must never acknowledge the answer that will arrive later.
-        let completion = activeSessions.contains(where: { $0.threadID == threadID })
-            ? nil : recentCompletions.first(where: { $0.session.threadID == threadID })
-        let opened = threadNavigator.open(threadID: threadID)
-        if let completion,
-           conversationReadStore.acknowledge(completion, threadLinkOpened: opened) {
-            render()
+        navigationRecovery.open(threadID: threadID)
+    }
+
+    private func showNavigationFailure(threadID: String, result: ThreadHandoffResult, receipt: ConversationReadReceipt?) {
+        let language = runtimePreferences.language
+        let alert = NSAlert()
+        alert.messageText = language.localized(chinese: "无法传递对话链接", english: "Could not hand off the conversation link", russian: "Не удалось передать ссылку на чат")
+        switch result {
+        case .invalidID:
+            alert.informativeText = language.localized(chinese: "对话标识无效。", english: "The conversation identifier is invalid.", russian: "Некорректный идентификатор чата.")
+        case .appUnavailable:
+            alert.informativeText = language.localized(chinese: "找不到 Codex 应用。", english: "The Codex app is unavailable.", russian: "Приложение Codex недоступно.")
+        case .refused:
+            alert.informativeText = language.localized(chinese: "系统未接受链接。", english: "The system did not accept the link.", russian: "Система не приняла ссылку.")
+        case .accepted: return
+        }
+        alert.addButton(withTitle: language.localized(chinese: "重试", english: "Retry", russian: "Повторить"))
+        alert.addButton(withTitle: language.localized(chinese: "打开 Codex", english: "Open Codex", russian: "Открыть Codex"))
+        alert.addButton(withTitle: language.localized(chinese: "关闭", english: "Close", russian: "Закрыть"))
+        NSApp.activate(ignoringOtherApps: true)
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            // Exit the current modal loop before presenting a subsequent failure.
+            DispatchQueue.main.async { [weak self] in self?.navigationRecovery.retry(threadID: threadID, capturedTurn: receipt) }
+        case .alertSecondButtonReturn: activateChatGPT()
+        default: break
         }
     }
 

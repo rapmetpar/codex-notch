@@ -4019,3 +4019,35 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: NAVIGATION-RECOVERY-001
+    title: Recover refused thread link handoffs without false acknowledgements
+    status: active
+    statement: >-
+      Distinguish invalid thread IDs, unavailable current Codex app, refused
+      URL handoffs and accepted handoffs. On failure show a localized native
+      alert with explicit retry, open Codex and close actions. No automatic app
+      fallback or retry occurs. A retry retains the completion captured at the
+      original action; acknowledge only after an accepted thread URL and only
+      if the same turn and completion instant remain current and not running.
+      An accepted handoff does not prove selection or reading. Opening the app,
+      closing the alert or a failed handoff never creates a receipt. Preserve
+      native attention, privacy, geometry and the current Codex bundle target.
+    rationale: A failed link previously gave no actionable feedback.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [navigation-failure, explicit-retry, exact-completion-receipts]
+      exclude: [automatic-retry, native-ui-scraping, url-publication, geometry]
+    examples:
+      positive: A refused handoff presents retry and a later accepted retry acknowledges only the unchanged completion.
+      negative: Opening the app or retrying after a new turn acknowledges that new answer.
+    guards:
+      - Tests/CodexNotchTests/NavigationRecoveryTests.swift
+      - Tests/CodexNotchTests/CodexThreadNavigatorTests.swift
+      - docs/decisions/072-navigation-recovery.md
+      - "manual: verify alert actions, handoff and notch geometry on real hardware"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
