@@ -33,7 +33,7 @@ actor ActiveSessionStore {
         rollouts[rolloutID] = RolloutState(
             active: reduction.active,
             completed: reduction.completed.map {
-                CompletedSession(session: $0, completedAt: $0.lastActivityAt)
+                CompletedSession(session: $0, completedAt: $0.lastActivityAt, outcome: $0.terminalOutcome ?? .unknown)
             },
             lastModifiedAt: lastModifiedAt
         )

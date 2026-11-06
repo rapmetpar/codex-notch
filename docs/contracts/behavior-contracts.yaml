@@ -4019,3 +4019,40 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: TURN-OUTCOME-001
+    title: Show terminal lifecycle outcome independently of attention
+    status: active
+    statement: >-
+      Carry only recognized lifecycle metadata into recent conversation rows.
+      A timestamped task_complete is an ended event, not a claim of successful
+      work; an explicit turn_aborted is interrupted, and a completion lacking
+      a valid timestamp is unknown. Unfinished stale or replaced turns do not
+      become terminal history. A late event for an older identified turn never
+      ends its replacement. Show a localized short outcome on the existing
+      metadata line and an explanation in tooltip and accessibility. Interrupted
+      and unknown rows use a neutral icon without a green completion check.
+      Keep Running/New/Viewed, sorting, limits, native and local read receipts,
+      compact completion source policy, geometry and privacy unchanged. Only a
+      timestamped completion event can trigger pet celebration or compact
+      completion effects; native unread may still supply the existing static
+      compact signal for an interrupted or unknown outcome.
+    rationale: Explicit interruptions were indistinguishable from completion in history.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [terminal-outcome, history-row, accessibility, pet-celebration-filter]
+      exclude: [message-content, success-inference, task-controls, compact-signal-policy, geometry]
+    examples:
+      positive: An explicit abort is labelled Interrupted while its read attention remains independent.
+      negative: A missing completion timestamp is called successful or an old abort stops a new turn.
+    guards:
+      - Tests/CodexNotchTests/TurnOutcomeTests.swift
+      - Tests/CodexNotchTests/ConversationAttentionTests.swift
+      - Tests/CodexNotchTests/CompactCompletionStoreTests.swift
+      - docs/decisions/072-terminal-outcome.md
+      - "manual: inspect long localized labels and VoiceOver on physical notch; exercise live replacement"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null

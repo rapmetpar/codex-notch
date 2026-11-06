@@ -21,8 +21,10 @@ struct SessionActivity: Equatable, Identifiable, Sendable {
     let originator: String?
     let startedAt: Date
     let lastActivityAt: Date
+    let terminalOutcome: TurnOutcome?
 
     var id: String { "\(threadID)#\(turnID)" }
+    var permitsCompletionEffects: Bool { terminalOutcome == .completedEvent }
 
     init(
         threadID: String,
@@ -31,7 +33,8 @@ struct SessionActivity: Equatable, Identifiable, Sendable {
         cwd: String?,
         originator: String?,
         startedAt: Date,
-        lastActivityAt: Date
+        lastActivityAt: Date,
+        terminalOutcome: TurnOutcome? = nil
     ) {
         self.threadID = threadID
         self.turnID = turnID
@@ -40,13 +43,15 @@ struct SessionActivity: Equatable, Identifiable, Sendable {
         self.originator = originator
         self.startedAt = startedAt
         self.lastActivityAt = lastActivityAt
+        self.terminalOutcome = terminalOutcome
     }
 
     func updating(
         threadID: String = "",
         cwd: String? = nil,
         originator: String? = nil,
-        lastActivityAt: Date? = nil
+        lastActivityAt: Date? = nil,
+        terminalOutcome: TurnOutcome? = nil
     ) -> SessionActivity {
         SessionActivity(
             threadID: threadID.isEmpty ? self.threadID : threadID,
@@ -55,7 +60,8 @@ struct SessionActivity: Equatable, Identifiable, Sendable {
             cwd: cwd ?? self.cwd,
             originator: originator ?? self.originator,
             startedAt: startedAt,
-            lastActivityAt: lastActivityAt ?? self.lastActivityAt
+            lastActivityAt: lastActivityAt ?? self.lastActivityAt,
+            terminalOutcome: terminalOutcome ?? self.terminalOutcome
         )
     }
 
@@ -67,7 +73,8 @@ struct SessionActivity: Equatable, Identifiable, Sendable {
             cwd: cwd,
             originator: originator,
             startedAt: startedAt,
-            lastActivityAt: lastActivityAt
+            lastActivityAt: lastActivityAt,
+            terminalOutcome: terminalOutcome
         )
     }
 }
@@ -137,7 +144,7 @@ enum ActiveSessionReducer {
                       let item = active.removeValue(forKey: key) else {
                     continue
                 }
-                let completion = item.updating(lastActivityAt: event.timestamp ?? item.lastActivityAt)
+                let completion = item.updating(lastActivityAt: event.timestamp ?? item.lastActivityAt, terminalOutcome: event.timestamp == nil ? .unknown : .completedEvent)
                 completed.append(completion)
                 // Signals require an actual completion timestamp; the history fallback
                 // for malformed timestamps cannot prove when the task completed.
@@ -147,7 +154,7 @@ enum ActiveSessionReducer {
                 guard !isSubagentRollout else { continue }
                 guard let key = matchingKey(for: turnID, active: active),
                       let item = active.removeValue(forKey: key) else { continue }
-                completed.append(item.updating(lastActivityAt: event.timestamp ?? item.lastActivityAt))
+                completed.append(item.updating(lastActivityAt: event.timestamp ?? item.lastActivityAt, terminalOutcome: .interrupted))
             }
         }
 

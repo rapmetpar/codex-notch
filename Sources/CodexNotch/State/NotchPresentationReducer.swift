@@ -61,7 +61,8 @@ enum NotchPresentationReducer {
                     session: completion.session,
                     activity: .completed(completedAt: completion.completedAt),
                     isViewed: isViewed(completion, input: input),
-                    project: project(for: completion.session)
+                    project: project(for: completion.session),
+                    outcome: completion.outcome
                 )
             )
         }
