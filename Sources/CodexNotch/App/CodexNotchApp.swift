@@ -16,6 +16,11 @@ struct CodexNotchApp: App {
                 .defaultAppStorage(AppPreferences.store)
         }
         .commands {
+            CommandGroup(after: .appSettings) {
+                Button(appLanguage.localized(chinese: "阅读窗口…", english: "Reading Window…", russian: "Окно чтения…")) {
+                    appDelegate.showReaderWindow()
+                }
+            }
             CommandGroup(replacing: .appSettings) {
                 NotchSettingsButton {
                     Text(appLanguage.localized(chinese: "设置…", english: "Settings…", russian: "Настройки…"))

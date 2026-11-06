@@ -23,6 +23,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         runtimeCoordinator?.start()
     }
 
+    func showReaderWindow() {
+        runtimeCoordinator?.showReaderWindow()
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         runtimeCoordinator?.stop()
     }
