@@ -4019,3 +4019,33 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: RECENT-SEARCH-001
+    title: Search only the bounded recent conversation snapshot
+    status: active
+    statement: >-
+      An explicitly opened native search window projects the existing ordered
+      recent snapshot after the configured limit. Match only short titles and
+      project labels and optionally filter current attention. Preserve thread IDs
+      and relative order; refreshing status does not navigate or acknowledge.
+      Keep query and filter in memory only while the window is open. At limit zero
+      hide the entry and close the window. No query triggers metadata reads, and
+      no message bodies, archives, or persistent query index are accessed. The
+      compact state, notch geometry and existing navigation receipts stay unchanged.
+    rationale: A bounded temporary filter helps find an already visible recent chat.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [recent-search, temporary-filter, native-window]
+      exclude: [message-content, archive-search, saved-queries, compact-state, geometry]
+    examples:
+      positive: A project query narrows the bounded list without changing its order; clearing restores it.
+      negative: A query fetches older threads, acknowledges a result, or remains after closing.
+    guards:
+      - Tests/CodexNotchTests/ConversationQueryTests.swift
+      - docs/decisions/072-bounded-recent-search.md
+      - "manual: IME input, Escape, focus, navigation and physical notch behavior"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
