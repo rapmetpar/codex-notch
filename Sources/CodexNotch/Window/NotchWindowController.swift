@@ -32,6 +32,8 @@ final class NotchWindowController: NSWindowController {
     private var deferredFrameWorkItem: DispatchWorkItem?
     private var deferredFrameIdentifier: UUID?
     private var lastPreparedTargetFrame: NSRect?
+    private var lastScreenID: CGDirectDisplayID?
+    private var lastScreenFrame: NSRect?
     private var lastPreparedSettledFrame: NSRect?
     private var lastPreparedIsExpanded = false
     private(set) var isCardTransitionInFlight = false
@@ -82,6 +84,8 @@ final class NotchWindowController: NSWindowController {
         layout: NotchLayout,
         state: NotchPresentationState,
         isHovering: Bool = false,
+        screenID: CGDirectDisplayID? = nil,
+        screenFrame: NSRect? = nil,
         animationsEnabled: Bool = AppAnimationPreference.defaultEnabled
     ) -> UUID {
         guard let panel = window as? NotchPanel else { return canvasTransitionIdentifier }
@@ -102,9 +106,12 @@ final class NotchWindowController: NSWindowController {
             for: targetFrame, isExpanded: isExpanded, isHovering: isHovering,
             animationsEnabled: animationsEnabled
         )
+        let screenChanged = screenFrame != nil && (screenID != lastScreenID || screenFrame != lastScreenFrame)
+        lastScreenID = screenID
+        lastScreenFrame = screenFrame
         let wasVisible = panel.isVisible
         let wasIgnoringMouseEvents = panel.ignoresMouseEvents
-        let changesTarget = lastPreparedTargetFrame != targetFrame
+        let changesTarget = screenChanged || lastPreparedTargetFrame != targetFrame
             || lastPreparedSettledFrame != settledFrame
             || !wasVisible
             || (deferredFrameWorkItem == nil && !awaitingSurfaceCompletion && panel.frame != settledFrame)
@@ -127,7 +134,7 @@ final class NotchWindowController: NSWindowController {
             to: frame,
             wasVisible: wasVisible
         )
-        if setsFrameImmediately {
+        if setsFrameImmediately || screenChanged {
             applyCanvasFrame(frame)
         } else {
             updateHostingFrame()
@@ -138,7 +145,7 @@ final class NotchWindowController: NSWindowController {
             // already visible. Workspace changes use the dedicated reassertion
             // path below, so preserving the z-order no longer wakes
             // WindowServer once per tick.
-            if setsFrameImmediately || wasIgnoringMouseEvents {
+            if setsFrameImmediately || screenChanged || wasIgnoringMouseEvents {
                 panel.orderFrontRegardless()
             }
         } else if !animationsEnabled {
@@ -281,6 +288,10 @@ final class NotchWindowController: NSWindowController {
         let growsHeight = target.height > current.height + 0.5
         let changesTopAttachment = abs(target.maxY - current.maxY) > 0.5
         return growsWidth || growsHeight || changesTopAttachment
+    }
+
+    func invalidateDisplayRoute() {
+        lastScreenFrame = nil
     }
 
     func hideNotchPanel() {

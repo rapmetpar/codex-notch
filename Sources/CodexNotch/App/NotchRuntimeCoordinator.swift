@@ -142,7 +142,9 @@ final class NotchRuntimeCoordinator {
         }
 
         windowController.onScreenParametersChanged = { [weak self] in
-            self?.render()
+            guard let self else { return }
+            self.windowController.invalidateDisplayRoute()
+            self.render()
         }
         windowController.onOpenThread = { [weak self] threadID in
             self?.openThread(threadID)
@@ -588,7 +590,7 @@ final class NotchRuntimeCoordinator {
         let preferences = runtimePreferences
         PetCompanionController.shared.observe(activeSessions: activeSessions, completions: recentCompletions,
             isHovered: isHovered, now: renderDate)
-        guard let screen = NotchScreenMetrics.preferredScreen() else {
+        guard let screen = NotchScreenMetrics.preferredScreen(selection: preferences.selectedDisplay) else {
             resetHoverState()
             windowController.hideNotchPanel()
             return
@@ -694,6 +696,7 @@ final class NotchRuntimeCoordinator {
             layout: layout,
             state: displayState,
             isHovering: isPointerInside,
+            screenID: DisplaySelection.screenID(screen), screenFrame: metrics.frame,
             animationsEnabled: animationsEnabled
         )
         let animationWillComplete = viewModel.update(
@@ -740,6 +743,7 @@ final class NotchRuntimeCoordinator {
         windowController.prepare(
             layout: layout,
             state: hiddenState,
+            screenID: DisplaySelection.screenID(screen), screenFrame: metrics.frame,
             animationsEnabled: false
         )
         viewModel.update(
@@ -773,6 +777,7 @@ final class NotchRuntimeCoordinator {
             layout: layout,
             state: displayState,
             isHovering: isPointerInside && displayState != .hidden,
+            screenID: DisplaySelection.screenID(screen), screenFrame: metrics.frame,
             animationsEnabled: animationsEnabled
         )
         let animationWillComplete = viewModel.update(

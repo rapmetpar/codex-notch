@@ -9,17 +9,23 @@ enum NotchLayoutMode: Equatable {
 
 struct NotchScreenMetrics {
     /// One selection rule for the real surface and Settings applicability hints.
-    static func preferredScreen() -> NSScreen? {
+    static func preferredScreen(selection: String = DisplaySelection.automatic) -> NSScreen? {
         let screens = NSScreen.screens
         let main = NSScreen.main
+        let auto: NSScreen?
         if let main,
            main.auxiliaryTopLeftArea != nil,
            main.auxiliaryTopRightArea != nil {
-            return main
+            auto = main
+        } else {
+            auto = screens.first {
+                $0.auxiliaryTopLeftArea != nil && $0.auxiliaryTopRightArea != nil
+            } ?? main ?? screens.first
         }
-        return screens.first {
-            $0.auxiliaryTopLeftArea != nil && $0.auxiliaryTopRightArea != nil
-        } ?? main ?? screens.first
+        let id = DisplaySelection.select(selection, displays: DisplaySelection.onlineDisplays(),
+            availableIDs: screens.compactMap(DisplaySelection.screenID),
+            autoID: auto.flatMap(DisplaySelection.screenID))
+        return screens.first { DisplaySelection.screenID($0) == id } ?? auto
     }
 
     let frame: NSRect

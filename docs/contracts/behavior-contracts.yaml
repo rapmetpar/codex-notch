@@ -4019,3 +4019,35 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: DISPLAY-SELECTION-001
+    title: Select one display with automatic fallback
+    status: active
+    statement: >-
+      Settings offers Automatic and the available displays. Persist only the opaque
+      system display identity in app-owned preferences, never display a serial or
+      identifier. Automatic retains the existing preferred-screen algorithm. A
+      missing selection temporarily falls back to Automatic without rewriting the
+      preference; reconnection restores it. Resolve mirror members to the current
+      drawable master and calculate geometry from current NSScreen metrics on every
+      render. Keep one panel, existing safe areas, hover recovery, visibility,
+      activity, quota, animation and settings persistence. Never change system
+      display configuration or store manual frames.
+    rationale: A user working on an external display needs an explicit target that survives temporary disconnection.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [display-selection, temporary-fallback, mirror-master, settings]
+      exclude: [multiple-panels, system-display-configuration, manual-geometry, releases]
+    examples:
+      positive: Selecting an external display moves the existing island there; disconnect falls back and reconnect restores the target.
+      negative: A disconnect erases the preference, a mirror slave uses stale coordinates, or a serial appears in Settings.
+    guards:
+      - Tests/CodexNotchTests/DisplaySelectionTests.swift
+      - Tests/CodexNotchTests/NotchDisplayRoutingTests.swift
+      - docs/decisions/072-display-selection.md
+      - "manual: connect and disconnect external display, mirror, clamshell and change primary; inspect physical notch, hover and mouse regions"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
