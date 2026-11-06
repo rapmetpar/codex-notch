@@ -5,6 +5,7 @@ struct FloatingCenterView: View {
     let startedAt: Date?
     let now: Date
     let isExpanded: Bool
+    @AppStorage(PresentationPrivacyPolicy.storageKey) private var privacyEnabled = false
     @AppStorage(FloatingCenterStyle.storageKey)
     private var styleRaw = FloatingCenterStyle.defaultStyle.rawValue
     @AppStorage(FloatingCenterText.storageKey)
@@ -12,7 +13,7 @@ struct FloatingCenterView: View {
 
     var body: some View {
         FloatingCenterContent(
-            style: .fromStoredValue(styleRaw), customText: customText,
+            style: privacyEnabled ? .flow : .fromStoredValue(styleRaw), customText: privacyEnabled ? "" : customText,
             activity: activity, startedAt: startedAt, now: now, isExpanded: isExpanded
         )
     }

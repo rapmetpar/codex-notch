@@ -32,6 +32,7 @@ struct ProjectConversationListView: View {
     let onOpenThread: (String) -> Void
     let onDropProjects: ([ProjectDragToken], String) -> Bool
     let onMoveProject: (String, Int) -> Void
+    @AppStorage(PresentationPrivacyPolicy.storageKey) private var privacyEnabled = false
     @State private var targetedProjectID: String?
 
     private var fullIDs: [String] {
@@ -58,10 +59,17 @@ struct ProjectConversationListView: View {
                 heading(section)
                 ForEach(section.conversations, id: \.threadID) { conversation in
                     ConversationRowView(conversation: conversation, now: now, language: language,
+                                        privacyTitle: privacyEnabled ? PresentationAliases.shared.chat(conversation.threadID, language: language) : nil,
+                                        privacyProject: privacyEnabled ? projectTitle(section) : nil,
                                         action: { onOpenThread(conversation.threadID) })
                 }
             }
         }
+    }
+
+    private func projectTitle(_ section: ConversationProjectSection) -> String {
+        guard privacyEnabled else { return section.title(language: language) }
+        return PresentationAliases.shared.project(section.id, language: language)
     }
 
     private func heading(_ section: ConversationProjectSection) -> some View {
@@ -69,15 +77,15 @@ struct ProjectConversationListView: View {
             // Only headings are draggable; row clicks retain their navigation behavior.
             HStack(spacing: 5) {
                 Image(systemName: "line.3.horizontal").font(.system(size: 10))
-                Text(section.title(language: language)).lineLimit(1).truncationMode(.middle)
+                Text(projectTitle(section)).lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 0)
             }
             .font(.system(size: 11, weight: .semibold))
             .contentShape(Rectangle())
             .draggable(ProjectDragToken(id: section.id)) {
-                ProjectHeadingDragPreview(title: section.title(language: language))
+                ProjectHeadingDragPreview(title: projectTitle(section))
             }
-            .accessibilityLabel(section.title(language: language))
+            .accessibilityLabel(projectTitle(section))
             .accessibilityHint(language.localized(chinese: "拖动以调整项目优先级", english: "Drag to prioritize projects", russian: "Перетащите для изменения порядка проектов"))
             moveButton(section, offset: -1)
             moveButton(section, offset: 1)
@@ -100,9 +108,9 @@ struct ProjectConversationListView: View {
     private func moveButton(_ section: ConversationProjectSection, offset: Int) -> some View {
         let index = fullIDs.firstIndex(of: section.id) ?? 0
         let title = language.localized(
-            chinese: "将\(section.title(language: language))向\(offset < 0 ? "上" : "下")移动",
-            english: "Move \(section.title(language: language)) \(offset < 0 ? "up" : "down")",
-            russian: "Переместить \(section.title(language: language)) \(offset < 0 ? "выше" : "ниже")")
+            chinese: "将\(projectTitle(section))向\(offset < 0 ? "上" : "下")移动",
+            english: "Move \(projectTitle(section)) \(offset < 0 ? "up" : "down")",
+            russian: "Переместить \(projectTitle(section)) \(offset < 0 ? "выше" : "ниже")")
         return ProjectMoveButton(symbol: offset < 0 ? "chevron.up" : "chevron.down", title: title,
             enabled: fullIDs.indices.contains(index + offset), action: { onMoveProject(section.id, offset) })
             .frame(width: 24, height: 24)

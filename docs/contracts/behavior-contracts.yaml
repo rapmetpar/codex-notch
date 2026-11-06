@@ -4019,3 +4019,34 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: PRESENTATION-PRIVACY-001
+    title: Opt-in presentation privacy across existing surfaces
+    status: active
+    statement: >-
+      A persisted, off-by-default presentation privacy switch masks conversation
+      and project names, personal signature, custom status pixels and companion
+      artwork in existing island, menu and Settings surfaces, including their
+      tooltips, accessibility labels and project drag preview. Use local generic
+      labels while preserving quota, activity and ordering. Hide sensitive
+      appearance controls while enabled without modifying stored choices or pet
+      library. Any action opening Codex requires a separate explicit confirmation;
+      cancel must not navigate or acknowledge a conversation. Restart retains the
+      mode. This does not protect other applications or system screen capture.
+    rationale: Screen demonstrations can reveal personal app-owned presentation data.
+    source: user-request
+    owner: project-maintainer
+    risk: high
+    scope:
+      include: [presentation-redaction, accessibility, drag-preview, navigation-confirmation]
+      exclude: [screen-sharing-detection, system-capture, other-apps, preference-reset]
+    examples:
+      positive: Enabling the mode hides personal labels and artwork, and cancelling the Codex warning keeps the current app open.
+      negative: A menu or accessibility label exposes a title, a custom image remains visible, or opening a chat bypasses confirmation.
+    guards:
+      - Tests/CodexNotchTests/PresentationPrivacyTests.swift
+      - docs/decisions/072-presentation-privacy.md
+      - "manual: review all surfaces and VoiceOver on physical notch, floating and mirrored displays; verify confirmation and restoration"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null
