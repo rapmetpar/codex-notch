@@ -4019,3 +4019,31 @@ contracts:
     supersedes: [CI-VERIFICATION-004]
     superseded_by: null
     last_verified_commit: null
+
+  - id: READER-WINDOW-001
+    title: Explicit bounded reading window
+    status: active
+    statement: >-
+      An explicit app-menu command opens one reusable standard resizable window
+      with 100, 125 and 150 percent readable wrapping text, quota reset times and
+      the existing bounded recent conversation snapshot. Zero hides recent rows.
+      Row actions use the existing navigation and read policy. The window adds no
+      monitor, request, animation or automatic activation on updates. Its size
+      does not alter the notch, its geometry, state or physical constraints.
+    rationale: A separately opened window supports sustained reading without altering the notch.
+    source: user-request
+    owner: project-maintainer
+    risk: medium
+    scope:
+      include: [reader-window, text-scale, bounded-snapshot]
+      exclude: [notch-geometry, monitor, archive, release]
+    examples:
+      positive: The twentieth visible chat navigates to its own thread at 150 percent.
+      negative: Opening the reader starts another monitor or expands the notch.
+    guards:
+      - Tests/CodexNotchTests/ReaderWindowTests.swift
+      - docs/decisions/072-reader-window.md
+      - "manual: resize and VoiceOver at 150 percent, verify Spaces and physical notch"
+    supersedes: []
+    superseded_by: null
+    last_verified_commit: null

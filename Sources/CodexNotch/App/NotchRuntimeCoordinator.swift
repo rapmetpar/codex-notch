@@ -40,6 +40,7 @@ final class NotchRuntimeCoordinator {
     private let conversationReadStore: ConversationReadStore
     private let compactCompletionStore: CompactCompletionStore
     private let nativeReadMonitor: NativeConversationReadMonitor
+    private let readerWindow = ReaderWindowController()
     private let viewModel: NotchViewModel
     private let titleReadQueue = DispatchQueue(
         label: "com.david.codexnotch.thread-title-read",
@@ -114,6 +115,25 @@ final class NotchRuntimeCoordinator {
             rootURL: codexHome.appendingPathComponent("sessions", isDirectory: true),
             store: sessionStore
         )
+    }
+
+    func showReaderWindow() {
+        updateReaderSnapshot(now: nowProvider())
+        readerWindow.show()
+    }
+
+    private func updateReaderSnapshot(now: Date) {
+        let input = NotchPresentationInput(now: now, isChatGPTFrontmost: isChatGPTFrontmost,
+            activeSessions: activeSessions, recentCompletions: recentCompletions, usage: usage,
+            isHovered: true, readReceipts: conversationReadStore.receipts,
+            nativeReadReceipts: nativeReadMonitor.receipts, compactCompletionSignals: compactCompletionStore.signals,
+            conversationCategoryOrder: runtimePreferences.conversationCategoryOrder, threadProjects: threadProjects,
+            conversationProjectOrder: runtimePreferences.conversationProjectOrder)
+        if case let .expanded(content) = NotchPresentationReducer.reduce(input) {
+            readerWindow.update(content.limitingRecentConversations(to: recentConversationLimit), now: now) { [weak self] id in
+                self?.openThread(id)
+            }
+        }
     }
 
     func start() {
@@ -224,6 +244,7 @@ final class NotchRuntimeCoordinator {
             animationsEnabled: animationsEnabled
         )
         windowController.hideNotchPanel()
+        readerWindow.close()
     }
 
     deinit {
@@ -585,6 +606,7 @@ final class NotchRuntimeCoordinator {
 
     private func render(now: Date? = nil) {
         let renderDate = now ?? nowProvider()
+        updateReaderSnapshot(now: renderDate)
         let preferences = runtimePreferences
         PetCompanionController.shared.observe(activeSessions: activeSessions, completions: recentCompletions,
             isHovered: isHovered, now: renderDate)
